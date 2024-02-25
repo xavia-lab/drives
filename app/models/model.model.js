@@ -3,6 +3,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const Capacity = require("./capacity.model");
 const Interface = require("./interface.model");
 const Manufacturer = require("./manufacturer.model");
+const StorageType = require('../models/storageType.model');
 
 const db = require('../util/database')
 
@@ -50,5 +51,14 @@ Manufacturer.hasMany(Model, {
   onUpdate: 'RESTRICT',
 });
 Model.belongsTo(Manufacturer);
+
+StorageType.hasMany(Model, {
+  foreignKey: {
+    allowNull: false
+  },
+  onDelete: 'RESTRICT',
+  onUpdate: 'RESTRICT',
+});
+Model.belongsTo(StorageType);
 
 module.exports = Model;

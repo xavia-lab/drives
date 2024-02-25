@@ -1,0 +1,17 @@
+meta {
+  name: /storageTypes - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/storageTypes/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Solid State"
+  }
+}

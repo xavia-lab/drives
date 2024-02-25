@@ -30,12 +30,14 @@ exports.create = (req, res, next) => {
     const capacityId = req.body.capacityId;
     const interfaceId = req.body.interfaceId;
     const manufacturerId = req.body.manufacturerId;
+    const storageTypeId = req.body.storageTypeId;
     Model.create({
         name: modelName,
         number: modelNumber,
         capacityId: capacityId,
         interfaceId: interfaceId,
         manufacturerId: manufacturerId,
+        storageTypeId: storageTypeId,
     })
     .then(result => {
         console.log('Created model');
@@ -57,6 +59,7 @@ exports.update = (req, res, next) => {
     const capacityId = req.body.capacityId;
     const interfaceId = req.body.interfaceId;
     const manufacturerId = req.body.manufacturerId;
+    const storageTypeId = req.body.storageTypeId;
     Model.findByPk(modelId)
         .then(model => {
             if (!model) {
@@ -69,6 +72,7 @@ exports.update = (req, res, next) => {
                 capacityId: capacityId,
                 interfaceId: interfaceId,
                 manufacturerId: manufacturerId,
+                storageTypeId: storageTypeId,
             });
         })
         .then(result => {
