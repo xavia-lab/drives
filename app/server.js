@@ -39,6 +39,7 @@ app.use("/capacities", require('./routes/capacities'));
 app.use("/interfaces", require('./routes/interfaces'));
 app.use("/manufacturers", require('./routes/manufacturers'));
 app.use("/models", require('./routes/models'));
+app.use("/retailers", require('./routes/retailers'));
 
 app.use((error, req, res, next) => {
   console.log(error);

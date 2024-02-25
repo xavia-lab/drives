@@ -1,0 +1,18 @@
+meta {
+  name: /retailers - create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/retailers
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Amazon",
+    "country": "US"
+  }
+}
