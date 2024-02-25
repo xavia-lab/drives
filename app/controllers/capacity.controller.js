@@ -1,6 +1,6 @@
 const Capacity = require('../models/capacity.model');
 
-// Retrieve all Capacities from the database.
+// Retrieve all capacities from the database.
 exports.findAll = (req, res, next) => {
     Capacity.findAll()
         .then(capacities => {

@@ -1,0 +1,21 @@
+meta {
+  name: /models - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/models/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exos X24",
+    "number": "ST16000NM007H",
+    "capacityId": 1,
+    "interfaceId": 1,
+    "manufacturerId": 2
+  }
+}

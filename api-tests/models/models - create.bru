@@ -1,0 +1,21 @@
+meta {
+  name: /models - create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/models
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exos X24",
+    "number": "ST16000NM007H",
+    "capacityId": 1,
+    "interfaceId": 1,
+    "manufacturerId": 1
+  }
+}

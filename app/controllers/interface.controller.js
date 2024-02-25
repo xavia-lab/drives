@@ -1,6 +1,6 @@
 const Interface = require('../models/interface.model');
 
-// Retrieve all Capacities from the database.
+// Retrieve all interfaces from the database.
 exports.findAll = (req, res, next) => {
     Interface.findAll()
         .then(interfaces => {

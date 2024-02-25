@@ -3,11 +3,6 @@ const bodyParser = require("body-parser");
 // const cors = require("cors");
 const sequelize = require("./util/database");
 
-const Capacity = require("./models/capacity.model");
-const Interface = require("./models/interface.model");
-const Manufacturer = require("./models/manufacturer.model");
-
-
 const app = express();
 
 // var corsOptions = {
@@ -43,6 +38,7 @@ app.get("/hello", (req, res) => {
 app.use("/capacities", require('./routes/capacities'));
 app.use("/interfaces", require('./routes/interfaces'));
 app.use("/manufacturers", require('./routes/manufacturers'));
+app.use("/models", require('./routes/models'));
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -54,7 +50,7 @@ app.use((error, req, res, next) => {
 
 // Sync database
 sequelize.sync(
-  { force: true }
+  // { force: true }
 ).then(() => {
   console.log("Drop and re-sync db.");
 });
