@@ -1,0 +1,32 @@
+{
+  "name": "drives",
+  "version": "1.0.0",
+  "description": "A simple inventory of all your disk drives!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xavia-lab/drives.git"
+  },
+  "keywords": [
+    "Hard",
+    "Drive",
+    "Inventory"
+  ],
+  "author": "Rehan Mahmood",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/xavia-lab/drives/issues"
+  },
+  "homepage": "https://github.com/xavia-lab/drives#readme",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.1"
+  }
+}

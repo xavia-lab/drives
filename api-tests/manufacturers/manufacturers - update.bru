@@ -1,0 +1,17 @@
+meta {
+  name: /manufacturers - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/manufacturers/3
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Samsung"
+  }
+}

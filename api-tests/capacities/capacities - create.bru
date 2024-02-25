@@ -1,0 +1,18 @@
+meta {
+  name: /capacities - create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/capacities
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "unit": "TB",
+    "value": "16"
+  }
+}

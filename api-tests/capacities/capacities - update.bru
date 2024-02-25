@@ -1,0 +1,18 @@
+meta {
+  name: /capacities - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/capacities/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "unit": "GB",
+    "value": "750"
+  }
+}
