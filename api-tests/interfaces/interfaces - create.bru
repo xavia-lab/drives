@@ -1,0 +1,19 @@
+meta {
+  name: /interfaces - create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/interfaces
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "SATA",
+    "form": "3.5 in",
+    "speed": "6 gb/s"
+  }
+}

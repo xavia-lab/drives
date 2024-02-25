@@ -1,0 +1,19 @@
+meta {
+  name: /interfaces - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/interfaces/3
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "ATA",
+    "form": "3.5 in",
+    "speed": "3 gb/s"
+  }
+}

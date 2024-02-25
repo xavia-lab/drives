@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const sequelize = require("./util/database");
 
 const Capacity = require("./models/capacity.model");
+const Interface = require("./models/interface.model");
 const Manufacturer = require("./models/manufacturer.model");
 
 
@@ -40,6 +41,7 @@ app.get("/hello", (req, res) => {
 
 // CRUD Routes
 app.use("/capacities", require('./routes/capacities'));
+app.use("/interfaces", require('./routes/interfaces'));
 app.use("/manufacturers", require('./routes/manufacturers'));
 
 app.use((error, req, res, next) => {
