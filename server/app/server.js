@@ -1,9 +1,9 @@
 const express = require("express");
-const sequelize = require("./util/database");
 
 const dotenv = require('dotenv');
 dotenv.config();
 
+const sequelize = require("./util/database");
 const app = express();
 
 // parse requests of content-type - application/json
