@@ -1,21 +1,16 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-// const cors = require("cors");
 const sequelize = require("./util/database");
+
+const dotenv = require('dotenv');
+dotenv.config();
 
 const app = express();
 
-// var corsOptions = {
-//   origin: "http://localhost:5000"
-// };
-
-// app.use(cors(corsOptions));
-
 // parse requests of content-type - application/json
-app.use(bodyParser.json());
+app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
