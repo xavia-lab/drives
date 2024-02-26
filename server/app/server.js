@@ -1,25 +1,16 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-// const cors = require("cors");
 const sequelize = require("./util/database");
 
-const Capacity = require("./models/capacity.model");
-const Manufacturer = require("./models/manufacturer.model");
-
+const dotenv = require('dotenv');
+dotenv.config();
 
 const app = express();
 
-// var corsOptions = {
-//   origin: "http://localhost:5000"
-// };
-
-// app.use(cors(corsOptions));
-
 // parse requests of content-type - application/json
-app.use(bodyParser.json());
+app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,7 +31,12 @@ app.get("/hello", (req, res) => {
 
 // CRUD Routes
 app.use("/capacities", require('./routes/capacities'));
+app.use("/drives", require('./routes/drives'));
+app.use("/interfaces", require('./routes/interfaces'));
 app.use("/manufacturers", require('./routes/manufacturers'));
+app.use("/models", require('./routes/models'));
+app.use("/retailers", require('./routes/retailers'));
+app.use("/storageTypes", require('./routes/storageTypes'));
 
 app.use((error, req, res, next) => {
   console.log(error);

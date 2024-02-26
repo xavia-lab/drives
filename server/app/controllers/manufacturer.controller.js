@@ -2,7 +2,7 @@
 const Manufacturer = require('../models/manufacturer.model');
 // const Op = db.Sequelize.Op;
 
-// Retrieve all Manufacturers from the database.
+// Retrieve all manufacturers from the database.
 exports.findAll = (req, res, next) => {
     Manufacturer.findAll()
         .then(manufacturers => {

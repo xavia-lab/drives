@@ -1,0 +1,21 @@
+meta {
+  name: /drives - update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/drives/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "label": "S02-EXOS2021-12-06-16T",
+    "serial": "ZL2KH558",
+    "datePurchased": "2022-12-30",
+    "modelId": 1,
+    "retailerId": 1
+  }
+}
