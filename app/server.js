@@ -36,6 +36,7 @@ app.get("/hello", (req, res) => {
 
 // CRUD Routes
 app.use("/capacities", require('./routes/capacities'));
+app.use("/drives", require('./routes/drives'));
 app.use("/interfaces", require('./routes/interfaces'));
 app.use("/manufacturers", require('./routes/manufacturers'));
 app.use("/models", require('./routes/models'));
@@ -52,7 +53,7 @@ app.use((error, req, res, next) => {
 
 // Sync database
 sequelize.sync(
-  // { force: true }
+  { force: true }
 ).then(() => {
   console.log("Drop and re-sync db.");
 });

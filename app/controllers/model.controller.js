@@ -1,5 +1,4 @@
 const Model = require('../models/model.model');
-// const Manufacturer = require("../models/manufacturer.model");
 
 // Retrieve all models from the database.
 exports.findAll = (req, res, next) => {
