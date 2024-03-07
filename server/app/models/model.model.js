@@ -5,7 +5,7 @@ const Interface = require("./interface.model");
 const Manufacturer = require("./manufacturer.model");
 const StorageType = require('./storageType.model');
 
-const db = require('../util/database')
+const db = require('../configs/database.config')
 
 const Model = db.define("model", {
   id: {

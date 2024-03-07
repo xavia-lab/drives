@@ -24,9 +24,11 @@ exports.findOne = (req, res, next) => {
 
 // Create and Save a new Capacity
 exports.create = (req, res, next) => {
+    const capacityName = req.body.name;
     const capacityUnit = req.body.unit;
     const capacityValue = req.body.value;
     Capacity.create({
+        name: capacityName,
         unit: capacityUnit,
         value: capacityValue,
     })
@@ -45,6 +47,7 @@ exports.create = (req, res, next) => {
 // Update a Capacity by the id in the request
 exports.update = (req, res, next) => {
     const capacityId = req.params.id;
+    const capacityName = req.body.name;
     const capacityUnit = req.body.unit;
     const capacityValue = req.body.value;
     Capacity.findByPk(capacityId)
@@ -52,6 +55,7 @@ exports.update = (req, res, next) => {
             if (!capacity) {
                 return res.status(404).json({ message: 'Capacity not found!'});
             }
+            capacity.name = capacityName;
             capacity.unit = capacityUnit;
             capacity.value = capacityValue;
     

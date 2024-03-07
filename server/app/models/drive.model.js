@@ -3,7 +3,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const Model = require("./model.model");
 const Retailer = require("./retailer.model");
 
-const db = require('../util/database')
+const db = require('../configs/database.config')
 
 const Drive = db.define("drive", {
   id: {
@@ -11,6 +11,10 @@ const Drive = db.define("drive", {
     autoIncrement: true,
     allowNull: false,
     primaryKey: true,
+  },
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false,
   },
   label: {
     type: Sequelize.STRING,
