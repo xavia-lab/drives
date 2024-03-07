@@ -1,6 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-const db = require('../util/database')
+const db = require('../configs/database.config')
 
 const Manufacturer = db.define("manufacturer", {
   id: {

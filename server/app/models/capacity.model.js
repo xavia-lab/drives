@@ -1,6 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-const db = require('../util/database')
+const db = require('../configs/database.config')
 
 const Capacity = db.define("capacity", {
   id: {
@@ -8,6 +8,11 @@ const Capacity = db.define("capacity", {
     autoIncrement: true,
     allowNull: false,
     primaryKey: true,
+  },
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    unique: true,
   },
   value: {
     type: Sequelize.DECIMAL(10, 2),

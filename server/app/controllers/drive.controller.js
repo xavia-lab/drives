@@ -24,12 +24,14 @@ exports.findOne = (req, res, next) => {
 
 // Create and Save a new Drive
 exports.create = (req, res, next) => {
+    const driveName = req.body.name;
     const driveLabel = req.body.label;
     const driveSerial = req.body.serial;
     const driveDatePurchased = req.body.datePurchased;
     const modelId = req.body.modelId;
     const retailerId = req.body.retailerId;
     Drive.create({
+        name: driveName,
         label: driveLabel,
         serial: driveSerial,
         datePurchased: driveDatePurchased,
@@ -51,6 +53,7 @@ exports.create = (req, res, next) => {
 // Update a Drive by the id in the request
 exports.update = (req, res, next) => {
     const driveId = req.params.id;
+    const driveName = req.body.name;
     const driveLabel = req.body.label;
     const driveSerial = req.body.serial;
     const driveDatePurchased = req.body.datePurchased;
@@ -63,6 +66,7 @@ exports.update = (req, res, next) => {
             }
 
             return drive.update({
+                name: driveName,
                 label: driveLabel,
                 serial: driveSerial,
                 datePurchased: driveDatePurchased,
