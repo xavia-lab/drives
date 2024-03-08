@@ -5,16 +5,17 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/drives?page=1&size=2&sortBy=name&orderBy=desc&filterBy=name&filter=SATA
+  url: http://localhost:5000/drives?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC
   body: none
   auth: none
 }
 
 query {
-  page: 1
-  size: 2
-  sortBy: name
-  orderBy: desc
-  filterBy: name
-  filter: SATA
+  pageNumber: 1
+  pageSize: 2
+  sortField: name
+  sortOrder: DESC
+  ~filterField: name
+  ~filterValue: S02
+  ~filterOperator: LIKE
 }

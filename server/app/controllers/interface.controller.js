@@ -5,12 +5,13 @@ const PaginationHandler = require("../utils/pagination.util");
 
 // Retrieve all interfaces from the database.
 exports.findAll = (req, res) => {
-  const pageNumber = req.query.page;
-  const pageSize = req.query.size;
-  const orderBy = req.query.orderBy;
-  const sortBy = req.query.sortBy;
-  const filterBy = req.query.filterBy;
-  const filter = req.query.filter;
+  const pageNumber = req.query.pageNumber;
+  const pageSize = req.query.pageSize;
+  const sortField = req.query.sortField;
+  const sortOrder = req.query.orderOrder;
+  const filterField = req.query.filterField;
+  const filterOperator = req.query.filterOperator;
+  const filterValue = req.query.filterValue;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,36 +21,40 @@ exports.findAll = (req, res) => {
     });
   }
 
-  const pagingAttributes = PaginationHandler.paginate(
+  const queryParams = PaginationHandler.paginate(
     (paging = { page: pageNumber, size: pageSize }),
-    (ordering = { orderBy: orderBy, sortBy: sortBy }),
-    (filtering = { filterBy: filterBy, filter: filter }),
+    (sorting = { field: sortField, order: sortOrder }),
+    (filtering = {
+      field: filterField,
+      operator: filterOperator,
+      value: filterValue,
+    }),
   );
 
   Interface.findAll({
-    ...pagingAttributes,
+    ...queryParams,
   })
-    .then((interfaces) => {
-      res.status(200).json({ interfaces: interfaces });
+    .then((result) => {
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Find a single Interface with an id
-exports.findOne = (req, res, next) => {
+exports.findOne = (req, res) => {
   const interfaceId = req.params.id;
   Interface.findByPk(interfaceId)
     .then((interface) => {
       if (!interface) {
         return res.status(404).json({ message: "Interface not found!" });
       }
-      res.status(200).json({ interface: interface });
+      res.status(200).json(interface);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Interface
-exports.create = (req, res, next) => {
+exports.create = (req, res) => {
   const interfaceName = req.body.name;
   const interfaceForm = req.body.form;
   const interfaceSpeed = req.body.speed;
@@ -60,10 +65,7 @@ exports.create = (req, res, next) => {
   })
     .then((result) => {
       console.log("Created interface");
-      res.status(201).json({
-        message: "Interface created succssfully!",
-        interface: result,
-      });
+      res.status(201).json(result);
     })
     .catch((err) => {
       console.log(err);
@@ -71,7 +73,7 @@ exports.create = (req, res, next) => {
 };
 
 // Update a Interface by the id in the request
-exports.update = (req, res, next) => {
+exports.update = (req, res) => {
   const interfaceId = req.params.id;
   const interfaceName = req.body.name;
   const interfaceForm = req.body.form;
@@ -88,13 +90,13 @@ exports.update = (req, res, next) => {
       return interface.save();
     })
     .then((result) => {
-      res.status(200).json({ message: "Interface updated", interface: result });
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Delete a Interface with the specified id in the request
-exports.delete = (req, res, next) => {
+exports.delete = (req, res) => {
   const interfaceId = req.params.id;
   Interface.findByPk(interfaceId)
     .then((interface) => {

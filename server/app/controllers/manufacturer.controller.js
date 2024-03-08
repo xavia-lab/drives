@@ -5,12 +5,13 @@ const PaginationHandler = require("../utils/pagination.util");
 
 // Retrieve all manufacturers from the database.
 exports.findAll = (req, res) => {
-  const pageNumber = req.query.page;
-  const pageSize = req.query.size;
-  const orderBy = req.query.orderBy;
-  const sortBy = req.query.sortBy;
-  const filterBy = req.query.filterBy;
-  const filter = req.query.filter;
+  const pageNumber = req.query.pageNumber;
+  const pageSize = req.query.pageSize;
+  const sortField = req.query.sortField;
+  const sortOrder = req.query.orderOrder;
+  const filterField = req.query.filterField;
+  const filterOperator = req.query.filterOperator;
+  const filterValue = req.query.filterValue;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,36 +21,40 @@ exports.findAll = (req, res) => {
     });
   }
 
-  const pagingAttributes = PaginationHandler.paginate(
+  const queryParams = PaginationHandler.paginate(
     (paging = { page: pageNumber, size: pageSize }),
-    (ordering = { orderBy: orderBy, sortBy: sortBy }),
-    (filtering = { filterBy: filterBy, filter: filter }),
+    (sorting = { field: sortField, order: sortOrder }),
+    (filtering = {
+      field: filterField,
+      operator: filterOperator,
+      value: filterValue,
+    }),
   );
 
   Manufacturer.findAll({
-    ...pagingAttributes,
+    ...queryParams,
   })
-    .then((manufacturers) => {
-      res.status(200).json({ manufacturers: manufacturers });
+    .then((result) => {
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Find a single Manufacturer with an id
-exports.findOne = (req, res, next) => {
+exports.findOne = (req, res) => {
   const manufacturerId = req.params.id;
   Manufacturer.findByPk(manufacturerId)
     .then((manufacturer) => {
       if (!manufacturer) {
         return res.status(404).json({ message: "Manufacturer not found!" });
       }
-      res.status(200).json({ manufacturer: manufacturer });
+      res.status(200).json(manufacturer);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Manufacturer
-exports.create = (req, res, next) => {
+exports.create = (req, res) => {
   const manufacturerName = req.body.name;
   const manufacturerAddress = req.body.address;
   const manufacturerCountry = req.body.country;
@@ -77,7 +82,7 @@ exports.create = (req, res, next) => {
 };
 
 // Update a Manufacturer by the id in the request
-exports.update = (req, res, next) => {
+exports.update = (req, res) => {
   const manufacturerId = req.params.id;
   const manufacturerName = req.body.name;
   const manufacturerAddress = req.body.address;
@@ -100,15 +105,13 @@ exports.update = (req, res, next) => {
       return manufacturer.save();
     })
     .then((result) => {
-      res
-        .status(200)
-        .json({ message: "Manufacturer updated", manufacturer: result });
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Delete a Manufacturer with the specified id in the request
-exports.delete = (req, res, next) => {
+exports.delete = (req, res) => {
   const manufacturerId = req.params.id;
   Manufacturer.findByPk(manufacturerId)
     .then((manufacturer) => {

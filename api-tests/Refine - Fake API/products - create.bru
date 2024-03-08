@@ -1,0 +1,24 @@
+meta {
+  name: /products - create
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://api.fake-rest.refine.dev/products
+  body: json
+  auth: none
+}
+
+body:json {
+    {
+      "name": "Cotopaxi Allpa 35L Travel Pack - New",
+      "description": "Durable and stylish backpack made from recycled materials. Versatile design, organization compartments.",
+      "price": 200,
+      "material": "Recycled nylon, polyester",
+      "category": {
+        "id": 11
+      }
+    }
+  
+}

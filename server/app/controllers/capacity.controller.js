@@ -5,12 +5,13 @@ const PaginationHandler = require("../utils/pagination.util");
 
 // Retrieve all capacities from the database.
 exports.findAll = (req, res) => {
-  const pageNumber = req.query.page;
-  const pageSize = req.query.size;
-  const orderBy = req.query.orderBy;
-  const sortBy = req.query.sortBy;
-  const filterBy = req.query.filterBy;
-  const filter = req.query.filter;
+  const pageNumber = req.query.pageNumber;
+  const pageSize = req.query.pageSize;
+  const sortField = req.query.sortField;
+  const sortOrder = req.query.orderOrder;
+  const filterField = req.query.filterField;
+  const filterOperator = req.query.filterOperator;
+  const filterValue = req.query.filterValue;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,36 +21,40 @@ exports.findAll = (req, res) => {
     });
   }
 
-  const pagingAttributes = PaginationHandler.paginate(
+  const queryParams = PaginationHandler.paginate(
     (paging = { page: pageNumber, size: pageSize }),
-    (ordering = { orderBy: orderBy, sortBy: sortBy }),
-    (filtering = { filterBy: filterBy, filter: filter }),
+    (sorting = { field: sortField, order: sortOrder }),
+    (filtering = {
+      field: filterField,
+      operator: filterOperator,
+      value: filterValue,
+    }),
   );
 
   Capacity.findAll({
-    ...pagingAttributes,
+    ...queryParams,
   })
-    .then((capacities) => {
-      res.status(200).json({ capacities: capacities });
+    .then((result) => {
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Find a single Capacity with an id
-exports.findOne = (req, res, next) => {
+exports.findOne = (req, res) => {
   const capacityId = req.params.id;
   Capacity.findByPk(capacityId)
     .then((capacity) => {
       if (!capacity) {
         return res.status(404).json({ message: "Capacity not found!" });
       }
-      res.status(200).json({ capacity: capacity });
+      res.status(200).json(capacity);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Capacity
-exports.create = (req, res, next) => {
+exports.create = (req, res) => {
   const capacityName = req.body.name;
   const capacityUnit = req.body.unit;
   const capacityValue = req.body.value;
@@ -60,10 +65,7 @@ exports.create = (req, res, next) => {
   })
     .then((result) => {
       console.log("Created capacity");
-      res.status(201).json({
-        message: "Capacity created succssfully!",
-        capacity: result,
-      });
+      res.status(201).json(result);
     })
     .catch((err) => {
       console.log(err);
@@ -71,7 +73,7 @@ exports.create = (req, res, next) => {
 };
 
 // Update a Capacity by the id in the request
-exports.update = (req, res, next) => {
+exports.update = (req, res) => {
   const capacityId = req.params.id;
   const capacityName = req.body.name;
   const capacityUnit = req.body.unit;
@@ -88,13 +90,13 @@ exports.update = (req, res, next) => {
       return capacity.save();
     })
     .then((result) => {
-      res.status(200).json({ message: "Capacity updated", capacity: result });
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Delete a Capacity with the specified id in the request
-exports.delete = (req, res, next) => {
+exports.delete = (req, res) => {
   const capacityId = req.params.id;
   Capacity.findByPk(capacityId)
     .then((capacity) => {

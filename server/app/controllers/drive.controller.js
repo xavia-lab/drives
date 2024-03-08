@@ -5,12 +5,13 @@ const PaginationHandler = require("../utils/pagination.util");
 
 // Retrieve all drives from the database.
 exports.findAll = (req, res) => {
-  const pageNumber = req.query.page;
-  const pageSize = req.query.size;
-  const orderBy = req.query.orderBy;
-  const sortBy = req.query.sortBy;
-  const filterBy = req.query.filterBy;
-  const filter = req.query.filter;
+  const pageNumber = req.query.pageNumber;
+  const pageSize = req.query.pageSize;
+  const sortField = req.query.sortField;
+  const sortOrder = req.query.orderOrder;
+  const filterField = req.query.filterField;
+  const filterOperator = req.query.filterOperator;
+  const filterValue = req.query.filterValue;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,37 +21,41 @@ exports.findAll = (req, res) => {
     });
   }
 
-  const pagingAttributes = PaginationHandler.paginate(
+  const queryParams = PaginationHandler.paginate(
     (paging = { page: pageNumber, size: pageSize }),
-    (ordering = { orderBy: orderBy, sortBy: sortBy }),
-    (filtering = { filterBy: filterBy, filter: filter }),
+    (sorting = { field: sortField, order: sortOrder }),
+    (filtering = {
+      field: filterField,
+      operator: filterOperator,
+      value: filterValue,
+    }),
   );
 
   Drive.findAll({
-    ...pagingAttributes,
+    ...queryParams,
     include: { all: true, nested: true },
   })
-    .then((drives) => {
-      res.status(200).json({ drives: drives });
+    .then((result) => {
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Find a single Drive with an id
-exports.findOne = (req, res, next) => {
+exports.findOne = (req, res) => {
   const driveId = req.params.id;
   Drive.findByPk(driveId, { include: { all: true, nested: true } })
     .then((drive) => {
       if (!drive) {
         return res.status(404).json({ message: "Drive not found!" });
       }
-      res.status(200).json({ drive: drive });
+      res.status(200).json(drive);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Drive
-exports.create = (req, res, next) => {
+exports.create = (req, res) => {
   const driveName = req.body.name;
   const driveLabel = req.body.label;
   const driveSerial = req.body.serial;
@@ -67,10 +72,7 @@ exports.create = (req, res, next) => {
   })
     .then((result) => {
       console.log("Created drive");
-      res.status(201).json({
-        message: "Drive created succssfully!",
-        drive: result,
-      });
+      res.status(201).json(result);
     })
     .catch((err) => {
       console.log(err);
@@ -78,7 +80,7 @@ exports.create = (req, res, next) => {
 };
 
 // Update a Drive by the id in the request
-exports.update = (req, res, next) => {
+exports.update = (req, res) => {
   const driveId = req.params.id;
   const driveName = req.body.name;
   const driveLabel = req.body.label;
@@ -102,13 +104,13 @@ exports.update = (req, res, next) => {
       });
     })
     .then((result) => {
-      res.status(200).json({ message: "Drive updated", drive: result });
+      res.status(200).json(result);
     })
     .catch((err) => console.log(err));
 };
 
 // Delete a Drive with the specified id in the request
-exports.delete = (req, res, next) => {
+exports.delete = (req, res) => {
   const driveId = req.params.id;
   Drive.findByPk(driveId)
     .then((drive) => {

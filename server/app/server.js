@@ -47,7 +47,7 @@ app.use((error, req, res, next) => {
 // Sync database
 sequelize
   .sync({
-    //  force: true
+    // force: true,
   })
   .then(() => {
     console.log("Drop and re-sync db.");

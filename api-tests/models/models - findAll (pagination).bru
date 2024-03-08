@@ -5,16 +5,17 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/models?page=1&size=2&sortBy=name&orderBy=desc&filterBy=number&filter=ST
+  url: http://localhost:5000/models?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC&filterField=number&filterValue=ST&filterOperator=LIKE
   body: none
   auth: none
 }
 
 query {
-  page: 1
-  size: 2
-  sortBy: name
-  orderBy: desc
-  filterBy: number
-  filter: ST
+  pageNumber: 1
+  pageSize: 2
+  sortField: name
+  sortOrder: DESC
+  filterField: number
+  filterValue: ST
+  filterOperator: LIKE
 }

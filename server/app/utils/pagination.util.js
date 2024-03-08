@@ -1,8 +1,9 @@
+const collect = require("collect.js");
+
 const { make, ruleIn } = require("simple-body-validator");
 
-const { Op } = require("sequelize");
-
 const Objects = require("./objects.util");
+const SqlOperators = require("./sql.operators.util");
 
 const calculatePaging = (paging) => {
   const rules = {
@@ -20,8 +21,7 @@ const calculatePaging = (paging) => {
     Objects.isNotEmpty(paging.page) &&
     Objects.isNotEmpty(paging.size)
   ) {
-    const page = paging.page;
-    const size = paging.size;
+    const { page, size } = paging;
 
     const offset = (page - 1) * size;
     const limit = size;
@@ -33,67 +33,72 @@ const calculatePaging = (paging) => {
   } else return {};
 };
 
-const calculateOrdering = (ordering) => {
+const calculateSorting = (sorting) => {
   const rules = {
-    orderBy: [ruleIn(["desc", "asc"])],
-    sortBy: ["string", "required_with:orderBy"],
+    order: [ruleIn(["DESC", "ASC"])],
+    field: "string|required_with:order",
   };
 
-  const validator = make(ordering, rules);
+  const validator = make(sorting, rules);
   if (!validator.validate()) {
     return { errors: validator.errors().all() };
   }
 
   if (
-    Objects.isNotEmpty(ordering) &&
-    Objects.isNotEmpty(ordering.sortBy) &&
-    Objects.isNotEmpty(ordering.orderBy)
-  )
-    return [[ordering.sortBy, ordering.orderBy.toUpperCase()]];
-  else if (
-    Objects.isNotEmpty(ordering) &&
-    Objects.isNotEmpty(ordering.sortBy) &&
-    Objects.isEmpty(ordering.orderBy)
-  )
-    return [[ordering.sortBy]];
-  else return [];
+    Objects.isNotEmpty(sorting) &&
+    Objects.isNotEmpty(sorting.field) &&
+    Objects.isNotEmpty(sorting.order)
+  ) {
+    const { field, order } = sorting;
+
+    const sortingFields = collect(Array.from(field.split(",")));
+    const result = sortingFields.map((x) => [x, order.toUpperCase()]);
+
+    return result.all();
+  } else if (
+    Objects.isNotEmpty(sorting) &&
+    Objects.isNotEmpty(sorting.field) &&
+    Objects.isEmpty(sorting.order)
+  ) {
+    const { field } = sorting;
+
+    const sortingFields = collect(Array.from(field.split(",")));
+    const result = sortingFields.map((x) => [x]);
+
+    return result.all();
+  } else return [];
 };
 
 const calculateFiltring = (filtering) => {
   const rules = {
-    filterBy: ["string"],
-    filter: ["string", "required_with:filterBy"],
+    field: ["string"],
+    value: ["string", "required_with:filterBy"],
+    operator: [ruleIn(["EQ", "NE", "LT", "LTE", "GT", "GTE", "LIKE"])],
   };
 
-  const validator = make(ordering, rules);
+  const validator = make(filtering, rules);
   if (!validator.validate()) {
     return { errors: validator.errors().all() };
   }
 
   if (
     Objects.isNotEmpty(filtering) &&
-    Objects.isNotEmpty(filtering.filterBy) &&
-    Objects.isNotEmpty(filtering.filter)
-  ) {
-    const { filterBy, filter } = filtering;
-    return {
-      where: {
-        [filterBy]: {
-          [Op.like]: `%${filter}%`,
-        },
-      },
-    };
-  } else return {};
+    Objects.isNotEmpty(filtering.field) &&
+    Objects.isNotEmpty(filtering.operator) &&
+    Objects.isNotEmpty(filtering.value)
+  )
+    return SqlOperators.where(filtering);
+  else return {};
 };
 
-exports.paginate = (paging, ordering, filtering) => {
-  const pagingAttributes = calculatePaging(paging);
-  const order = calculateOrdering(ordering);
+exports.paginate = (paging, sorting, filtering) => {
+  const pagination = calculatePaging(paging);
+  const order = calculateSorting(sorting);
   const filter = calculateFiltring(filtering);
 
   const result = {
-    order: Objects.isEmpty(order) ? [] : order,
-    ...pagingAttributes,
+    order: order,
+    ...pagination,
     ...filter,
   };
 
