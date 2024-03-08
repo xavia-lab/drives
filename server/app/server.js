@@ -1,6 +1,6 @@
 const express = require("express");
 
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 dotenv.config();
 
 const sequelize = require("./configs/database.config");
@@ -13,11 +13,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   next();
 });
-
 
 // Root route
 app.get("/", (req, res) => {
@@ -26,17 +25,17 @@ app.get("/", (req, res) => {
 
 // Hello route
 app.get("/hello", (req, res) => {
-  res.send('Hello, World!');
+  res.send("Hello, World!");
 });
 
 // CRUD Routes
-app.use("/capacities", require('./routes/capacities'));
-app.use("/drives", require('./routes/drives'));
-app.use("/interfaces", require('./routes/interfaces'));
-app.use("/manufacturers", require('./routes/manufacturers'));
-app.use("/models", require('./routes/models'));
-app.use("/retailers", require('./routes/retailers'));
-app.use("/storageTypes", require('./routes/storageTypes'));
+app.use("/capacities", require("./routes/capacities"));
+app.use("/drives", require("./routes/drives"));
+app.use("/interfaces", require("./routes/interfaces"));
+app.use("/manufacturers", require("./routes/manufacturers"));
+app.use("/models", require("./routes/models"));
+app.use("/retailers", require("./routes/retailers"));
+app.use("/storageTypes", require("./routes/storageTypes"));
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -45,14 +44,14 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: message });
 });
 
-
 // Sync database
-sequelize.sync(
-  { force: true }
-).then(() => {
-  console.log("Drop and re-sync db.");
-});
-
+sequelize
+  .sync({
+    //  force: true
+  })
+  .then(() => {
+    console.log("Drop and re-sync db.");
+  });
 
 // set port, listen for requests
 const PORT = process.env.PORT || 5000;

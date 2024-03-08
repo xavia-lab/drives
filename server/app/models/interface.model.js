@@ -1,6 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const Interface = db.define("interface", {
   id: {
@@ -22,5 +22,5 @@ const Interface = db.define("interface", {
     allowNull: true,
   },
 });
-  
+
 module.exports = Interface;

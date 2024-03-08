@@ -1,6 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const Capacity = db.define("capacity", {
   id: {
@@ -29,11 +29,11 @@ const Capacity = db.define("capacity", {
     allowNull: false,
     validate: {
       isIn: {
-        args: [['MB', 'GB', 'TB', 'PB']],
+        args: [["MB", "GB", "TB", "PB"]],
         msg: "Must be a valid storage capacity unit.",
       },
     },
   },
 });
-  
+
 module.exports = Capacity;

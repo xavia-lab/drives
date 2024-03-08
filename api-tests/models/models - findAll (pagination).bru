@@ -1,0 +1,20 @@
+meta {
+  name: /models - findAll (pagination)
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:5000/models?page=1&size=2&sortBy=name&orderBy=desc&filterBy=number&filter=ST
+  body: none
+  auth: none
+}
+
+query {
+  page: 1
+  size: 2
+  sortBy: name
+  orderBy: desc
+  filterBy: number
+  filter: ST
+}

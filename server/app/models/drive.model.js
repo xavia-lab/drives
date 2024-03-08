@@ -1,9 +1,9 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
 const Model = require("./model.model");
 const Retailer = require("./retailer.model");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const Drive = db.define("drive", {
   id: {
@@ -34,19 +34,19 @@ const Drive = db.define("drive", {
 
 Model.hasMany(Drive, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Drive.belongsTo(Model);
 
 Retailer.hasMany(Drive, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Drive.belongsTo(Retailer);
 

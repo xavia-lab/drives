@@ -1,11 +1,11 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
 const Capacity = require("./capacity.model");
 const Interface = require("./interface.model");
 const Manufacturer = require("./manufacturer.model");
-const StorageType = require('./storageType.model');
+const StorageType = require("./storageType.model");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const Model = db.define("model", {
   id: {
@@ -27,37 +27,37 @@ const Model = db.define("model", {
 
 Capacity.hasMany(Model, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Model.belongsTo(Capacity);
 
 Interface.hasMany(Model, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Model.belongsTo(Interface);
 
 Manufacturer.hasMany(Model, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Model.belongsTo(Manufacturer);
 
 StorageType.hasMany(Model, {
   foreignKey: {
-    allowNull: false
+    allowNull: false,
   },
-  onDelete: 'RESTRICT',
-  onUpdate: 'RESTRICT',
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
 });
 Model.belongsTo(StorageType);
 
