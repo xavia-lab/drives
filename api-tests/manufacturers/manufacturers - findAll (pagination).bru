@@ -5,16 +5,17 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/manufacturers?page=1&size=2&sortBy=name&orderBy=desc&filterBy=name&filter=Seagate
+  url: http://localhost:5000/manufacturers?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC&filterField=name&filterValue=Seagate&filterOperator=LIKE
   body: none
   auth: none
 }
 
 query {
-  page: 1
-  size: 2
-  sortBy: name
-  orderBy: desc
-  filterBy: name
-  filter: Seagate
+  pageNumber: 1
+  pageSize: 2
+  sortField: name
+  sortOrder: DESC
+  filterField: name
+  filterValue: Seagate
+  filterOperator: LIKE
 }

@@ -1,13 +1,13 @@
 const PaginationHandler = require("../../../app/utils/pagination.util");
 
-describe("Pagination Handler Tests", () => {
+describe("Pagination Handler", () => {
   describe("Paging", () => {
-    test("given page number and pageSize, calculate offset and limit", () => {
+    test("given pageNumber and pageSize, calculate offset and limit", () => {
       //Call function of Add
 
       var result = PaginationHandler.paginate(
         (paging = { page: 5, size: 25 }),
-        (ordering = {}),
+        (sorting = {}),
         (filtering = {}),
       );
 
@@ -17,10 +17,10 @@ describe("Pagination Handler Tests", () => {
       expect(result.limit).toBe(25);
     });
 
-    test("given no page number and pageSize, should have no offset and limit", () => {
+    test("given no page number and page size, should have no offset and limit", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (ordering = {}),
+        (sorting = {}),
         (filtering = {}),
       );
 
@@ -31,11 +31,26 @@ describe("Pagination Handler Tests", () => {
     });
   });
 
-  describe("Ordering", () => {
-    test("given orderBy and sortBy properties, calculate order object", () => {
+  describe("Sorting", () => {
+    test("given multiple sort fields and sort order properties, calculate order object", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (ordering = { orderBy: "desc", sortBy: "name" }),
+        (sorting = { order: "ASC", field: "name,createdAt" }),
+        (filtering = {}),
+      );
+
+      // assertions
+
+      expect(result.order).toStrictEqual([
+        ["name", "ASC"],
+        ["createdAt", "ASC"],
+      ]);
+    });
+
+    test("given sort field and sort order properties, calculate order object", () => {
+      var result = PaginationHandler.paginate(
+        (paging = {}),
+        (sorting = { order: "DESC", field: "name" }),
         (filtering = {}),
       );
 
@@ -47,7 +62,7 @@ describe("Pagination Handler Tests", () => {
     test("given sortBy only, calculate order object", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (ordering = { sortBy: "name" }),
+        (sorting = { field: "name" }),
         (filtering = {}),
       );
 
@@ -59,7 +74,7 @@ describe("Pagination Handler Tests", () => {
     test("given orderBy only, should return error", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (ordering = { orderBy: "desc" }),
+        (sorting = { order: "DESC" }),
         (filtering = {}),
       );
 
@@ -67,7 +82,7 @@ describe("Pagination Handler Tests", () => {
 
       expect(result.order).toStrictEqual({
         errors: {
-          sortBy: ["The sort by field is required when order by is present."],
+          field: ["The field field is required when order is present."],
         },
       });
     });
@@ -86,15 +101,14 @@ describe("Pagination Handler Tests", () => {
   });
 
   describe("Filtering", () => {
-    test("given filterBy and filter properties, calculate where clause", () => {
+    test("given filter field, filter operator, and filter value properties, calculate where clause", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
         (ordering = {}),
-        (filtering = { filterBy: "name", filter: "GB" }),
+        (filtering = { field: "name", operator: "EQ", value: "GB" }),
       );
 
       // assertions
-
       expect(result.where).toBeDefined();
     });
 
@@ -106,7 +120,6 @@ describe("Pagination Handler Tests", () => {
       );
 
       // assertions
-
       expect(result.order).toStrictEqual([]);
     });
   });
