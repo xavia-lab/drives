@@ -3,9 +3,9 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: 'drives-postgres'
+    container_name: "drives-postgres"
     ports:
-    - "5432:5432/tcp"
+      - "5432:5432/tcp"
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -18,25 +18,24 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    restart: 'unless-stopped'
+    restart: "unless-stopped"
 
   adminer:
     image: adminer:latest
-    container_name: 'drives-adminer'
+    container_name: "drives-adminer"
     ports:
-    - "8080:8080/tcp"
+      - "8080:8080/tcp"
     depends_on:
       postgres:
         condition: service_healthy
-    restart: 'unless-stopped'
-
+    restart: "unless-stopped"
 
   app:
-    container_name: 'drives-app'
-    build: './'
+    container_name: "drives-app"
+    build: "./"
     image: rehanone/drives
     ports:
-    - "5000:5000/tcp"
+      - "5000:5000/tcp"
     environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
@@ -47,7 +46,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: 'unless-stopped'
+    restart: "unless-stopped"
 
 volumes:
   postgres_data:

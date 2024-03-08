@@ -1,6 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const Manufacturer = db.define("manufacturer", {
   id: {
@@ -41,5 +41,5 @@ const Manufacturer = db.define("manufacturer", {
     },
   },
 });
-  
+
 module.exports = Manufacturer;

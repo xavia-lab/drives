@@ -1,6 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require('../configs/database.config')
+const db = require("../configs/database.config");
 
 const StorageType = db.define("storageType", {
   id: {
@@ -14,5 +14,5 @@ const StorageType = db.define("storageType", {
     allowNull: false,
   },
 });
-  
+
 module.exports = StorageType;

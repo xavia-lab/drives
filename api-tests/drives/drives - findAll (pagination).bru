@@ -1,0 +1,20 @@
+meta {
+  name: /drives - findAll (pagination)
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:5000/drives?page=1&size=2&sortBy=name&orderBy=desc&filterBy=name&filter=SATA
+  body: none
+  auth: none
+}
+
+query {
+  page: 1
+  size: 2
+  sortBy: name
+  orderBy: desc
+  filterBy: name
+  filter: SATA
+}
