@@ -7,32 +7,49 @@ const StorageType = require("./storageType.model");
 
 const db = require("../configs/database.config");
 
-const Model = db.define("model", {
-  id: {
-    type: Sequelize.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true,
-  },
-  name: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  number: {
-    type: Sequelize.STRING,
-    allowNull: true,
-  },
-  title: {
-    type: DataTypes.VIRTUAL,
-    get() {
-      return `${this.name} | ${this.number}`;
+const Model = db.define(
+  "model",
+  {
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true,
     },
-    set(value) {
-      throw new Error("Do not try to set the `title` value!");
+    name: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    number: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    title: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return `${this.name} | ${this.number}`;
+      },
+      set(value) {
+        throw new Error("Do not try to set the `title` value!");
+      },
     },
   },
-});
+  {
+    indexes: [
+      {
+        unique: true,
+        fields: [
+          "name",
+          "number",
+          "capacityId",
+          "interfaceId",
+          "manufacturerId",
+          "storageTypeId",
+        ],
+      },
+    ],
+  },
+);
 
 Capacity.hasMany(Model, {
   foreignKey: {
