@@ -34,8 +34,10 @@ const calculatePaging = (paging) => {
 };
 
 const calculateSorting = (sorting) => {
+  console.log(`Sorting parameters: ${JSON.stringify(sorting)}`);
+
   const rules = {
-    order: [ruleIn(["DESC", "ASC"])],
+    order: [ruleIn(["desc", "asc"])],
     field: "string|required_with:order",
   };
 
@@ -52,7 +54,7 @@ const calculateSorting = (sorting) => {
     const { field, order } = sorting;
 
     const sortingFields = collect(Array.from(field.split(",")));
-    const result = sortingFields.map((x) => [x, order.toUpperCase()]);
+    const result = sortingFields.map((x) => [x, order]);
 
     return result.all();
   } else if (
@@ -73,7 +75,7 @@ const calculateFiltring = (filtering) => {
   const rules = {
     field: ["string"],
     value: ["string", "required_with:filterBy"],
-    operator: [ruleIn(["EQ", "NE", "LT", "LTE", "GT", "GTE", "LIKE"])],
+    operator: [ruleIn(["eq", "ne", "lt", "lte", "gt", "gte", "like"])],
   };
 
   const validator = make(filtering, rules);

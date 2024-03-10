@@ -30,6 +30,15 @@ const Drive = db.define("drive", {
     type: Sequelize.DATEONLY,
     allowNull: true,
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.name} | ${this.label} | ${this.serial}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 Model.hasMany(Drive, {

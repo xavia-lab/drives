@@ -35,28 +35,28 @@ describe("Pagination Handler", () => {
     test("given multiple sort fields and sort order properties, calculate order object", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (sorting = { order: "ASC", field: "name,createdAt" }),
+        (sorting = { order: "asc", field: "name,createdAt" }),
         (filtering = {}),
       );
 
       // assertions
 
       expect(result.order).toStrictEqual([
-        ["name", "ASC"],
-        ["createdAt", "ASC"],
+        ["name", "asc"],
+        ["createdAt", "asc"],
       ]);
     });
 
     test("given sort field and sort order properties, calculate order object", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (sorting = { order: "DESC", field: "name" }),
+        (sorting = { order: "desc", field: "name" }),
         (filtering = {}),
       );
 
       // assertions
 
-      expect(result.order).toStrictEqual([["name", "DESC"]]);
+      expect(result.order).toStrictEqual([["name", "desc"]]);
     });
 
     test("given sortBy only, calculate order object", () => {
@@ -74,7 +74,7 @@ describe("Pagination Handler", () => {
     test("given orderBy only, should return error", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
-        (sorting = { order: "DESC" }),
+        (sorting = { order: "desc" }),
         (filtering = {}),
       );
 
@@ -105,7 +105,7 @@ describe("Pagination Handler", () => {
       var result = PaginationHandler.paginate(
         (paging = {}),
         (ordering = {}),
-        (filtering = { field: "name", operator: "EQ", value: "GB" }),
+        (filtering = { field: "name", operator: "eq", value: "GB" }),
       );
 
       // assertions

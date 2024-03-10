@@ -8,7 +8,7 @@ exports.findAll = (req, res) => {
   const pageNumber = req.query.pageNumber;
   const pageSize = req.query.pageSize;
   const sortField = req.query.sortField;
-  const sortOrder = req.query.orderOrder;
+  const sortOrder = req.query.sortOrder;
   const filterField = req.query.filterField;
   const filterOperator = req.query.filterOperator;
   const filterValue = req.query.filterValue;
@@ -31,12 +31,15 @@ exports.findAll = (req, res) => {
     }),
   );
 
-  Drive.findAll({
+  Drive.findAndCountAll({
     ...queryParams,
     include: { all: true, nested: true },
   })
     .then((result) => {
-      res.status(200).json(result);
+      res
+        .status(200)
+        .set("X-Pagination-Total-Count", result.count)
+        .json(result.rows);
     })
     .catch((err) => console.log(err));
 };

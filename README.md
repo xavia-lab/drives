@@ -26,7 +26,7 @@ npm install
 #### Run Tests
 
 ```bash
-node run test
+npm run test
 ```
 
 #### Format Code
@@ -38,5 +38,5 @@ npx prettier . --write
 #### Run Server for Development
 
 ```bash
-node run dev
+npm run dev
 ```
