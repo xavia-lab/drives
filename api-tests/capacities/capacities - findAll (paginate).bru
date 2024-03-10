@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/capacities?pageNumber=1&pageSize=5&sortField=createdAt&sortOrder=ASC&filterOperator=LIKE&filterField=name&filterValue=1
+  url: http://localhost:5000/capacities?pageNumber=1&pageSize=5&sortField=createdAt&sortOrder=desc
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 5
   sortField: createdAt
-  sortOrder: ASC
-  filterOperator: LIKE
-  filterField: name
-  filterValue: 1
+  sortOrder: desc
+  ~filterOperator: LIKE
+  ~filterField: name
+  ~filterValue: 1
 }

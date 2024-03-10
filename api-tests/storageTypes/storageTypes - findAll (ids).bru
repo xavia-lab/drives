@@ -1,0 +1,16 @@
+meta {
+  name: /storageTypes - findAll (ids)
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:5000/storageTypes?id=1&id=2
+  body: none
+  auth: none
+}
+
+query {
+  id: 1
+  id: 2
+}

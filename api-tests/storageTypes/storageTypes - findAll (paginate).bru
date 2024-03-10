@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/storageTypes?pageNumber=1&pageSize=2&sortField=createdAt,name&sortOrder=DESC&filterField=id&filterValue=2&filterOperator=EQ
+  url: http://localhost:5000/storageTypes?pageNumber=1&pageSize=2&sortField=createdAt,name&sortOrder=desc&filterField=id&filterValue=2&filterOperator=eq
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: createdAt,name
-  sortOrder: DESC
+  sortOrder: desc
   filterField: id
   filterValue: 2
-  filterOperator: EQ
+  filterOperator: eq
 }

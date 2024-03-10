@@ -7,3 +7,11 @@ exports.isEmpty = (value) => {
 exports.isNotEmpty = (value) => {
   return !this.isEmpty(value);
 };
+
+exports.isObjectEmpty = (objectName) => {
+  return JSON.stringify(objectName) === "{}";
+};
+
+exports.isObjectNotEmpty = (objectName) => {
+  return !this.isObjectEmpty(objectName);
+};
