@@ -12,6 +12,7 @@ const StorageType = db.define("storageType", {
   name: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true,
   },
   title: {
     type: DataTypes.VIRTUAL,
