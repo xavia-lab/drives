@@ -18,15 +18,16 @@ const paginationQueryValidateSchema = checkSchema(
     },
     sortField: {
       optional: true,
-      isString: { errorMessage: "Sort by should be string" },
+      isString: { errorMessage: "Sort field by should be string" },
     },
     sortOrder: {
       optional: true,
-      isString: { errorMessage: "Order by should be string" },
+      isString: { errorMessage: "Sort order should be string" },
       isIn: {
-        options: [["DESC", "ASC"]],
-        errorMessage: "Order should be either `DESC`  or `ASC`",
+        options: [["desc", "asc"]],
+        errorMessage: "Order should be either `desc`  or `asc`",
       },
+      toLowerCase: true,
     },
     filterField: {
       optional: true,
@@ -36,10 +37,11 @@ const paginationQueryValidateSchema = checkSchema(
       optional: true,
       isString: { errorMessage: "Filter operator should be a string" },
       isIn: {
-        options: [["EQ", "NE", "LT", "LTE", "GT", "GTE", "LIKE"]],
+        options: [["eq", "ne", "lt", "lte", "gt", "gte", "like"]],
         errorMessage:
-          "Filter operator should be in [`EQ`, `NE`, `LT`, `LTE`, `GT`, `GTE`, `LIKE`]",
+          "Filter operator should be in [`eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `like`]",
       },
+      toLowerCase: true,
     },
     filterValue: {
       optional: true,

@@ -34,6 +34,15 @@ const Capacity = db.define("capacity", {
       },
     },
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.name}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 module.exports = Capacity;

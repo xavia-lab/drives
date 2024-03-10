@@ -21,6 +21,15 @@ const Interface = db.define("interface", {
     type: Sequelize.STRING,
     allowNull: true,
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.name} ${this.speed} | ${this.form}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 module.exports = Interface;

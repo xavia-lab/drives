@@ -13,6 +13,15 @@ const StorageType = db.define("storageType", {
     type: Sequelize.STRING,
     allowNull: false,
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.name}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 module.exports = StorageType;

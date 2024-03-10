@@ -40,6 +40,16 @@ const Manufacturer = db.define("manufacturer", {
       isUrl: true,
     },
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      const x = [this.name, this.country];
+      return `${x.filter(Boolean).join(", ")}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 module.exports = Manufacturer;

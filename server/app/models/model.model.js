@@ -23,6 +23,15 @@ const Model = db.define("model", {
     type: Sequelize.STRING,
     allowNull: true,
   },
+  title: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.name} | ${this.number}`;
+    },
+    set(value) {
+      throw new Error("Do not try to set the `title` value!");
+    },
+  },
 });
 
 Capacity.hasMany(Model, {
