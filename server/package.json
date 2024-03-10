@@ -2,10 +2,10 @@
   "name": "drives",
   "version": "1.0.0",
   "description": "A simple inventory of all your disk drives!",
-  "main": "app/server.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon app/server.js",
-    "start": "node app/server.js",
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
     "test": "jest"
   },
   "repository": {

@@ -1,4 +1,4 @@
-const Objects = require("../../../app/utils/objects.util");
+const Objects = require("../../../src/utils/objects.util");
 
 describe("Object Handler Tests", () => {
   describe("isEmpty", () => {

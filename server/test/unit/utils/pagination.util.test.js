@@ -1,4 +1,4 @@
-const PaginationHandler = require("../../../app/utils/pagination.util");
+const PaginationHandler = require("../../../src/utils/pagination.util");
 
 describe("Pagination Handler", () => {
   describe("Paging", () => {
