@@ -1,17 +1,10 @@
 const { validationResult } = require("express-validator");
 
 const StorageType = require("../models/storageType.model");
-const PaginationHandler = require("../utils/pagination.util");
+const QueryParamsBuilder = require("../builders/query.params.builder");
 
-// Retrieve all storageTypes from the database.
 exports.findAll = (req, res) => {
-  const pageNumber = req.query.pageNumber;
-  const pageSize = req.query.pageSize;
-  const sortField = req.query.sortField;
-  const sortOrder = req.query.sortOrder;
-  const filterField = req.query.filterField;
-  const filterOperator = req.query.filterOperator;
-  const filterValue = req.query.filterValue;
+  const requestQueryParams = req.query;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -21,15 +14,7 @@ exports.findAll = (req, res) => {
     });
   }
 
-  const queryParams = PaginationHandler.paginate(
-    (paging = { page: pageNumber, size: pageSize }),
-    (sorting = { field: sortField, order: sortOrder }),
-    (filtering = {
-      field: filterField,
-      operator: filterOperator,
-      value: filterValue,
-    }),
-  );
+  const queryParams = QueryParamsBuilder.build(requestQueryParams);
 
   StorageType.findAndCountAll({
     ...queryParams,

@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/manufacturers?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC&filterField=name&filterValue=Seagate&filterOperator=LIKE
+  url: http://localhost:5000/manufacturers?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=name&filterValue=Seagate&filterOperator=like
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: DESC
+  sortOrder: desc
   filterField: name
   filterValue: Seagate
-  filterOperator: LIKE
+  filterOperator: like
 }
