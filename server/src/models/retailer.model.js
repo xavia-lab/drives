@@ -30,16 +30,16 @@ const Retailer = db.define(
     email: {
       type: Sequelize.STRING,
       allowNull: true,
-      validate: {
-        isEmail: true,
-      },
+      // validate: {
+      //   isEmail: true,
+      // },
     },
     website: {
       type: Sequelize.STRING,
       allowNull: true,
-      validate: {
-        isUrl: true,
-      },
+      // validate: {
+      //   isUrl: true,
+      // },
     },
     title: {
       type: DataTypes.VIRTUAL,
