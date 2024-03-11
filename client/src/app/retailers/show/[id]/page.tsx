@@ -3,9 +3,11 @@
 import { Stack, Typography } from "@mui/material";
 import { useShow } from "@refinedev/core";
 import {
+  EmailField,
   NumberField,
   Show,
   TextFieldComponent as TextField,
+  UrlField,
 } from "@refinedev/mui";
 
 export default function RetailerShow() {
@@ -40,11 +42,11 @@ export default function RetailerShow() {
         <Typography variant="body1" fontWeight="bold">
           {"Email"}
         </Typography>
-        <TextField value={record?.email} />
+        <EmailField value={record?.email} />
         <Typography variant="body1" fontWeight="bold">
           {"Website"}
         </Typography>
-        <TextField value={record?.website} />
+        <UrlField value={record?.website} />
       </Stack>
     </Show>
   );

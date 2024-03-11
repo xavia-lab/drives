@@ -4,7 +4,6 @@ import { Stack, Typography } from "@mui/material";
 import { useOne, useShow } from "@refinedev/core";
 import {
   DateField,
-  MarkdownField,
   NumberField,
   Show,
   TextFieldComponent as TextField,
@@ -19,7 +18,7 @@ export default function ModelShow() {
 
   const { data: capacityData, isLoading: capacityIsLoading } = useOne({
     resource: "capacities",
-    id: record?.capacity?.id || "",
+    id: record?.capacityId || "",
     queryOptions: {
       enabled: !!record,
     },
@@ -27,7 +26,7 @@ export default function ModelShow() {
 
   const { data: interfaceData, isLoading: interfaceIsLoading } = useOne({
     resource: "interfaces",
-    id: record?.interface?.id || "",
+    id: record?.interfaceId || "",
     queryOptions: {
       enabled: !!record,
     },
@@ -35,7 +34,7 @@ export default function ModelShow() {
 
   const { data: manufacturerData, isLoading: manufacturerIsLoading } = useOne({
     resource: "manufacturers",
-    id: record?.manufacturer?.id || "",
+    id: record?.manufacturerId || "",
     queryOptions: {
       enabled: !!record,
     },
@@ -43,7 +42,7 @@ export default function ModelShow() {
 
   const { data: storageTypeData, isLoading: storageTypeIsLoading } = useOne({
     resource: "storageTypes",
-    id: record?.storageType?.id || "",
+    id: record?.storageTypeId || "",
     queryOptions: {
       enabled: !!record,
     },

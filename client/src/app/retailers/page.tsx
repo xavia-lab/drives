@@ -49,12 +49,14 @@ export default function RetailerList() {
         field: "email",
         flex: 1,
         headerName: "Email",
+        type: "email",
         minWidth: 50,
       },
       {
         field: "website",
         flex: 1,
         headerName: "Website",
+        type: "url",
         minWidth: 50,
       },
       {

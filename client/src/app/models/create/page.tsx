@@ -66,7 +66,7 @@ export default function ModelCreate() {
         />
         <Controller
           control={control}
-          name={"manufacturer.id"}
+          name={"manufacturerId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -113,7 +113,7 @@ export default function ModelCreate() {
         />
         <Controller
           control={control}
-          name={"capacity.id"}
+          name={"capacityId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -160,7 +160,7 @@ export default function ModelCreate() {
         />
         <Controller
           control={control}
-          name={"interface.id"}
+          name={"interfaceId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -207,7 +207,7 @@ export default function ModelCreate() {
         />
         <Controller
           control={control}
-          name={"storageType.id"}
+          name={"storageTypeId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}

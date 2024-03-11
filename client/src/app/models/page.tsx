@@ -22,7 +22,7 @@ export default function ModelList() {
     resource: "capacities",
     ids:
       dataGridProps?.rows
-        ?.map((item: any) => item?.capacity?.id)
+        ?.map((item: any) => item?.capacityId)
         .filter(Boolean) ?? [],
     queryOptions: {
       enabled: !!dataGridProps?.rows,
@@ -33,7 +33,7 @@ export default function ModelList() {
     resource: "interfaces",
     ids:
       dataGridProps?.rows
-        ?.map((item: any) => item?.interface?.id)
+        ?.map((item: any) => item?.interfaceId)
         .filter(Boolean) ?? [],
     queryOptions: {
       enabled: !!dataGridProps?.rows,
@@ -44,7 +44,7 @@ export default function ModelList() {
     resource: "manufacturers",
     ids:
       dataGridProps?.rows
-        ?.map((item: any) => item?.manufacturer?.id)
+        ?.map((item: any) => item?.manufacturerId)
         .filter(Boolean) ?? [],
     queryOptions: {
       enabled: !!dataGridProps?.rows,
@@ -55,7 +55,7 @@ export default function ModelList() {
     resource: "storageTypes",
     ids:
       dataGridProps?.rows
-        ?.map((item: any) => item?.storageType?.id)
+        ?.map((item: any) => item?.storageTypeId)
         .filter(Boolean) ?? [],
     queryOptions: {
       enabled: !!dataGridProps?.rows,
@@ -88,14 +88,14 @@ export default function ModelList() {
         headerName: "Manufacturer",
         minWidth: 50,
         valueGetter: ({ row }) => {
-          const value = row?.manufacturer;
+          const value = row?.manufacturerId;
           return value;
         },
         renderCell: function render({ value }) {
           return manufacturerIsLoading ? (
             <>Loading...</>
           ) : (
-            manufacturerData?.data?.find((item) => item.id === value?.id)?.title
+            manufacturerData?.data?.find((item) => item.id === value)?.title
           );
         },
       },
@@ -105,14 +105,14 @@ export default function ModelList() {
         headerName: "Capacity",
         minWidth: 50,
         valueGetter: ({ row }) => {
-          const value = row?.capacity;
+          const value = row?.capacityId;
           return value;
         },
         renderCell: function render({ value }) {
           return capacityIsLoading ? (
             <>Loading...</>
           ) : (
-            capacityData?.data?.find((item) => item.id === value?.id)?.title
+            capacityData?.data?.find((item) => item.id === value)?.title
           );
         },
       },
@@ -122,31 +122,31 @@ export default function ModelList() {
         headerName: "Interface",
         minWidth: 50,
         valueGetter: ({ row }) => {
-          const value = row?.interface;
+          const value = row?.interfaceId;
           return value;
         },
         renderCell: function render({ value }) {
           return interfaceIsLoading ? (
             <>Loading...</>
           ) : (
-            interfaceData?.data?.find((item) => item.id === value?.id)?.title
+            interfaceData?.data?.find((item) => item.id === value)?.title
           );
         },
       },
       {
         field: "storageType",
         flex: 1,
-        headerName: "StorageType",
+        headerName: "Storage Type",
         minWidth: 50,
         valueGetter: ({ row }) => {
-          const value = row?.storageType;
+          const value = row?.storageTypeId;
           return value;
         },
         renderCell: function render({ value }) {
           return storageTypeIsLoading ? (
             <>Loading...</>
           ) : (
-            storageTypeData?.data?.find((item) => item.id === value?.id)?.title
+            storageTypeData?.data?.find((item) => item.id === value)?.title
           );
         },
       },
@@ -177,7 +177,7 @@ export default function ModelList() {
         minWidth: 80,
       },
     ],
-    [capacityData]
+    [capacityData, interfaceData, manufacturerData, storageTypeData]
   );
 
   return (

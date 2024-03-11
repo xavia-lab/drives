@@ -18,6 +18,22 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
+  getMany: async ({ resource, ids, meta }) => {
+    const params = new URLSearchParams();
+
+    if (ids) {
+      ids.forEach((id) => params.append("id", id));
+    }
+
+    const response = await fetch(`${API_URL}/${resource}?${params.toString()}`);
+
+    if (response.status < 200 || response.status > 299) throw response;
+
+    const data = await response.json();
+
+    return { data };
+  },
+
   update: async ({ resource, id, variables, meta }) => {
     const response = await fetch(`${API_URL}/${resource}/${id}`, {
       method: "PUT",
@@ -98,7 +114,6 @@ export const dataProvider: DataProvider = {
   },
   getApiUrl: () => API_URL,
   // Optional methods:
-  // getMany: () => { /* ... */ },
   // createMany: () => { /* ... */ },
   // deleteMany: () => { /* ... */ },
   // updateMany: () => { /* ... */ },

@@ -18,7 +18,6 @@ exports.findAll = (req, res) => {
 
   Drive.findAndCountAll({
     ...queryParams,
-    include: { all: true, nested: true },
   })
     .then((result) => {
       res

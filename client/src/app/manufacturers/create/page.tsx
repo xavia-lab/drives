@@ -80,7 +80,7 @@ export default function ManufacturerCreate() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="email"
           label={"Email"}
           name="email"
         />
@@ -93,7 +93,7 @@ export default function ManufacturerCreate() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="url"
           label={"Website"}
           name="website"
         />

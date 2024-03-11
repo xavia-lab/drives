@@ -41,7 +41,7 @@ export default function CapacityCreate() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="number"
           label={"Value"}
           name="value"
         />

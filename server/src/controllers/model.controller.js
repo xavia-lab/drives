@@ -18,7 +18,6 @@ exports.findAll = (req, res) => {
 
   Model.findAndCountAll({
     ...queryParams,
-    include: { all: true },
   })
     .then((result) => {
       res

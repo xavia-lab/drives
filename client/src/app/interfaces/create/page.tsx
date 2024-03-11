@@ -1,14 +1,16 @@
 "use client";
 
-import { Box, TextField } from "@mui/material";
+import { Box, MenuItem, Select, TextField } from "@mui/material";
 import { Create, NumberField } from "@refinedev/mui";
 import { useForm } from "@refinedev/react-hook-form";
+import { Controller } from "react-hook-form";
 
 export default function InterfaceCreate() {
   const {
     saveButtonProps,
     refineCore: { formLoading },
     register,
+    control,
     formState: { errors },
   } = useForm({});
 
@@ -33,30 +35,30 @@ export default function InterfaceCreate() {
           name="name"
         />
         <TextField
-          {...register("value", {
+          {...register("form", {
             required: "This field is required",
           })}
-          error={!!(errors as any)?.value}
-          helperText={(errors as any)?.value?.message}
+          error={!!(errors as any)?.form}
+          helperText={(errors as any)?.form?.message}
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
           type="text"
-          label={"Value"}
-          name="value"
+          label={"Form"}
+          name="form"
         />
         <TextField
-          {...register("unit", {
+          {...register("speed", {
             required: "This field is required",
           })}
-          error={!!(errors as any)?.unit}
-          helperText={(errors as any)?.unit?.message}
+          error={!!(errors as any)?.speed}
+          helperText={(errors as any)?.speed?.message}
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
           type="text"
-          label={"Unit"}
-          name="unit"
+          label={"Speed"}
+          name="speed"
         />
       </Box>
     </Create>

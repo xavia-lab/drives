@@ -1,20 +1,36 @@
 "use client";
 
 import { Stack, Typography } from "@mui/material";
-import { useShow } from "@refinedev/core";
+import { useOne, useShow } from "@refinedev/core";
 import {
-  EmailField,
+  DateField,
   NumberField,
   Show,
   TextFieldComponent as TextField,
-  UrlField,
 } from "@refinedev/mui";
 
-export default function ManufacturerShow() {
+export default function DriveShow() {
   const { queryResult } = useShow({});
+
   const { data, isLoading } = queryResult;
 
   const record = data?.data;
+
+  const { data: modelData, isLoading: modelIsLoading } = useOne({
+    resource: "models",
+    id: record?.modelId || "",
+    queryOptions: {
+      enabled: !!record,
+    },
+  });
+
+  const { data: retailerData, isLoading: retailerIsLoading } = useOne({
+    resource: "retailers",
+    id: record?.retailerId || "",
+    queryOptions: {
+      enabled: !!record,
+    },
+  });
 
   return (
     <Show isLoading={isLoading}>
@@ -23,30 +39,36 @@ export default function ManufacturerShow() {
           {"ID"}
         </Typography>
         <NumberField value={record?.id ?? ""} />
+
         <Typography variant="body1" fontWeight="bold">
           {"Name"}
         </Typography>
         <TextField value={record?.name} />
+
         <Typography variant="body1" fontWeight="bold">
-          {"Address"}
+          {"Label"}
         </Typography>
-        <TextField value={record?.address} />
+        <TextField value={record?.label} />
+
         <Typography variant="body1" fontWeight="bold">
-          {"Country"}
+          {"Serial"}
         </Typography>
-        <TextField value={record?.country} />
+        <TextField value={record?.serial} />
+
         <Typography variant="body1" fontWeight="bold">
-          {"Phone"}
+          {"Date Purchased"}
         </Typography>
-        <TextField value={record?.phone} />
+        <DateField value={record?.datePurchased} />
+
         <Typography variant="body1" fontWeight="bold">
-          {"Email"}
+          {"Model"}
         </Typography>
-        <EmailField value={record?.email} />
+        {modelIsLoading ? <>Loading...</> : <>{modelData?.data?.title}</>}
+
         <Typography variant="body1" fontWeight="bold">
-          {"Website"}
+          {"Retailer"}
         </Typography>
-        <UrlField value={record?.website} />
+        {retailerIsLoading ? <>Loading...</> : <>{retailerData?.data?.title}</>}
       </Stack>
     </Show>
   );

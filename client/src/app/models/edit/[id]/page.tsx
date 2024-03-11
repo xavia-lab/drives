@@ -20,22 +20,22 @@ export default function ModelEdit() {
 
   const { autocompleteProps: capacityAutocompleteProps } = useAutocomplete({
     resource: "capacities",
-    defaultValue: ModelsData?.capacity?.id,
+    defaultValue: ModelsData?.capacityId,
   });
 
   const { autocompleteProps: interfaceAutocompleteProps } = useAutocomplete({
     resource: "interfaces",
-    defaultValue: ModelsData?.interface?.id,
+    defaultValue: ModelsData?.interfaceId,
   });
 
   const { autocompleteProps: manufacturerAutocompleteProps } = useAutocomplete({
     resource: "manufacturers",
-    defaultValue: ModelsData?.manufacturer?.id,
+    defaultValue: ModelsData?.manufacturerId,
   });
 
   const { autocompleteProps: storageTypeAutocompleteProps } = useAutocomplete({
     resource: "storageTypes",
-    defaultValue: ModelsData?.storageType?.id,
+    defaultValue: ModelsData?.storageTypeId,
   });
 
   return (
@@ -73,7 +73,7 @@ export default function ModelEdit() {
         />
         <Controller
           control={control}
-          name={"manufacturer.id"}
+          name={"manufacturerId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -120,7 +120,7 @@ export default function ModelEdit() {
         />
         <Controller
           control={control}
-          name={"capacity.id"}
+          name={"capacityId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -167,7 +167,7 @@ export default function ModelEdit() {
         />
         <Controller
           control={control}
-          name={"interface.id"}
+          name={"interfaceId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}
@@ -214,7 +214,7 @@ export default function ModelEdit() {
         />
         <Controller
           control={control}
-          name={"storageType.id"}
+          name={"storageTypeId"}
           rules={{ required: "This field is required" }}
           // eslint-disable-next-line
           defaultValue={null as any}

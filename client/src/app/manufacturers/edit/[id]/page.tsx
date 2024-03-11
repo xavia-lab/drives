@@ -79,7 +79,7 @@ export default function ManufacturerEdit() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="email"
           label={"Email"}
           name="email"
         />
@@ -92,7 +92,7 @@ export default function ManufacturerEdit() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="url"
           label={"Website"}
           name="website"
         />

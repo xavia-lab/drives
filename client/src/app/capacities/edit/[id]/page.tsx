@@ -40,7 +40,7 @@ export default function CapacityEdit() {
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
-          type="text"
+          type="number"
           label={"Value"}
           name="value"
         />
