@@ -4,7 +4,7 @@ exports.where = (filtering) => {
   const { field, operator, value } = filtering;
 
   switch (operator.toUpperCase()) {
-    case "EQ":
+    case "eq":
       return {
         where: {
           [field]: {
@@ -58,7 +58,7 @@ exports.where = (filtering) => {
         },
       };
 
-    case "LIKE":
+    case "like":
     default:
       return {
         where: {

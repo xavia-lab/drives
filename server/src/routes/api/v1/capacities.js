@@ -1,7 +1,7 @@
 const router = require("express").Router();
 
-const controller = require("../controllers/capacity.controller");
-const validator = require("../validations/pagination.validation");
+const controller = require("../../../controllers/capacity.controller");
+const validator = require("../../../validations/pagination.validation");
 
 // CRUD Routes for /capacities
 router.get("/", validator, controller.findAll); // /capacities

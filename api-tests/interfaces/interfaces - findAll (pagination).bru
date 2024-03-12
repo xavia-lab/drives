@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/interfaces?pageNumber=1&pageSize=2&sortField=name&sortOrder=ASC&filterField=name&filterValue=SATA&filterOperator=LIKE
+  url: http://localhost:5000/api/v1/interfaces?pageNumber=1&pageSize=2&sortField=name&sortOrder=asc&filterField=name&filterValue=SATA&filterOperator=like
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: ASC
+  sortOrder: asc
   filterField: name
   filterValue: SATA
-  filterOperator: LIKE
+  filterOperator: like
 }

@@ -25,22 +25,16 @@ app.use((req, res, next) => {
 
 // Root route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to Drives Application." });
+  res.json({ message: "Welcome to Drives Application API Server." });
 });
 
-// Hello route
-app.get("/hello", (req, res) => {
-  res.send("Hello, World!");
-});
+// api v1 Routes
+app.use("/api/v1", require("./routes/api/v1"));
 
-// CRUD Routes
-app.use("/capacities", require("./routes/capacities"));
-app.use("/drives", require("./routes/drives"));
-app.use("/interfaces", require("./routes/interfaces"));
-app.use("/manufacturers", require("./routes/manufacturers"));
-app.use("/models", require("./routes/models"));
-app.use("/retailers", require("./routes/retailers"));
-app.use("/storageTypes", require("./routes/storageTypes"));
+// Healthcheck route
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 app.use((error, req, res, next) => {
   console.log(error);
