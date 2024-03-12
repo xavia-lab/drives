@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/drives?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC
+  url: http://localhost:5000/api/v1/drives?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: DESC
+  sortOrder: desc
   ~filterField: name
   ~filterValue: S02
-  ~filterOperator: LIKE
+  ~filterOperator: like
 }

@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/retailers?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC&filterField=name&filterValue=US&filterOperator=LIKE
+  url: http://localhost:5000/api/v1/retailers?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=name&filterValue=US&filterOperator=like
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: DESC
+  sortOrder: desc
   filterField: name
   filterValue: US
-  filterOperator: LIKE
+  filterOperator: like
 }

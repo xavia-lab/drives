@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/models?pageNumber=1&pageSize=2&sortField=name&sortOrder=DESC&filterField=number&filterValue=ST&filterOperator=LIKE
+  url: http://localhost:5000/api/v1/models?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=number&filterValue=ST&filterOperator=like
   body: none
   auth: none
 }
@@ -14,8 +14,8 @@ query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: DESC
+  sortOrder: desc
   filterField: number
   filterValue: ST
-  filterOperator: LIKE
+  filterOperator: like
 }
