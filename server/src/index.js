@@ -3,7 +3,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const sequelize = require("./configs/database.config");
+const db = require("./models");
 const app = express();
 
 // parse requests of content-type - application/json
@@ -44,7 +44,7 @@ app.use((error, req, res, next) => {
 });
 
 // Sync database
-sequelize
+db.sequelize
   .sync({
     // force: true,
     // match: /test$/,

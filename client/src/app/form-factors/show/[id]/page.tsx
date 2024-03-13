@@ -8,7 +8,7 @@ import {
   TextFieldComponent as TextField,
 } from "@refinedev/mui";
 
-export default function CapacityShow() {
+export default function FormFactorShow() {
   const { queryResult } = useShow({});
   const { data, isLoading } = queryResult;
 
@@ -27,14 +27,6 @@ export default function CapacityShow() {
           {"Name"}
         </Typography>
         <TextField value={record?.name} />
-        <Typography variant="body1" fontWeight="bold">
-          {"Value"}
-        </Typography>
-        <NumberField value={record?.value ?? ""} />
-        <Typography variant="body1" fontWeight="bold">
-          {"Unit"}
-        </Typography>
-        <TextField value={record?.unit} />
         <Typography variant="body1" fontWeight="bold">
           {"Provider"}
         </Typography>

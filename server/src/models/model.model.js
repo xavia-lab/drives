@@ -1,13 +1,14 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 const Capacity = require("./capacity.model");
+const FormFactor = require("./formFactor.model");
 const Interface = require("./interface.model");
 const Manufacturer = require("./manufacturer.model");
 const StorageType = require("./storageType.model");
 
-const db = require("../configs/database.config");
+const db = require(".");
 
-const Model = db.define(
+const Model = db.sequelize.define(
   "model",
   {
     id: {
@@ -44,6 +45,7 @@ const Model = db.define(
           "capacityId",
           // "interfaceId",
           // "manufacturerId",
+          "formFactorId",
           "storageTypeId",
         ],
       },
@@ -59,6 +61,15 @@ Capacity.hasMany(Model, {
   onUpdate: "RESTRICT",
 });
 Model.belongsTo(Capacity);
+
+FormFactor.hasMany(Model, {
+  foreignKey: {
+    allowNull: false,
+  },
+  onDelete: "RESTRICT",
+  onUpdate: "RESTRICT",
+});
+Model.belongsTo(FormFactor);
 
 Interface.hasMany(Model, {
   foreignKey: {

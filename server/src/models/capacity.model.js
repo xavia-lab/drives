@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require("../configs/database.config");
+const db = require(".");
 
-const Capacity = db.define(
+const Capacity = db.sequelize.define(
   "capacity",
   {
     id: {
@@ -35,6 +35,11 @@ const Capacity = db.define(
           msg: "Must be a valid storage capacity unit.",
         },
       },
+    },
+    managed: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
     title: {
       type: DataTypes.VIRTUAL,

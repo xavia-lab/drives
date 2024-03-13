@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require("../configs/database.config");
+const db = require(".");
 
-const StorageType = db.define("storageType", {
+const StorageType = db.sequelize.define("storageType", {
   id: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
@@ -13,6 +13,11 @@ const StorageType = db.define("storageType", {
     type: Sequelize.STRING,
     allowNull: false,
     unique: true,
+  },
+  managed: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   },
   title: {
     type: DataTypes.VIRTUAL,

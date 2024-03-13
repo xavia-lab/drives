@@ -29,6 +29,17 @@ export default function ModelList() {
     },
   });
 
+  const { data: formFactorData, isLoading: formFactorIsLoading } = useMany({
+    resource: "formFactors",
+    ids:
+      dataGridProps?.rows
+        ?.map((item: any) => item?.formFactorId)
+        .filter(Boolean) ?? [],
+    queryOptions: {
+      enabled: !!dataGridProps?.rows,
+    },
+  });
+
   const { data: interfaceData, isLoading: interfaceIsLoading } = useMany({
     resource: "interfaces",
     ids:
@@ -117,6 +128,23 @@ export default function ModelList() {
         },
       },
       {
+        field: "formFactor",
+        flex: 1,
+        headerName: "Form Factor",
+        minWidth: 50,
+        valueGetter: ({ row }) => {
+          const value = row?.formFactorId;
+          return value;
+        },
+        renderCell: function render({ value }) {
+          return formFactorIsLoading ? (
+            <>Loading...</>
+          ) : (
+            formFactorData?.data?.find((item) => item.id === value)?.title
+          );
+        },
+      },
+      {
         field: "interface",
         flex: 1,
         headerName: "Interface",
@@ -177,7 +205,13 @@ export default function ModelList() {
         minWidth: 80,
       },
     ],
-    [capacityData, interfaceData, manufacturerData, storageTypeData]
+    [
+      capacityData,
+      formFactorData,
+      interfaceData,
+      manufacturerData,
+      storageTypeData,
+    ]
   );
 
   return (

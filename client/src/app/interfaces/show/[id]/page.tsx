@@ -14,6 +14,9 @@ export default function InterfaceShow() {
 
   const record = data?.data;
 
+  const providerLabel = record?.managed ? "System" : "User";
+
+
   return (
     <Show isLoading={isLoading}>
       <Stack gap={1}>
@@ -26,13 +29,13 @@ export default function InterfaceShow() {
         </Typography>
         <TextField value={record?.name} />
         <Typography variant="body1" fontWeight="bold">
-          {"Form"}
+          {"Throughput"}
         </Typography>
-        <TextField value={record?.form} />
+        <TextField value={record?.throughput} />
         <Typography variant="body1" fontWeight="bold">
-          {"Speed"}
+          {"Provider"}
         </Typography>
-        <TextField value={record?.speed} />
+        <TextField value={providerLabel} />
       </Stack>
     </Show>
   );

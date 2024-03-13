@@ -34,7 +34,7 @@ exports.findOne = (req, res) => {
   StorageType.findByPk(storageTypeId)
     .then((storageType) => {
       if (!storageType) {
-        return res.status(404).json({ message: "StorageType not found!" });
+        return res.status(404).json({ message: "Storage type not found!" });
       }
       res.status(200).json(storageType);
     })
@@ -48,7 +48,7 @@ exports.create = (req, res) => {
     name: storageTypeName,
   })
     .then((result) => {
-      console.log("Created storageType");
+      console.log("Created storage type");
       res.status(201).json(result);
     })
     .catch((err) => {
@@ -63,14 +63,21 @@ exports.update = (req, res) => {
   StorageType.findByPk(storageTypeId)
     .then((storageType) => {
       if (!storageType) {
-        return res.status(404).json({ message: "StorageType not found!" });
-      }
-      storageType.name = storageTypeName;
+        return { status: 404, message: "Storage type not found!" };
+      } else if (storageType.managed) {
+        return {
+          status: 409,
+          message: "System managed storage type cannot be deleted!",
+        };
+      } else {
+        storageType.name = storageTypeName;
 
-      return storageType.save();
+        const out = storageType.save();
+        return { status: 200, result: out };
+      }
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -81,16 +88,29 @@ exports.delete = (req, res) => {
   StorageType.findByPk(storageTypeId)
     .then((storageType) => {
       if (!storageType) {
-        return res.status(404).json({ message: "StorageType not found!" });
+        return { status: 404, message: "Storage type not found!" };
+      } else if (storageType.managed) {
+        return {
+          status: 409,
+          message: "System managed storage type cannot be deleted!",
+        };
+      } else {
+        const out = storageType.destroy({
+          where: {
+            id: storageTypeId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted storageTypeId: ${storageTypeId}`,
+          out: out,
+        };
       }
-      return storageType.destroy({
-        where: {
-          id: storageTypeId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "StorageType deleted" });
+      console.log(`Deleted response for storageTypeId: ${storageTypeId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

@@ -1,18 +1,19 @@
 "use client";
 
 import { Box, TextField } from "@mui/material";
-import { Edit } from "@refinedev/mui";
+import { Create, NumberField } from "@refinedev/mui";
 import { useForm } from "@refinedev/react-hook-form";
 
-export default function InterfaceEdit() {
+export default function FormFactorCreate() {
   const {
     saveButtonProps,
+    refineCore: { formLoading },
     register,
     formState: { errors },
   } = useForm({});
 
   return (
-    <Edit saveButtonProps={saveButtonProps}>
+    <Create isLoading={formLoading} saveButtonProps={saveButtonProps}>
       <Box
         component="form"
         sx={{ display: "flex", flexDirection: "column" }}
@@ -31,20 +32,7 @@ export default function InterfaceEdit() {
           label={"Name"}
           name="name"
         />
-        <TextField
-          {...register("throughput", {
-            required: "This field is required",
-          })}
-          error={!!(errors as any)?.throughput}
-          helperText={(errors as any)?.throughput?.message}
-          margin="normal"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          type="text"
-          label={"Throughput"}
-          name="throughput"
-        />
       </Box>
-    </Edit>
+    </Create>
   );
 }

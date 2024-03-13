@@ -41,6 +41,16 @@ export default function CapacityList() {
         minWidth: 50,
       },
       {
+        field: "managed",
+        flex: 1,
+        headerName: "Provider",
+        minWidth: 100,
+        renderCell: function render({ row }) {
+          if (row.managed) return <>System</>;
+          else return <>User</>;
+        },
+      },
+      {
         field: "actions",
         headerName: "Actions",
         sortable: false,

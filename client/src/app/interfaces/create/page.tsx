@@ -48,17 +48,17 @@ export default function InterfaceCreate() {
           name="form"
         />
         <TextField
-          {...register("speed", {
+          {...register("throughput", {
             required: "This field is required",
           })}
-          error={!!(errors as any)?.speed}
-          helperText={(errors as any)?.speed?.message}
+          error={!!(errors as any)?.throughput}
+          helperText={(errors as any)?.throughput?.message}
           margin="normal"
           fullWidth
           InputLabelProps={{ shrink: true }}
           type="text"
-          label={"Speed"}
-          name="speed"
+          label={"Throughput"}
+          name="throughput"
         />
       </Box>
     </Create>

@@ -81,19 +81,26 @@ exports.update = (req, res) => {
   Manufacturer.findByPk(manufacturerId)
     .then((manufacturer) => {
       if (!manufacturer) {
-        return res.status(404).json({ message: "Manufacturer not found!" });
-      }
-      manufacturer.name = manufacturerName;
-      manufacturer.address = manufacturerAddress;
-      manufacturer.country = manufacturerCountry;
-      manufacturer.phone = manufacturerPhone;
-      manufacturer.email = manufacturerEmail;
-      manufacturer.website = manufacturerWebsite;
+        return { status: 404, message: "Manufacturer not found!" };
+      } else if (manufacturer.managed) {
+        return {
+          status: 409,
+          message: "System managed manufacturer cannot be deleted!",
+        };
+      } else {
+        manufacturer.name = manufacturerName;
+        manufacturer.address = manufacturerAddress;
+        manufacturer.country = manufacturerCountry;
+        manufacturer.phone = manufacturerPhone;
+        manufacturer.email = manufacturerEmail;
+        manufacturer.website = manufacturerWebsite;
 
-      return manufacturer.save();
+        const out = manufacturer.save();
+        return { status: 200, result: out };
+      }
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -104,16 +111,29 @@ exports.delete = (req, res) => {
   Manufacturer.findByPk(manufacturerId)
     .then((manufacturer) => {
       if (!manufacturer) {
-        return res.status(404).json({ message: "Manufacturer not found!" });
+        return { status: 404, message: "Manufacturer not found!" };
+      } else if (manufacturer.managed) {
+        return {
+          status: 409,
+          message: "System managed manufacturer cannot be deleted!",
+        };
+      } else {
+        const out = manufacturer.destroy({
+          where: {
+            id: manufacturerId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted manufacturerId: ${manufacturerId}`,
+          out: out,
+        };
       }
-      return manufacturer.destroy({
-        where: {
-          id: manufacturerId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Manufacturer deleted" });
+      console.log(`Deleted response for manufacturerId: ${manufacturerId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

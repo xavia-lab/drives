@@ -3,7 +3,7 @@
 // import dataProviderSimpleRest from "@refinedev/simple-rest";
 
 // const API_URL = "https://api.fake-rest.refine.dev";
-const API_URL = "http://localhost:5000/api/v1/";
+const API_URL = "http://localhost:5000/api/v1";
 
 // export const dataProvider = dataProviderSimpleRest(API_URL);
 
@@ -109,8 +109,16 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  deleteOne: () => {
-    throw new Error("Not implemented");
+  deleteOne: async ({ resource, id, variables, meta }) => {
+    const response = await fetch(`${API_URL}/${resource}/${id}`, {
+      method: "DELETE",
+    });
+
+    if (response.status < 200 || response.status > 299) throw response;
+
+    const data = await response.json();
+
+    return { data };
   },
   getApiUrl: () => API_URL,
   // Optional methods:

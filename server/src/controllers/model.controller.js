@@ -31,7 +31,7 @@ exports.findAll = (req, res) => {
 // Find a single Model with an id
 exports.findOne = (req, res) => {
   const modelId = req.params.id;
-  Model.findByPk(modelId, { include: { all: true, nested: true } })
+  Model.findByPk(modelId)
     .then((model) => {
       if (!model) {
         return res.status(404).json({ message: "Model not found!" });
@@ -46,6 +46,7 @@ exports.create = (req, res) => {
   const modelName = req.body.name;
   const modelNumber = req.body.number;
   const capacityId = req.body.capacityId;
+  const formFactorId = req.body.formFactorId;
   const interfaceId = req.body.interfaceId;
   const manufacturerId = req.body.manufacturerId;
   const storageTypeId = req.body.storageTypeId;
@@ -53,6 +54,7 @@ exports.create = (req, res) => {
     name: modelName,
     number: modelNumber,
     capacityId: capacityId,
+    formFactorId: formFactorId,
     interfaceId: interfaceId,
     manufacturerId: manufacturerId,
     storageTypeId: storageTypeId,
@@ -72,26 +74,29 @@ exports.update = (req, res) => {
   const modelName = req.body.name;
   const modelNumber = req.body.number;
   const capacityId = req.body.capacityId;
+  const formFactorId = req.body.formFactorId;
   const interfaceId = req.body.interfaceId;
   const manufacturerId = req.body.manufacturerId;
   const storageTypeId = req.body.storageTypeId;
   Model.findByPk(modelId)
     .then((model) => {
       if (!model) {
-        return res.status(404).json({ message: "Model not found!" });
+        return { status: 404, message: "Model not found!" };
+      } else {
+        const out = model.update({
+          name: modelName,
+          number: modelNumber,
+          capacityId: capacityId,
+          formFactorId: formFactorId,
+          interfaceId: interfaceId,
+          manufacturerId: manufacturerId,
+          storageTypeId: storageTypeId,
+        });
+        return { status: 200, result: out };
       }
-
-      return model.update({
-        name: modelName,
-        number: modelNumber,
-        capacityId: capacityId,
-        interfaceId: interfaceId,
-        manufacturerId: manufacturerId,
-        storageTypeId: storageTypeId,
-      });
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -102,16 +107,24 @@ exports.delete = (req, res) => {
   Model.findByPk(modelId)
     .then((model) => {
       if (!model) {
-        return res.status(404).json({ message: "Model not found!" });
+        return { status: 404, message: "Model not found!" };
+      } else {
+        const out = model.destroy({
+          where: {
+            id: modelId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted modelId: ${modelId}`,
+          out: out,
+        };
       }
-      return model.destroy({
-        where: {
-          id: modelId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Model deleted" });
+      console.log(`Deleted response for modelId: ${modelId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };
