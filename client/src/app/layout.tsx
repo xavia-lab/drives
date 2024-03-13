@@ -103,6 +103,16 @@ export default function RootLayout({
                         },
                       },
                       {
+                        name: "formFactors",
+                        list: "/form-factors",
+                        create: "/form-factors/create",
+                        edit: "/form-factors/edit/:id",
+                        show: "/form-factors/show/:id",
+                        meta: {
+                          canDelete: true,
+                        },
+                      },
+                      {
                         name: "storageTypes",
                         list: "/storage-types",
                         create: "/storage-types/create",

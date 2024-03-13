@@ -25,20 +25,24 @@ export default function InterfaceList() {
         field: "name",
         flex: 1,
         headerName: "Name",
-        minWidth: 100,
-      },
-      {
-        field: "form",
-        flex: 1,
-        headerName: "Form",
         minWidth: 50,
       },
       {
-        field: "speed",
+        field: "throughput",
         flex: 1,
-        headerName: "Speed",
+        headerName: "Throughput",
         type: "number",
         minWidth: 50,
+      },
+      {
+        field: "managed",
+        flex: 1,
+        headerName: "Provider",
+        minWidth: 100,
+        renderCell: function render({ row }) {
+          if (row.managed) return <>System</>;
+          else return <>User</>;
+        },
       },
       {
         field: "actions",

@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
-const db = require("../configs/database.config");
+const db = require(".");
 
-const Manufacturer = db.define(
+const Manufacturer = db.sequelize.define(
   "manufacturer",
   {
     id: {
@@ -40,6 +40,11 @@ const Manufacturer = db.define(
       // validate: {
       //   isUrl: true,
       // },
+    },
+    managed: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
     title: {
       type: DataTypes.VIRTUAL,

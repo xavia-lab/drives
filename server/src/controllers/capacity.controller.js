@@ -68,16 +68,23 @@ exports.update = (req, res) => {
   Capacity.findByPk(capacityId)
     .then((capacity) => {
       if (!capacity) {
-        return res.status(404).json({ message: "Capacity not found!" });
-      }
-      capacity.name = capacityName;
-      capacity.unit = capacityUnit;
-      capacity.value = capacityValue;
+        return { status: 404, message: "Capacity not found!" };
+      } else if (capacity.managed) {
+        return {
+          status: 409,
+          message: "System managed capacity cannot be deleted!",
+        };
+      } else {
+        capacity.name = capacityName;
+        capacity.unit = capacityUnit;
+        capacity.value = capacityValue;
 
-      return capacity.save();
+        const out = capacity.save();
+        return { status: 200, result: out };
+      }
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -88,16 +95,29 @@ exports.delete = (req, res) => {
   Capacity.findByPk(capacityId)
     .then((capacity) => {
       if (!capacity) {
-        return res.status(404).json({ message: "Capacity not found!" });
+        return { status: 404, message: "Capacity not found!" };
+      } else if (capacity.managed) {
+        return {
+          status: 409,
+          message: "System managed capacity cannot be deleted!",
+        };
+      } else {
+        const out = capacity.destroy({
+          where: {
+            id: capacityId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted capacityId: ${capacityId}`,
+          out: out,
+        };
       }
-      return capacity.destroy({
-        where: {
-          id: capacityId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Capacity deleted" });
+      console.log(`Deleted response for capacityId: ${capacityId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

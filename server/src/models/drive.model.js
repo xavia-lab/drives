@@ -3,9 +3,9 @@ const { Sequelize, DataTypes } = require("sequelize");
 const Model = require("./model.model");
 const Retailer = require("./retailer.model");
 
-const db = require("../configs/database.config");
+const db = require(".");
 
-const Drive = db.define(
+const Drive = db.sequelize.define(
   "drive",
   {
     id: {

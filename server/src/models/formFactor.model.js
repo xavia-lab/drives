@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 
 const db = require(".");
 
-const Interface = db.sequelize.define("interface", {
+const Interface = db.sequelize.define("formFactor", {
   id: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
@@ -12,11 +12,6 @@ const Interface = db.sequelize.define("interface", {
   name: {
     type: Sequelize.STRING,
     allowNull: false,
-    unique: true,
-  },
-  throughput: {
-    type: Sequelize.STRING,
-    allowNull: true,
   },
   managed: {
     type: Sequelize.BOOLEAN,
@@ -26,7 +21,7 @@ const Interface = db.sequelize.define("interface", {
   title: {
     type: DataTypes.VIRTUAL,
     get() {
-      return `${this.name} ${this.throughput}`;
+      return `${this.name}`;
     },
     set(value) {
       throw new Error("Do not try to set the `title` value!");

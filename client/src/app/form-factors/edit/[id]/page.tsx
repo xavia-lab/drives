@@ -4,7 +4,7 @@ import { Box, TextField } from "@mui/material";
 import { Edit } from "@refinedev/mui";
 import { useForm } from "@refinedev/react-hook-form";
 
-export default function InterfaceEdit() {
+export default function FormFactorEdit() {
   const {
     saveButtonProps,
     register,
@@ -30,19 +30,6 @@ export default function InterfaceEdit() {
           type="text"
           label={"Name"}
           name="name"
-        />
-        <TextField
-          {...register("throughput", {
-            required: "This field is required",
-          })}
-          error={!!(errors as any)?.throughput}
-          helperText={(errors as any)?.throughput?.message}
-          margin="normal"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          type="text"
-          label={"Throughput"}
-          name="throughput"
         />
       </Box>
     </Edit>

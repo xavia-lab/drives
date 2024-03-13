@@ -44,12 +44,10 @@ exports.findOne = (req, res) => {
 // Create and Save a new Interface
 exports.create = (req, res) => {
   const interfaceName = req.body.name;
-  const interfaceForm = req.body.form;
-  const interfaceSpeed = req.body.speed;
+  const interfaceThroughput = req.body.throughput;
   Interface.create({
     name: interfaceName,
-    form: interfaceForm,
-    speed: interfaceSpeed,
+    speed: interfaceThroughput,
   })
     .then((result) => {
       console.log("Created interface");
@@ -64,21 +62,26 @@ exports.create = (req, res) => {
 exports.update = (req, res) => {
   const interfaceId = req.params.id;
   const interfaceName = req.body.name;
-  const interfaceForm = req.body.form;
-  const interfaceSpeed = req.body.speed;
+  const interfaceThroughput = req.body.throughput;
   Interface.findByPk(interfaceId)
     .then((interface) => {
       if (!interface) {
-        return res.status(404).json({ message: "Interface not found!" });
-      }
-      interface.name = interfaceName;
-      interface.form = interfaceForm;
-      interface.speed = interfaceSpeed;
+        return { status: 404, message: "Interface not found!" };
+      } else if (interface.managed) {
+        return {
+          status: 409,
+          message: "System managed interface cannot be deleted!",
+        };
+      } else {
+        interface.name = interfaceName;
+        interface.throughput = interfaceThroughput;
 
-      return interface.save();
+        const out = interface.save();
+        return { status: 200, result: out };
+      }
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -89,16 +92,29 @@ exports.delete = (req, res) => {
   Interface.findByPk(interfaceId)
     .then((interface) => {
       if (!interface) {
-        return res.status(404).json({ message: "Interface not found!" });
+        return { status: 404, message: "Interface not found!" };
+      } else if (interface.managed) {
+        return {
+          status: 409,
+          message: "System managed interface cannot be deleted!",
+        };
+      } else {
+        const out = interface.destroy({
+          where: {
+            id: interfaceId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted interfaceId: ${interfaceId}`,
+          out: out,
+        };
       }
-      return interface.destroy({
-        where: {
-          id: interfaceId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Interface deleted" });
+      console.log(`Deleted response for interfaceId: ${interfaceId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

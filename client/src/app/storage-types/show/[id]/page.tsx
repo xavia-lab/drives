@@ -14,6 +14,8 @@ export default function StorageTypeShow() {
 
   const record = data?.data;
 
+  const providerLabel = record?.managed ? "System" : "User";
+
   return (
     <Show isLoading={isLoading}>
       <Stack gap={1}>
@@ -25,6 +27,10 @@ export default function StorageTypeShow() {
           {"Name"}
         </Typography>
         <TextField value={record?.name} />
+        <Typography variant="body1" fontWeight="bold">
+          {"Provider"}
+        </Typography>
+        <TextField value={providerLabel} />
       </Stack>
     </Show>
   );

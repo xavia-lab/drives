@@ -24,6 +24,14 @@ export default function ModelShow() {
     },
   });
 
+  const { data: formFactorData, isLoading: formFactorIsLoading } = useOne({
+    resource: "formFactors",
+    id: record?.formFactorId || "",
+    queryOptions: {
+      enabled: !!record,
+    },
+  });
+
   const { data: interfaceData, isLoading: interfaceIsLoading } = useOne({
     resource: "interfaces",
     id: record?.interfaceId || "",
@@ -79,6 +87,15 @@ export default function ModelShow() {
           {"Capacity"}
         </Typography>
         {capacityIsLoading ? <>Loading...</> : <>{capacityData?.data?.title}</>}
+
+        <Typography variant="body1" fontWeight="bold">
+          {"Form Factor"}
+        </Typography>
+        {formFactorIsLoading ? (
+          <>Loading...</>
+        ) : (
+          <>{formFactorData?.data?.title}</>
+        )}
 
         <Typography variant="body1" fontWeight="bold">
           {"Interface"}

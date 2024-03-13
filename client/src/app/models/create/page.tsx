@@ -19,6 +19,10 @@ export default function ModelCreate() {
     resource: "capacities",
   });
 
+  const { autocompleteProps: formFactorAutocompleteProps } = useAutocomplete({
+    resource: "formFactors",
+  });
+
   const { autocompleteProps: interfaceAutocompleteProps } = useAutocomplete({
     resource: "interfaces",
   });
@@ -53,7 +57,7 @@ export default function ModelCreate() {
         />
         <TextField
           {...register("number", {
-            // required: "This field is required",
+            required: "This field is required",
           })}
           error={!!(errors as any)?.number}
           helperText={(errors as any)?.number?.message}
@@ -152,6 +156,53 @@ export default function ModelCreate() {
                   variant="outlined"
                   error={!!(errors as any)?.capacity?.id}
                   helperText={(errors as any)?.capacity?.id?.message}
+                  required
+                />
+              )}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name={"formFactorId"}
+          rules={{ required: "This field is required" }}
+          // eslint-disable-next-line
+          defaultValue={null as any}
+          render={({ field }) => (
+            <Autocomplete
+              {...formFactorAutocompleteProps}
+              {...field}
+              onChange={(_, value) => {
+                field.onChange(value.id);
+              }}
+              getOptionLabel={(item) => {
+                return (
+                  formFactorAutocompleteProps?.options?.find((p) => {
+                    const itemId =
+                      typeof item === "object"
+                        ? item?.id?.toString()
+                        : item?.toString();
+                    const pId = p?.id?.toString();
+                    return itemId === pId;
+                  })?.title ?? ""
+                );
+              }}
+              isOptionEqualToValue={(option, value) => {
+                const optionId = option?.id?.toString();
+                const valueId =
+                  typeof value === "object"
+                    ? value?.id?.toString()
+                    : value?.toString();
+                return value === undefined || optionId === valueId;
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={"Form Factor"}
+                  margin="normal"
+                  variant="outlined"
+                  error={!!(errors as any)?.formFactor?.id}
+                  helperText={(errors as any)?.formFactor?.id?.message}
                   required
                 />
               )}

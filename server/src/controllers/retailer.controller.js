@@ -78,19 +78,26 @@ exports.update = (req, res) => {
   Retailer.findByPk(retailerId)
     .then((retailer) => {
       if (!retailer) {
-        return res.status(404).json({ message: "Retailer not found!" });
-      }
-      retailer.name = retailerName;
-      retailer.address = retailerAddress;
-      retailer.country = retailerCountry;
-      retailer.phone = retailerPhone;
-      retailer.email = retailerEmail;
-      retailer.website = retailerWebsite;
+        return { status: 404, message: "Retailer not found!" };
+      } else if (retailer.managed) {
+        return {
+          status: 409,
+          message: "System managed retailer cannot be deleted!",
+        };
+      } else {
+        retailer.name = retailerName;
+        retailer.address = retailerAddress;
+        retailer.country = retailerCountry;
+        retailer.phone = retailerPhone;
+        retailer.email = retailerEmail;
+        retailer.website = retailerWebsite;
 
-      return retailer.save();
+        const out = retailer.save();
+        return { status: 200, result: out };
+      }
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -101,16 +108,29 @@ exports.delete = (req, res) => {
   Retailer.findByPk(retailerId)
     .then((retailer) => {
       if (!retailer) {
-        return res.status(404).json({ message: "Retailer not found!" });
+        return { status: 404, message: "Retailer not found!" };
+      } else if (retailer.managed) {
+        return {
+          status: 409,
+          message: "System managed retailer cannot be deleted!",
+        };
+      } else {
+        const out = retailer.destroy({
+          where: {
+            id: retailerId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted retailerId: ${retailerId}`,
+          out: out,
+        };
       }
-      return retailer.destroy({
-        where: {
-          id: retailerId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Retailer deleted" });
+      console.log(`Deleted response for retailerId: ${retailerId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

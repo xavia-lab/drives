@@ -31,7 +31,7 @@ exports.findAll = (req, res) => {
 // Find a single Drive with an id
 exports.findOne = (req, res) => {
   const driveId = req.params.id;
-  Drive.findByPk(driveId, { include: { all: true, nested: true } })
+  Drive.findByPk(driveId)
     .then((drive) => {
       if (!drive) {
         return res.status(404).json({ message: "Drive not found!" });
@@ -78,20 +78,21 @@ exports.update = (req, res) => {
   Drive.findByPk(driveId)
     .then((drive) => {
       if (!drive) {
-        return res.status(404).json({ message: "Drive not found!" });
+        return { status: 404, message: "Drive not found!" };
+      } else {
+        const out = drive.update({
+          name: driveName,
+          label: driveLabel,
+          serial: driveSerial,
+          datePurchased: driveDatePurchased,
+          modelId: modelId,
+          retailerId: retailerId,
+        });
+        return { status: 200, result: out };
       }
-
-      return drive.update({
-        name: driveName,
-        label: driveLabel,
-        serial: driveSerial,
-        datePurchased: driveDatePurchased,
-        modelId: modelId,
-        retailerId: retailerId,
-      });
     })
     .then((result) => {
-      res.status(200).json(result);
+      res.status(result.message).json(result.out);
     })
     .catch((err) => console.log(err));
 };
@@ -102,16 +103,24 @@ exports.delete = (req, res) => {
   Drive.findByPk(driveId)
     .then((drive) => {
       if (!drive) {
-        return res.status(404).json({ message: "Drive not found!" });
+        return { status: 404, message: "Drive not found!" };
+      } else {
+        const out = drive.destroy({
+          where: {
+            id: driveId,
+          },
+        });
+        return {
+          status: 200,
+          message: `Deleted driveId: ${driveId}`,
+          out: out,
+        };
       }
-      return drive.destroy({
-        where: {
-          id: driveId,
-        },
-      });
     })
     .then((result) => {
-      res.status(200).json({ message: "Drive deleted" });
+      console.log(`Deleted response for driveId: ${driveId}`);
+      console.log(JSON.stringify(result));
+      res.status(result.status).json({ message: `${result.message}` });
     })
     .catch((err) => console.log(err));
 };

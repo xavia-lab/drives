@@ -16,6 +16,8 @@ export default function RetailerShow() {
 
   const record = data?.data;
 
+  const providerLabel = record?.managed ? "System" : "User";
+
   return (
     <Show isLoading={isLoading}>
       <Stack gap={1}>
@@ -47,6 +49,10 @@ export default function RetailerShow() {
           {"Website"}
         </Typography>
         <UrlField value={record?.website} />
+        <Typography variant="body1" fontWeight="bold">
+          {"Provider"}
+        </Typography>
+        <TextField value={providerLabel} />
       </Stack>
     </Show>
   );
