@@ -30,29 +30,29 @@ exports.findAll = (req, res) => {
 
 // Find a single Model with an id
 exports.findOne = (req, res) => {
-  const modelId = req.params.id;
-  Model.findByPk(modelId)
-    .then((model) => {
-      if (!model) {
+  const id = req.params.id;
+  Model.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Model not found!" });
       }
-      res.status(200).json(model);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Model
 exports.create = (req, res) => {
-  const modelName = req.body.name;
-  const modelNumber = req.body.number;
+  const name = req.body.name;
+  const number = req.body.number;
   const capacityId = req.body.capacityId;
   const formFactorId = req.body.formFactorId;
   const interfaceId = req.body.interfaceId;
   const manufacturerId = req.body.manufacturerId;
   const storageTypeId = req.body.storageTypeId;
   Model.create({
-    name: modelName,
-    number: modelNumber,
+    name: name,
+    number: number,
     capacityId: capacityId,
     formFactorId: formFactorId,
     interfaceId: interfaceId,
@@ -70,22 +70,22 @@ exports.create = (req, res) => {
 
 // Update a Model by the id in the request
 exports.update = (req, res) => {
-  const modelId = req.params.id;
-  const modelName = req.body.name;
-  const modelNumber = req.body.number;
+  const id = req.params.id;
+  const name = req.body.name;
+  const number = req.body.number;
   const capacityId = req.body.capacityId;
   const formFactorId = req.body.formFactorId;
   const interfaceId = req.body.interfaceId;
   const manufacturerId = req.body.manufacturerId;
   const storageTypeId = req.body.storageTypeId;
-  Model.findByPk(modelId)
-    .then((model) => {
-      if (!model) {
+  Model.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Model not found!" };
       } else {
-        const out = model.update({
-          name: modelName,
-          number: modelNumber,
+        const out = item.update({
+          name: name,
+          number: number,
           capacityId: capacityId,
           formFactorId: formFactorId,
           interfaceId: interfaceId,
@@ -103,26 +103,26 @@ exports.update = (req, res) => {
 
 // Delete a Model with the specified id in the request
 exports.delete = (req, res) => {
-  const modelId = req.params.id;
-  Model.findByPk(modelId)
-    .then((model) => {
-      if (!model) {
+  const id = req.params.id;
+  Model.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Model not found!" };
       } else {
-        const out = model.destroy({
+        const out = item.destroy({
           where: {
-            id: modelId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted modelId: ${modelId}`,
+          message: `Deleted model id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for modelId: ${modelId}`);
+      console.log(`Deleted response for model id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })

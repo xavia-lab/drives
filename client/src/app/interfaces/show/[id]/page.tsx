@@ -16,7 +16,6 @@ export default function InterfaceShow() {
 
   const providerLabel = record?.managed ? "System" : "User";
 
-
   return (
     <Show isLoading={isLoading}>
       <Stack gap={1}>

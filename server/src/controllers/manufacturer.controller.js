@@ -30,32 +30,32 @@ exports.findAll = (req, res) => {
 
 // Find a single Manufacturer with an id
 exports.findOne = (req, res) => {
-  const manufacturerId = req.params.id;
-  Manufacturer.findByPk(manufacturerId)
-    .then((manufacturer) => {
-      if (!manufacturer) {
+  const id = req.params.id;
+  Manufacturer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Manufacturer not found!" });
       }
-      res.status(200).json(manufacturer);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Manufacturer
 exports.create = (req, res) => {
-  const manufacturerName = req.body.name;
-  const manufacturerAddress = req.body.address;
-  const manufacturerCountry = req.body.country;
-  const manufacturerPhone = req.body.phone;
-  const manufacturerEmail = req.body.email;
-  const manufacturerWebsite = req.body.website;
+  const name = req.body.name;
+  const address = req.body.address;
+  const country = req.body.country;
+  const phone = req.body.phone;
+  const email = req.body.email;
+  const website = req.body.website;
   Manufacturer.create({
-    name: manufacturerName,
-    address: manufacturerAddress,
-    country: manufacturerCountry,
-    phone: manufacturerPhone,
-    email: manufacturerEmail,
-    website: manufacturerWebsite,
+    name: name,
+    address: address,
+    country: country,
+    phone: phone,
+    email: email,
+    website: website,
   })
     .then((result) => {
       console.log("Created manufacturer");
@@ -71,31 +71,31 @@ exports.create = (req, res) => {
 
 // Update a Manufacturer by the id in the request
 exports.update = (req, res) => {
-  const manufacturerId = req.params.id;
-  const manufacturerName = req.body.name;
-  const manufacturerAddress = req.body.address;
-  const manufacturerCountry = req.body.country;
-  const manufacturerPhone = req.body.phone;
-  const manufacturerEmail = req.body.email;
-  const manufacturerWebsite = req.body.website;
-  Manufacturer.findByPk(manufacturerId)
-    .then((manufacturer) => {
-      if (!manufacturer) {
+  const id = req.params.id;
+  const name = req.body.name;
+  const address = req.body.address;
+  const country = req.body.country;
+  const phone = req.body.phone;
+  const email = req.body.email;
+  const website = req.body.website;
+  Manufacturer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Manufacturer not found!" };
-      } else if (manufacturer.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed manufacturer cannot be deleted!",
         };
       } else {
-        manufacturer.name = manufacturerName;
-        manufacturer.address = manufacturerAddress;
-        manufacturer.country = manufacturerCountry;
-        manufacturer.phone = manufacturerPhone;
-        manufacturer.email = manufacturerEmail;
-        manufacturer.website = manufacturerWebsite;
+        item.name = name;
+        item.address = address;
+        item.country = country;
+        item.phone = phone;
+        item.email = email;
+        item.website = website;
 
-        const out = manufacturer.save();
+        const out = item.save();
         return { status: 200, result: out };
       }
     })
@@ -107,31 +107,31 @@ exports.update = (req, res) => {
 
 // Delete a Manufacturer with the specified id in the request
 exports.delete = (req, res) => {
-  const manufacturerId = req.params.id;
-  Manufacturer.findByPk(manufacturerId)
-    .then((manufacturer) => {
-      if (!manufacturer) {
+  const id = req.params.id;
+  Manufacturer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Manufacturer not found!" };
-      } else if (manufacturer.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed manufacturer cannot be deleted!",
         };
       } else {
-        const out = manufacturer.destroy({
+        const out = item.destroy({
           where: {
-            id: manufacturerId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted manufacturerId: ${manufacturerId}`,
+          message: `Deleted manufacturer id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for manufacturerId: ${manufacturerId}`);
+      console.log(`Deleted response for manufacturer id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })

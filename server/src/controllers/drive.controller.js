@@ -30,30 +30,30 @@ exports.findAll = (req, res) => {
 
 // Find a single Drive with an id
 exports.findOne = (req, res) => {
-  const driveId = req.params.id;
-  Drive.findByPk(driveId)
-    .then((drive) => {
-      if (!drive) {
+  const id = req.params.id;
+  Drive.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Drive not found!" });
       }
-      res.status(200).json(drive);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Drive
 exports.create = (req, res) => {
-  const driveName = req.body.name;
-  const driveLabel = req.body.label;
-  const driveSerial = req.body.serial;
-  const driveDatePurchased = req.body.datePurchased;
+  const name = req.body.name;
+  const label = req.body.label;
+  const serial = req.body.serial;
+  const datePurchased = req.body.datePurchased;
   const modelId = req.body.modelId;
   const retailerId = req.body.retailerId;
   Drive.create({
-    name: driveName,
-    label: driveLabel,
-    serial: driveSerial,
-    datePurchased: driveDatePurchased,
+    name: name,
+    label: label,
+    serial: serial,
+    datePurchased: datePurchased,
     modelId: modelId,
     retailerId: retailerId,
   })
@@ -68,23 +68,23 @@ exports.create = (req, res) => {
 
 // Update a Drive by the id in the request
 exports.update = (req, res) => {
-  const driveId = req.params.id;
-  const driveName = req.body.name;
-  const driveLabel = req.body.label;
-  const driveSerial = req.body.serial;
-  const driveDatePurchased = req.body.datePurchased;
+  const id = req.params.id;
+  const name = req.body.name;
+  const label = req.body.label;
+  const serial = req.body.serial;
+  const datePurchased = req.body.datePurchased;
   const modelId = req.body.modelId;
   const retailerId = req.body.retailerId;
-  Drive.findByPk(driveId)
-    .then((drive) => {
-      if (!drive) {
+  Drive.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Drive not found!" };
       } else {
-        const out = drive.update({
-          name: driveName,
-          label: driveLabel,
-          serial: driveSerial,
-          datePurchased: driveDatePurchased,
+        const out = item.update({
+          name: name,
+          label: label,
+          serial: serial,
+          datePurchased: datePurchased,
           modelId: modelId,
           retailerId: retailerId,
         });
@@ -99,26 +99,26 @@ exports.update = (req, res) => {
 
 // Delete a Drive with the specified id in the request
 exports.delete = (req, res) => {
-  const driveId = req.params.id;
-  Drive.findByPk(driveId)
-    .then((drive) => {
-      if (!drive) {
+  const id = req.params.id;
+  Drive.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Drive not found!" };
       } else {
-        const out = drive.destroy({
+        const out = item.destroy({
           where: {
-            id: driveId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted driveId: ${driveId}`,
+          message: `Deleted drive id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for driveId: ${driveId}`);
+      console.log(`Deleted response for drive id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })

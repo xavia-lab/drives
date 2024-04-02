@@ -30,22 +30,22 @@ exports.findAll = (req, res) => {
 
 // Find a single FormFactor with an id
 exports.findOne = (req, res) => {
-  const formFactorId = req.params.id;
-  FormFactor.findByPk(formFactorId)
-    .then((formFactor) => {
-      if (!formFactor) {
+  const id = req.params.id;
+  FormFactor.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Form factor not found!" });
       }
-      res.status(200).json(formFactor);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new FormFactor
 exports.create = (req, res) => {
-  const formFactorName = req.body.name;
+  const name = req.body.name;
   FormFactor.create({
-    name: formFactorName,
+    name: name,
   })
     .then((result) => {
       console.log("Created form factor");
@@ -58,21 +58,21 @@ exports.create = (req, res) => {
 
 // Update a FormFactor by the id in the request
 exports.update = (req, res) => {
-  const formFactorId = req.params.id;
-  const formFactorName = req.body.name;
-  FormFactor.findByPk(formFactorId)
-    .then((formFactor) => {
-      if (!formFactor) {
+  const id = req.params.id;
+  const name = req.body.name;
+  FormFactor.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "FormFactor not found!" };
-      } else if (formFactor.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
-          message: "System managed formFactor cannot be deleted!",
+          message: "System managed form factor cannot be deleted!",
         };
       } else {
-        formFactor.name = formFactorName;
+        item.name = name;
 
-        const out = formFactor.save();
+        const out = item.save();
         return { status: 200, result: out };
       }
     })
@@ -84,31 +84,31 @@ exports.update = (req, res) => {
 
 // Delete a FormFactor with the specified id in the request
 exports.delete = (req, res) => {
-  const formFactorId = req.params.id;
-  FormFactor.findByPk(formFactorId)
-    .then((formFactor) => {
-      if (!formFactor) {
-        return { status: 404, message: "FormFactor not found!" };
-      } else if (formFactor.managed) {
+  const id = req.params.id;
+  FormFactor.findByPk(id)
+    .then((item) => {
+      if (!item) {
+        return { status: 404, message: "Form factor not found!" };
+      } else if (item.managed) {
         return {
           status: 409,
-          message: "System managed formFactor cannot be deleted!",
+          message: "System managed form factor cannot be deleted!",
         };
       } else {
-        const out = formFactor.destroy({
+        const out = item.destroy({
           where: {
-            id: formFactorId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted formFactorId: ${formFactorId}`,
+          message: `Deleted form factor id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for formFactorId: ${formFactorId}`);
+      console.log(`Deleted response for form factor id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })

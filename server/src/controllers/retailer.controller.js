@@ -30,32 +30,32 @@ exports.findAll = (req, res) => {
 
 // Find a single Retailer with an id
 exports.findOne = (req, res) => {
-  const retailerId = req.params.id;
-  Retailer.findByPk(retailerId)
-    .then((retailer) => {
-      if (!retailer) {
+  const id = req.params.id;
+  Retailer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Retailer not found!" });
       }
-      res.status(200).json(retailer);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Retailer
 exports.create = (req, res) => {
-  const retailerName = req.body.name;
-  const retailerAddress = req.body.address;
-  const retailerCountry = req.body.country;
-  const retailerPhone = req.body.phone;
-  const retailerEmail = req.body.email;
-  const retailerWebsite = req.body.website;
+  const name = req.body.name;
+  const address = req.body.address;
+  const country = req.body.country;
+  const phone = req.body.phone;
+  const email = req.body.email;
+  const website = req.body.website;
   Retailer.create({
-    name: retailerName,
-    address: retailerAddress,
-    country: retailerCountry,
-    phone: retailerPhone,
-    email: retailerEmail,
-    website: retailerWebsite,
+    name: name,
+    address: address,
+    country: country,
+    phone: phone,
+    email: email,
+    website: website,
   })
     .then((result) => {
       console.log("Created retailer");
@@ -68,31 +68,31 @@ exports.create = (req, res) => {
 
 // Update a Retailer by the id in the request
 exports.update = (req, res) => {
-  const retailerId = req.params.id;
-  const retailerName = req.body.name;
-  const retailerAddress = req.body.address;
-  const retailerCountry = req.body.country;
-  const retailerPhone = req.body.phone;
-  const retailerEmail = req.body.email;
-  const retailerWebsite = req.body.website;
-  Retailer.findByPk(retailerId)
-    .then((retailer) => {
-      if (!retailer) {
+  const id = req.params.id;
+  const name = req.body.name;
+  const address = req.body.address;
+  const country = req.body.country;
+  const phone = req.body.phone;
+  const email = req.body.email;
+  const website = req.body.website;
+  Retailer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Retailer not found!" };
-      } else if (retailer.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed retailer cannot be deleted!",
         };
       } else {
-        retailer.name = retailerName;
-        retailer.address = retailerAddress;
-        retailer.country = retailerCountry;
-        retailer.phone = retailerPhone;
-        retailer.email = retailerEmail;
-        retailer.website = retailerWebsite;
+        item.name = name;
+        item.address = address;
+        item.country = country;
+        item.phone = phone;
+        item.email = email;
+        item.website = website;
 
-        const out = retailer.save();
+        const out = item.save();
         return { status: 200, result: out };
       }
     })
@@ -104,31 +104,31 @@ exports.update = (req, res) => {
 
 // Delete a Retailer with the specified id in the request
 exports.delete = (req, res) => {
-  const retailerId = req.params.id;
-  Retailer.findByPk(retailerId)
-    .then((retailer) => {
-      if (!retailer) {
+  const id = req.params.id;
+  Retailer.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Retailer not found!" };
-      } else if (retailer.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed retailer cannot be deleted!",
         };
       } else {
-        const out = retailer.destroy({
+        const out = item.destroy({
           where: {
-            id: retailerId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted retailerId: ${retailerId}`,
+          message: `Deleted retailer id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for retailerId: ${retailerId}`);
+      console.log(`Deleted response for retailer id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })

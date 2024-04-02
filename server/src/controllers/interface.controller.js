@@ -30,24 +30,24 @@ exports.findAll = (req, res) => {
 
 // Find a single Interface with an id
 exports.findOne = (req, res) => {
-  const interfaceId = req.params.id;
-  Interface.findByPk(interfaceId)
-    .then((interface) => {
-      if (!interface) {
+  const id = req.params.id;
+  Interface.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Interface not found!" });
       }
-      res.status(200).json(interface);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 // Create and Save a new Interface
 exports.create = (req, res) => {
-  const interfaceName = req.body.name;
-  const interfaceThroughput = req.body.throughput;
+  const name = req.body.name;
+  const throughput = req.body.throughput;
   Interface.create({
-    name: interfaceName,
-    speed: interfaceThroughput,
+    name: name,
+    speed: throughput,
   })
     .then((result) => {
       console.log("Created interface");
@@ -60,23 +60,23 @@ exports.create = (req, res) => {
 
 // Update a Interface by the id in the request
 exports.update = (req, res) => {
-  const interfaceId = req.params.id;
-  const interfaceName = req.body.name;
-  const interfaceThroughput = req.body.throughput;
-  Interface.findByPk(interfaceId)
-    .then((interface) => {
-      if (!interface) {
+  const id = req.params.id;
+  const name = req.body.name;
+  const throughput = req.body.throughput;
+  Interface.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Interface not found!" };
-      } else if (interface.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed interface cannot be deleted!",
         };
       } else {
-        interface.name = interfaceName;
-        interface.throughput = interfaceThroughput;
+        item.name = name;
+        item.throughput = throughput;
 
-        const out = interface.save();
+        const out = item.save();
         return { status: 200, result: out };
       }
     })
@@ -88,31 +88,31 @@ exports.update = (req, res) => {
 
 // Delete a Interface with the specified id in the request
 exports.delete = (req, res) => {
-  const interfaceId = req.params.id;
-  Interface.findByPk(interfaceId)
-    .then((interface) => {
-      if (!interface) {
+  const id = req.params.id;
+  Interface.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Interface not found!" };
-      } else if (interface.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed interface cannot be deleted!",
         };
       } else {
-        const out = interface.destroy({
+        const out = item.destroy({
           where: {
-            id: interfaceId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted interfaceId: ${interfaceId}`,
+          message: `Deleted interface id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for interfaceId: ${interfaceId}`);
+      console.log(`Deleted response for interface id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })
