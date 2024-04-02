@@ -30,25 +30,25 @@ exports.findAll = (req, res) => {
 
 // Find a single Capacity with an id
 exports.findOne = (req, res) => {
-  const capacityId = req.params.id;
-  Capacity.findByPk(capacityId)
-    .then((capacity) => {
-      if (!capacity) {
+  const id = req.params.id;
+  Capacity.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return res.status(404).json({ message: "Capacity not found!" });
       }
-      res.status(200).json(capacity);
+      res.status(200).json(item);
     })
     .catch((err) => console.log(err));
 };
 
 exports.create = (req, res) => {
-  const capacityName = req.body.name;
-  const capacityUnit = req.body.unit;
-  const capacityValue = req.body.value;
+  const name = req.body.name;
+  const unit = req.body.unit;
+  const value = req.body.value;
   Capacity.create({
-    name: capacityName,
-    unit: capacityUnit,
-    value: capacityValue,
+    name: name,
+    unit: unit,
+    value: value,
   })
     .then((result) => {
       console.log("Created capacity");
@@ -61,25 +61,25 @@ exports.create = (req, res) => {
 
 // Update a Capacity by the id in the request
 exports.update = (req, res) => {
-  const capacityId = req.params.id;
-  const capacityName = req.body.name;
-  const capacityUnit = req.body.unit;
-  const capacityValue = req.body.value;
-  Capacity.findByPk(capacityId)
-    .then((capacity) => {
-      if (!capacity) {
+  const id = req.params.id;
+  const name = req.body.name;
+  const unit = req.body.unit;
+  const value = req.body.value;
+  Capacity.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Capacity not found!" };
-      } else if (capacity.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed capacity cannot be deleted!",
         };
       } else {
-        capacity.name = capacityName;
-        capacity.unit = capacityUnit;
-        capacity.value = capacityValue;
+        item.name = name;
+        item.unit = unit;
+        item.value = value;
 
-        const out = capacity.save();
+        const out = item.save();
         return { status: 200, result: out };
       }
     })
@@ -91,31 +91,31 @@ exports.update = (req, res) => {
 
 // Delete a Capacity with the specified id in the request
 exports.delete = (req, res) => {
-  const capacityId = req.params.id;
-  Capacity.findByPk(capacityId)
-    .then((capacity) => {
-      if (!capacity) {
+  const id = req.params.id;
+  Capacity.findByPk(id)
+    .then((item) => {
+      if (!item) {
         return { status: 404, message: "Capacity not found!" };
-      } else if (capacity.managed) {
+      } else if (item.managed) {
         return {
           status: 409,
           message: "System managed capacity cannot be deleted!",
         };
       } else {
-        const out = capacity.destroy({
+        const out = item.destroy({
           where: {
-            id: capacityId,
+            id: id,
           },
         });
         return {
           status: 200,
-          message: `Deleted capacityId: ${capacityId}`,
+          message: `Deleted capacity id: ${id}`,
           out: out,
         };
       }
     })
     .then((result) => {
-      console.log(`Deleted response for capacityId: ${capacityId}`);
+      console.log(`Deleted response for capacity id: ${id}`);
       console.log(JSON.stringify(result));
       res.status(result.status).json({ message: `${result.message}` });
     })
