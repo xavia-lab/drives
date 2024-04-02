@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator");
 
 const FormFactor = require("../models/formFactor.model");
 const QueryParamsBuilder = require("../builders/query.params.builder");
+const ColumnValidator = require("../validations/database.column.validation");
 
 exports.findAll = (req, res) => {
   const requestQueryParams = req.query;
@@ -12,20 +13,40 @@ exports.findAll = (req, res) => {
       success: false,
       errors: errors.array(),
     });
+  } else {
+    FormFactor.describe()
+      .then((tableSpec) => {
+        const validationResult = ColumnValidator.validate(
+          requestQueryParams,
+          tableSpec,
+        );
+        console.log(
+          `Column validation result: ${JSON.stringify(validationResult)}`,
+        );
+        if (!validationResult.success) {
+          res.status(400).json(validationResult);
+        } else {
+          const queryParams = QueryParamsBuilder.build(requestQueryParams);
+          FormFactor.findAndCountAll({
+            ...queryParams,
+          })
+            .then((result) => {
+              res
+                .status(200)
+                .set("X-Pagination-Total-Count", result.count)
+                .json(result.rows);
+            })
+            .catch((err) => console.log(err));
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(404).json({
+          success: false,
+          errors: [err],
+        });
+      });
   }
-
-  const queryParams = QueryParamsBuilder.build(requestQueryParams);
-
-  FormFactor.findAndCountAll({
-    ...queryParams,
-  })
-    .then((result) => {
-      res
-        .status(200)
-        .set("X-Pagination-Total-Count", result.count)
-        .json(result.rows);
-    })
-    .catch((err) => console.log(err));
 };
 
 // Find a single FormFactor with an id
@@ -33,12 +54,20 @@ exports.findOne = (req, res) => {
   const id = req.params.id;
   FormFactor.findByPk(id)
     .then((item) => {
-      if (!item) {
-        return res.status(404).json({ message: "Form factor not found!" });
-      }
-      res.status(200).json(item);
+      if (!item)
+        res.status(404).json({
+          success: false,
+          errors: ["Form factor not found!"],
+        });
+      else res.status(200).json(item);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      res.status(404).json({
+        success: false,
+        errors: [err],
+      });
+    });
 };
 
 // Create and Save a new FormFactor
@@ -53,6 +82,10 @@ exports.create = (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.status(409).json({
+        success: false,
+        errors: [err],
+      });
     });
 };
 
@@ -63,11 +96,11 @@ exports.update = (req, res) => {
   FormFactor.findByPk(id)
     .then((item) => {
       if (!item) {
-        return { status: 404, message: "FormFactor not found!" };
+        return { status: 404, message: "Form factor not found!" };
       } else if (item.managed) {
         return {
           status: 409,
-          message: "System managed form factor cannot be deleted!",
+          message: "System managed Form factor cannot be deleted!",
         };
       } else {
         item.name = name;
@@ -79,7 +112,13 @@ exports.update = (req, res) => {
     .then((result) => {
       res.status(result.message).json(result.out);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      res.status(409).json({
+        success: false,
+        errors: [err],
+      });
+    });
 };
 
 // Delete a FormFactor with the specified id in the request

@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator");
 
 const Capacity = require("../models/capacity.model");
 const QueryParamsBuilder = require("../builders/query.params.builder");
+const ColumnValidator = require("../validations/database.column.validation");
 
 exports.findAll = (req, res) => {
   const requestQueryParams = req.query;
@@ -12,20 +13,40 @@ exports.findAll = (req, res) => {
       success: false,
       errors: errors.array(),
     });
+  } else {
+    Capacity.describe()
+      .then((tableSpec) => {
+        const validationResult = ColumnValidator.validate(
+          requestQueryParams,
+          tableSpec,
+        );
+        console.log(
+          `Column validation result: ${JSON.stringify(validationResult)}`,
+        );
+        if (!validationResult.success) {
+          res.status(400).json(validationResult);
+        } else {
+          const queryParams = QueryParamsBuilder.build(requestQueryParams);
+          Capacity.findAndCountAll({
+            ...queryParams,
+          })
+            .then((result) => {
+              res
+                .status(200)
+                .set("X-Pagination-Total-Count", result.count)
+                .json(result.rows);
+            })
+            .catch((err) => console.log(err));
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(404).json({
+          success: false,
+          errors: [err],
+        });
+      });
   }
-
-  const queryParams = QueryParamsBuilder.build(requestQueryParams);
-
-  Capacity.findAndCountAll({
-    ...queryParams,
-  })
-    .then((result) => {
-      res
-        .status(200)
-        .set("X-Pagination-Total-Count", result.count)
-        .json(result.rows);
-    })
-    .catch((err) => console.log(err));
 };
 
 // Find a single Capacity with an id
@@ -33,14 +54,23 @@ exports.findOne = (req, res) => {
   const id = req.params.id;
   Capacity.findByPk(id)
     .then((item) => {
-      if (!item) {
-        return res.status(404).json({ message: "Capacity not found!" });
-      }
-      res.status(200).json(item);
+      if (!item)
+        res.status(404).json({
+          success: false,
+          errors: ["Capacity not found!"],
+        });
+      else res.status(200).json(item);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      res.status(404).json({
+        success: false,
+        errors: [err],
+      });
+    });
 };
 
+// Create and Save a new Capacity
 exports.create = (req, res) => {
   const name = req.body.name;
   const unit = req.body.unit;
@@ -56,6 +86,10 @@ exports.create = (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.status(409).json({
+        success: false,
+        errors: [err],
+      });
     });
 };
 
@@ -86,7 +120,13 @@ exports.update = (req, res) => {
     .then((result) => {
       res.status(result.message).json(result.out);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      res.status(409).json({
+        success: false,
+        errors: [err],
+      });
+    });
 };
 
 // Delete a Capacity with the specified id in the request
