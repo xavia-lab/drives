@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator");
 
+const BytesConverter = require("../utils/human.readable.bytes.converter");
+
 const Capacity = require("../models/capacity.model");
 const QueryParamsBuilder = require("../builders/query.params.builder");
 const ColumnValidator = require("../validations/database.column.validation");
@@ -79,6 +81,7 @@ exports.create = (req, res) => {
     name: name,
     unit: unit,
     value: value,
+    absoluteCapacity: BytesConverter.toBytes(value, unit),
   })
     .then((result) => {
       console.log("Created capacity");
@@ -112,13 +115,14 @@ exports.update = (req, res) => {
         item.name = name;
         item.unit = unit;
         item.value = value;
+        item.absoluteCapacity = BytesConverter.toBytes(value, unit);
 
-        const out = item.save();
-        return { status: 200, result: out };
+        item.save();
+        return { status: 200, message: "Updated succssfully!" };
       }
     })
     .then((result) => {
-      res.status(result.message).json(result.out);
+      res.status(result.status).json(result.message);
     })
     .catch((err) => {
       console.log(err);

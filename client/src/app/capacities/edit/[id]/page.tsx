@@ -1,13 +1,17 @@
 "use client";
 
-import { Box, TextField } from "@mui/material";
+import { Box, MenuItem, Select, TextField } from "@mui/material";
 import { Edit } from "@refinedev/mui";
 import { useForm } from "@refinedev/react-hook-form";
+import { Controller } from "react-hook-form";
 
 export default function CapacityEdit() {
   const {
     saveButtonProps,
+    refineCore: { queryResult, formLoading, onFinish },
+    handleSubmit,
     register,
+    control,
     formState: { errors },
   } = useForm({});
 
@@ -44,18 +48,19 @@ export default function CapacityEdit() {
           label={"Value"}
           name="value"
         />
-        <TextField
-          {...register("unit", {
-            required: "This field is required",
-          })}
-          error={!!(errors as any)?.unit}
-          helperText={(errors as any)?.unit?.message}
-          margin="normal"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          type="text"
-          label={"Unit"}
+        <Controller
           name="unit"
+          control={control}
+          defaultValue="TB"
+          render={({ field }) => {
+            return (
+              <Select {...field} value={field?.value || "TB"} label={"Unit"}>
+                <MenuItem value="MB">MB</MenuItem>
+                <MenuItem value="GB">GB</MenuItem>
+                <MenuItem value="TB">TB</MenuItem>
+              </Select>
+            );
+          }}
         />
       </Box>
     </Edit>

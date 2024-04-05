@@ -116,7 +116,7 @@ exports.update = (req, res) => {
       if (!item) {
         return { status: 404, message: "Model not found!" };
       } else {
-        const out = item.update({
+        item.update({
           name: name,
           number: number,
           capacityId: capacityId,
@@ -125,11 +125,11 @@ exports.update = (req, res) => {
           manufacturerId: manufacturerId,
           storageTypeId: storageTypeId,
         });
-        return { status: 200, result: out };
+        return { status: 200, message: "Updated succssfully!" };
       }
     })
     .then((result) => {
-      res.status(result.message).json(result.out);
+      res.status(result.status).json(result.message);
     })
     .catch((err) => {
       console.log(err);

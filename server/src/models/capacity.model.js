@@ -41,6 +41,10 @@ const Capacity = db.sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    absoluteCapacity: {
+      type: Sequelize.DECIMAL,
+      allowNull: false,
+    },
     title: {
       type: DataTypes.VIRTUAL,
       get() {

@@ -10,7 +10,8 @@
     "build": "refine build",
     "start": "refine start",
     "lint": "eslint '**/*.{js,jsx,ts,tsx}'",
-    "refine": "refine"
+    "refine": "refine",
+    "fmt": "npx prettier . --write"
   },
   "dependencies": {
     "@refinedev/cli": "^2.16.21",

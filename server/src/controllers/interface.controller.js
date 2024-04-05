@@ -109,12 +109,12 @@ exports.update = (req, res) => {
         item.name = name;
         item.throughput = throughput;
 
-        const out = item.save();
-        return { status: 200, result: out };
+        item.save();
+        return { status: 200, message: "Updated succssfully!" };
       }
     })
     .then((result) => {
-      res.status(result.message).json(result.out);
+      res.status(result.status).json(result.message);
     })
     .catch((err) => {
       console.log(err);

@@ -1,5 +1,7 @@
 "use strict";
 
+const BytesConverter = require("../utils/human.readable.bytes.converter");
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -11,6 +13,7 @@ module.exports = {
           value: 120.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(120.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -19,6 +22,7 @@ module.exports = {
           value: 128.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(128.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -27,6 +31,7 @@ module.exports = {
           value: 250.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(250.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -35,6 +40,7 @@ module.exports = {
           value: 256.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(256.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -43,6 +49,7 @@ module.exports = {
           value: 480.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(480.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -51,6 +58,7 @@ module.exports = {
           value: 500.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(500.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -59,6 +67,7 @@ module.exports = {
           value: 512.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(512.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -67,6 +76,7 @@ module.exports = {
           value: 750.0,
           unit: "GB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(750.0, "GB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -75,6 +85,7 @@ module.exports = {
           value: 1.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(1.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -83,6 +94,7 @@ module.exports = {
           value: 2.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(2.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -91,6 +103,7 @@ module.exports = {
           value: 3.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(3.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -99,6 +112,7 @@ module.exports = {
           value: 4.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(4.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -107,6 +121,7 @@ module.exports = {
           value: 6.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(6.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -115,6 +130,7 @@ module.exports = {
           value: 8.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(8.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -123,6 +139,7 @@ module.exports = {
           value: 10.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(10.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -131,6 +148,7 @@ module.exports = {
           value: 12.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(12.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -139,6 +157,7 @@ module.exports = {
           value: 14.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(14.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -147,6 +166,7 @@ module.exports = {
           value: 16.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(16.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -155,6 +175,7 @@ module.exports = {
           value: 18.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(18.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -163,6 +184,7 @@ module.exports = {
           value: 20.0,
           unit: "TB",
           managed: false,
+          absoluteCapacity: BytesConverter.toBytes(20.0, "TB"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -172,6 +194,9 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete("capacities", null, {});
+    await queryInterface.bulkDelete("capacities", null, {
+      truncate: true,
+      cascade: true,
+    });
   },
 };

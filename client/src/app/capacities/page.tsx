@@ -11,7 +11,11 @@ import {
 import React from "react";
 
 export default function CapacityList() {
-  const { dataGridProps } = useDataGrid({});
+  const { dataGridProps } = useDataGrid({
+    sorters: {
+      initial: [{ field: "absoluteCapacity", order: "asc" }],
+    },
+  });
 
   const columns = React.useMemo<GridColDef[]>(
     () => [
@@ -22,10 +26,13 @@ export default function CapacityList() {
         minWidth: 50,
       },
       {
-        field: "name",
+        field: "absoluteCapacity",
         flex: 1,
         headerName: "Name",
         minWidth: 100,
+        renderCell: function render({ row }) {
+          return <>{row.title}</>;
+        },
       },
       {
         field: "value",
