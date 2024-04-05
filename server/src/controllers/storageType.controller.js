@@ -105,12 +105,12 @@ exports.update = (req, res) => {
       } else {
         item.name = name;
 
-        const out = item.save();
-        return { status: 200, result: out };
+        item.save();
+        return { status: 200, message: "Updated succssfully!" };
       }
     })
     .then((result) => {
-      res.status(result.message).json(result.out);
+      res.status(result.status).json(result.message);
     })
     .catch((err) => {
       console.log(err);

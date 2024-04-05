@@ -24,6 +24,9 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete("storageTypes", null, {});
+    await queryInterface.bulkDelete("storageTypes", null, {
+      truncate: true,
+      cascade: true,
+    });
   },
 };

@@ -113,7 +113,7 @@ exports.update = (req, res) => {
       if (!item) {
         return { status: 404, message: "Drive not found!" };
       } else {
-        const out = item.update({
+        item.update({
           name: name,
           label: label,
           serial: serial,
@@ -121,11 +121,11 @@ exports.update = (req, res) => {
           modelId: modelId,
           retailerId: retailerId,
         });
-        return { status: 200, result: out };
+        return { status: 200, message: "Updated succssfully!" };
       }
     })
     .then((result) => {
-      res.status(result.message).json(result.out);
+      res.status(result.status).json(result.message);
     })
     .catch((err) => {
       console.log(err);

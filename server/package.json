@@ -7,6 +7,7 @@
     "dev": "nodemon src/index.js",
     "migrate": "npx sequelize-cli db:migrate",
     "migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
     "start": "node src/index.js",
     "test:db:prep": "export NODE_ENV=test; node test/fixtures/server.js && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
     "test:db:reset": "export NODE_ENV=test; npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
