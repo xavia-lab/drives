@@ -53,7 +53,8 @@ export const dataProvider: DataProvider = {
   getList: async ({ resource, pagination, filters, sorters, meta }) => {
     const params = new URLSearchParams();
 
-    if (pagination) {
+    console.log(`Resource: ${resource}; Pagination parameters: ${JSON.stringify(pagination)}`);
+    if (pagination && pagination.mode === 'server') {
       params.append("pageNumber", pagination.current);
       params.append("pageSize", pagination.pageSize);
     }

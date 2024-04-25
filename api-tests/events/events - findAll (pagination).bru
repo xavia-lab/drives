@@ -1,0 +1,21 @@
+meta {
+  name: /events - findAll (pagination)
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:5000/api/v1/events?pageNumber=1&pageSize=2&filterField=driveId&filterValue=1&filterOperator=eq
+  body: none
+  auth: none
+}
+
+query {
+  pageNumber: 1
+  pageSize: 2
+  filterField: driveId
+  filterValue: 1
+  filterOperator: eq
+  ~sortField: id
+  ~sortOrder: desc
+}

@@ -1,10 +1,12 @@
 const { Op } = require("sequelize");
 
 exports.where = (filtering) => {
+  console.log(`Filtring parameters: ${JSON.stringify(filtering)}`);
+
   const { field, operator, value } = filtering;
 
   switch (operator.toUpperCase()) {
-    case "eq":
+    case "EQ":
       return {
         where: {
           [field]: {
@@ -58,7 +60,7 @@ exports.where = (filtering) => {
         },
       };
 
-    case "like":
+    case "LIKE":
     default:
       return {
         where: {

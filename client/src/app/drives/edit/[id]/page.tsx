@@ -16,16 +16,16 @@ export default function DriveEdit() {
     formState: { errors },
   } = useForm({});
 
-  const DrivesData = queryResult?.data?.data;
+  const drivesData = queryResult?.data?.data;
 
   const { autocompleteProps: modelAutocompleteProps } = useAutocomplete({
     resource: "models",
-    defaultValue: DrivesData?.modelId,
+    defaultValue: drivesData?.modelId,
   });
 
   const { autocompleteProps: retailerAutocompleteProps } = useAutocomplete({
     resource: "retailers",
-    defaultValue: DrivesData?.retailerId,
+    defaultValue: drivesData?.retailerId,
   });
 
   return (
@@ -123,7 +123,7 @@ export default function DriveEdit() {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label={"Manufacturer"}
+                  label={"Model"}
                   margin="normal"
                   variant="outlined"
                   error={!!(errors as any)?.model?.id}

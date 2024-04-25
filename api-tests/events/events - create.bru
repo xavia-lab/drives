@@ -1,0 +1,20 @@
+meta {
+  name: /events - create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/api/v1/events
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "eventDate": "2020-12-30",
+    "heading": "New Purchase",
+    "content": "Purchased new from Amazon",
+    "driveId": 1
+  }
+}

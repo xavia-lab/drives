@@ -1,6 +1,7 @@
 const router = require("express").Router();
 
 // CRUD Routes
+router.use("/events", require("./events"));
 router.use("/drives", require("./drives"));
 router.use("/manufacturers", require("./manufacturers"));
 router.use("/models", require("./models"));

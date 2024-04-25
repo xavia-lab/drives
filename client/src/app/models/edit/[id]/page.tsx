@@ -16,31 +16,31 @@ export default function ModelEdit() {
     formState: { errors },
   } = useForm({});
 
-  const ModelsData = queryResult?.data?.data;
+  const modelsData = queryResult?.data?.data;
 
   const { autocompleteProps: capacityAutocompleteProps } = useAutocomplete({
     resource: "capacities",
-    defaultValue: ModelsData?.capacityId,
+    defaultValue: modelsData?.capacityId,
   });
 
   const { autocompleteProps: formFactorAutocompleteProps } = useAutocomplete({
     resource: "formFactors",
-    defaultValue: ModelsData?.formFactorId,
+    defaultValue: modelsData?.formFactorId,
   });
 
   const { autocompleteProps: interfaceAutocompleteProps } = useAutocomplete({
     resource: "interfaces",
-    defaultValue: ModelsData?.interfaceId,
+    defaultValue: modelsData?.interfaceId,
   });
 
   const { autocompleteProps: manufacturerAutocompleteProps } = useAutocomplete({
     resource: "manufacturers",
-    defaultValue: ModelsData?.manufacturerId,
+    defaultValue: modelsData?.manufacturerId,
   });
 
   const { autocompleteProps: storageTypeAutocompleteProps } = useAutocomplete({
     resource: "storageTypes",
-    defaultValue: ModelsData?.storageTypeId,
+    defaultValue: modelsData?.storageTypeId,
   });
 
   return (
