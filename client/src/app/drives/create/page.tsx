@@ -118,7 +118,7 @@ export default function DriveCreate() {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label={"Capacity"}
+                  label={"Model"}
                   margin="normal"
                   variant="outlined"
                   error={!!(errors as any)?.model?.id}
