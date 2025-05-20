@@ -44,7 +44,7 @@ export default function EventShow() {
         <TextField value={record?.heading} />
 
         <Typography variant="body1" fontWeight="bold">
-          {"Model"}
+          {"Drive"}
         </Typography>
         {driveIsLoading ? <>Loading...</> : <>{driveData?.data?.title}</>}
 
