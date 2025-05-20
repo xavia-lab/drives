@@ -86,25 +86,23 @@ describe(endpoint, () => {
             },
           ];
 
-          return (
-            request(server)
-              .get(endpoint)
-              .query({ pageNumber: 1, pageSize: 2 })
-              .expect("Content-Type", /json/)
-              .expect("X-Pagination-Total-Count", "3")
-              // .expect((res) => {
-              //   res.headers["X-Pagination-Total-Count"].toBe(3);
-              // })
-              .expect(200)
-              .then((response) => {
-                response.body.forEach(function (value, i) {
-                  expect(value.id).toEqual(i + 1);
-                  expect(value.managed).toEqual(expectedResult[i].managed);
-                  expect(value.name).toEqual(expectedResult[i].name);
-                  expect(value.title).toEqual(expectedResult[i].title);
-                });
-              })
-          );
+          return (request(server)
+            .get(endpoint)
+            .query({ pageNumber: 1, pageSize: 2 })
+            .expect("Content-Type", /json/)
+            .expect("X-Pagination-Total-Count", "3")
+            // .expect((res) => {
+            //   res.headers["X-Pagination-Total-Count"].toBe(3);
+            // })
+            .expect(200)
+            .then((response) => {
+              response.body.forEach(function (value, i) {
+                expect(value.id).toEqual(i + 1);
+                expect(value.managed).toEqual(expectedResult[i].managed);
+                expect(value.name).toEqual(expectedResult[i].name);
+                expect(value.title).toEqual(expectedResult[i].title);
+              });
+            }));
         },
         timeout,
       );
