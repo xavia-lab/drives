@@ -87,7 +87,7 @@ export default function RetailerList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

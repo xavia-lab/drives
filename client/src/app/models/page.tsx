@@ -211,7 +211,7 @@ export default function ModelList() {
       interfaceData,
       manufacturerData,
       storageTypeData,
-    ]
+    ],
   );
 
   return (

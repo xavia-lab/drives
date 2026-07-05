@@ -1,0 +1,7 @@
+packages:
+  - 'server'
+  - 'client'
+allowBuilds:
+  deasync: true
+  sqlite3: true
+  unrs-resolver: true

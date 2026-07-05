@@ -1,0 +1,19 @@
+{
+  "name": "drives-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "latest",
+    "prettier": "^3.8.3",
+    "turbo": "^2.10.2"
+  },
+  "packageManager": "pnpm@11.9.0"
+}

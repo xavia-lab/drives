@@ -55,7 +55,7 @@ export default function FormFactorList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (
