@@ -1,0 +1,24 @@
+server:
+  httpListenAddr: ":3592"
+  grpcListenAddr: ":3593"
+  cors:
+    disabled: false
+    allowedOrigins:
+      - "${CERBOS_ALLOWED_ORIGIN}"  # Replace with your Refine dev URL
+    allowedHeaders:
+      - "accept"
+      - "content-type"
+      - "user-agent"
+      - "x-requested-with"
+
+  adminAPI:
+    enabled: true
+    adminCredentials:
+      username: "${CERBOS_ADMIN_USERNAME}"
+      passwordHash: "${CERBOS_ADMIN_PASSWORD_HASH}"
+
+storage:
+  driver: "disk" # or "sqlite3", "postgres", etc.
+  disk:
+    directory: /policies
+    watchForChanges: true

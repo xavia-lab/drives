@@ -1,0 +1,17 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/api/v1/bus-protocols/3
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "ATA"
+  }
+}

@@ -1,0 +1,23 @@
+meta {
+  name: create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/api/v1/storage-models
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exos X18",
+    "modelNumber": "ST16000NM007H",
+    "capacityId": 1,
+    "formFactorId": 1,
+    "interfaceId": 1,
+    "manufacturerId": 1,
+    "storageTypeId": 1
+  }
+}
