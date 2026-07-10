@@ -15,6 +15,7 @@ import {
   indexes: [
     {
       name: 'form_factors_name',
+      unique: true,
       fields: ['name'],
     },
   ],

@@ -15,6 +15,7 @@ import {
   indexes: [
     {
       name: 'storage_types_name',
+      unique: true,
       fields: ['name'],
     },
   ],

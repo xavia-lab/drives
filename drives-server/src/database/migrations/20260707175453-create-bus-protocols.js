@@ -45,6 +45,7 @@ module.exports = {
     // 3. Create the Composite Unique Index (name, moniker)
     await queryInterface.addIndex('bus_protocols', ['name'], {
       name: 'bus_protocols_name',
+      unique: true,
       using: 'btree',
     });
   },

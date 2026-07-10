@@ -1,0 +1,110 @@
+/* src/app/globals.css */
+
+/* 1. Theme Variable Definitions */
+/* These variables control the loader and the initial body background */
+
+:root {
+  /* Default Light Mode Colors (Applied if no theme is set or light is chosen) */
+  --loader-bg: #ffffff;
+  --loader-text-primary: #065f46; /* Deep Emerald */
+  --loader-text-secondary: #50c878; /* Bright Emerald */
+  --loader-accent: rgba(80, 200, 120, 0.2);
+}
+
+/* 2. Force Light Mode if attribute is present */
+[data-theme="light"] {
+  --loader-bg: #ffffff !important;
+  --loader-text: #065f46 !important;
+}
+
+/* 3. Force Dark Mode if attribute is present */
+[data-theme="dark"] {
+  --loader-bg: #141414 !important;
+  --loader-text: #f0fdf4 !important;
+}
+
+/* 2. Global Resets */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--loader-bg);
+  /* The transition helps the background change smoothly when you toggle themes */
+  transition: background-color 0.3s ease;
+}
+
+/* 3. Loader Container */
+.emerald-loader-container {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--loader-bg); /* Controlled by the cookie script */
+}
+
+.emerald-loader-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 4. Gem Icon & Animation */
+.emerald-gem-pulse {
+  filter: drop-shadow(0 0 10px var(--loader-accent));
+  animation: gem-float 2.5s infinite ease-in-out;
+}
+
+.emerald-loader-text {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--loader-text-primary);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.emerald-loader-text span {
+  color: var(--loader-text-secondary);
+}
+
+/* 5. Progress Bar Styling */
+.emerald-progress-bar {
+  width: 160px;
+  height: 6px;
+  background-color: var(--loader-accent);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.emerald-progress-fill {
+  width: 40%;
+  height: 100%;
+  background-color: var(--loader-text-secondary);
+  border-radius: 10px;
+  animation: progress-slide 1.8s infinite ease-in-out;
+}
+
+/* 6. Animations */
+@keyframes gem-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-12px) scale(1.05);
+    opacity: 1;
+    filter: drop-shadow(0 0 20px var(--loader-text-secondary));
+  }
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

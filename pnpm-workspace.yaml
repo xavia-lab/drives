@@ -1,7 +1,7 @@
 packages:
   - 'cerbos'
   - 'drives-server'
-  - 'client'
+  - 'drives-ui'
 allowBuilds:
   '@scarf/scarf': true
   '@swc/core': set this to true or false

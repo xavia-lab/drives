@@ -40,6 +40,7 @@ module.exports = {
 
     await queryInterface.addIndex('form_factors', ['name'], {
       name: 'form_factors_name',
+      unique: true,
       using: 'btree',
     });
   },

@@ -40,6 +40,7 @@ module.exports = {
 
     await queryInterface.addIndex('storage_types', ['name'], {
       name: 'storage_types_name',
+      unique: true,
       using: 'btree',
     });
   },

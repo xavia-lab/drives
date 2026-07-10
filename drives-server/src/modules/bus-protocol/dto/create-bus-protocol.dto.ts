@@ -8,7 +8,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBusProtocolDto {
-  @ApiProperty({ example: 'Magnatic', description: 'Storage type name' })
+  @ApiProperty({ example: 'SATA', description: 'Bus protocol name' })
   @IsString()
   @IsNotEmpty()
   @Length(1, 32)
