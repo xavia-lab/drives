@@ -5,8 +5,10 @@ import {
   DataType,
   ForeignKey,
   PrimaryKey,
-  AutoIncrement,
+  Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
+
 import { User } from '../../user/entities/user.entity';
 
 // Explicit type layout for Refine-compliant historical payload objects
@@ -22,9 +24,9 @@ export interface RefineAuditPayload {
 })
 export class AuditLog extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string;
 
   @Column({
     type: DataType.STRING(32),

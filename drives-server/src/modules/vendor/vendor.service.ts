@@ -55,7 +55,7 @@ export class VendorService {
     }
   }
 
-  async findOne(id: number): Promise<Vendor> {
+  async findOne(id: string): Promise<Vendor> {
     const vendor = await this.vendorRepository.findByPk(id, {
       include: [Country],
     });
@@ -76,31 +76,14 @@ export class VendorService {
       );
     }
 
-    const {
-      name,
-      isManufacturer,
-      isRetailer,
-      supportContactEmail,
-      portalUrl,
-      countryId,
-    } = createVendorDto;
-    if (!name) {
-      throw new BadRequestException('Name is required');
-    }
-
-    if (!countryId) {
+    if (!createVendorDto.countryId) {
       throw new BadRequestException('countryId is required');
     }
 
     return this.sequelize.transaction(async (t: Transaction) => {
       const vendor = await this.vendorRepository.create(
         {
-          name: name,
-          isManufacturer: isManufacturer,
-          isRetailer: isRetailer,
-          supportContactEmail: supportContactEmail || null,
-          portalUrl: portalUrl || null,
-          countryId: countryId,
+          ...createVendorDto,
         },
         { transaction: t },
       );
@@ -109,7 +92,7 @@ export class VendorService {
     });
   }
 
-  async update(id: number, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
+  async update(id: string, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
     const {
       name,
       isManufacturer,
@@ -145,7 +128,7 @@ export class VendorService {
     });
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: string): Promise<boolean> {
     return this.sequelize.transaction(async (t: Transaction) => {
       // 1. Fetch with explicit attributes
       const vendor = await this.vendorRepository.findByPk(id, {

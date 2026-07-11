@@ -3,10 +3,10 @@ import {
   Column,
   Model,
   PrimaryKey,
-  AutoIncrement,
   DataType,
   Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
 
 @Table({
   tableName: 'form_factors',
@@ -22,9 +22,9 @@ import {
 })
 export class FormFactor extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string;
 
   @Column({
     type: DataType.STRING(32),
@@ -52,7 +52,7 @@ export class FormFactor extends Model {
   }
 }
 
-// Create a type for creating currencies (without Sequelize methods)
+// Updated creation attributes type helper (id is automatically omitted as it defaults)
 export type FormFactorCreateAttributes = Pick<
   FormFactor,
   'name' | 'slotPitch' | 'managed'

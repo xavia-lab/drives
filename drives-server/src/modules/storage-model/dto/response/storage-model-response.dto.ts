@@ -7,7 +7,7 @@ import { CapacityResponseDto } from '../../../capacity/dto/response/capacity-res
 
 export class StorageModelResponseDto {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
   name: string;
@@ -22,19 +22,19 @@ export class StorageModelResponseDto {
   maxEnduranceTbw: number | null;
 
   @Expose()
-  manufacturerId: number;
+  manufacturerId: string;
 
   @Expose()
-  storageTypeId: number;
+  storageTypeId: string;
 
   @Expose()
-  formFactorId: number;
+  formFactorId: string;
 
   @Expose()
-  interfaceId: number;
+  interfaceId: string;
 
   @Expose()
-  capacityId: number;
+  capacityId: string;
 
   @Expose()
   createdAt: Date;

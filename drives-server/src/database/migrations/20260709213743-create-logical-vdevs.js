@@ -3,21 +3,17 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Logical Vdevs
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "logical_vdevs_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure with Unified Integer References
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('logical_vdevs', {
       id: {
-        type: Sequelize.INTEGER, // FIX: Converted from UUID to common INTEGER primary key index
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"logical_vdevs_id_seq"\')'), // Numerical generator sequencing
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       storage_pool_id: {
-        type: Sequelize.INTEGER, // FIX: Converted to INTEGER to match the updated storage_pools layout
+        type: Sequelize.UUID, // Upgraded to UUID to match storage_pools.id
         allowNull: false,
         references: {
           model: 'storage_pools',
@@ -51,7 +47,7 @@ module.exports = {
       },
     });
 
-    // 3. Performance Optimization Indexes
+    // 2. Performance Optimization Indexes
     await queryInterface.addIndex('logical_vdevs', ['storage_pool_id'], {
       name: 'logical_vdevs_storage_pool_id_idx',
       using: 'btree',
@@ -59,13 +55,8 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies
+    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
     await queryInterface.dropTable('logical_vdevs');
-
-    // Purge the sequential ID generator sequence
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "logical_vdevs_id_seq";`,
-    );
 
     // Clean up localized PostgreSQL types created exclusively for this table state
     await queryInterface.sequelize.query(

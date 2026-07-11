@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,10 +56,18 @@ export class CurrencyController {
   @Public()
   // @CheckPolicy('show', 'currencies')
   @ApiOperation({ summary: 'Get currency by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Currency retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Currency not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Currency> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<Currency> {
+    // 3. Set version '7' validation and changed type to string
     const currency = await this.currencyService.findOne(id);
     if (!currency) {
       throw new NotFoundException(`Currency with ID ${id} not found`);
@@ -83,7 +91,11 @@ export class CurrencyController {
   @Public()
   // @CheckPolicy('edit', 'currencies')
   @ApiOperation({ summary: 'Update a currency' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Currency updated successfully' })
   @ApiResponse({ status: 404, description: 'Currency not found' })
   @ApiResponse({
@@ -91,7 +103,7 @@ export class CurrencyController {
     description: 'System-managed currency cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateCurrencyDto: UpdateCurrencyDto,
   ): Promise<Currency> {
     const result = await this.currencyService.updateCurrency(
@@ -108,7 +120,11 @@ export class CurrencyController {
   @Public()
   // @CheckPolicy('delete', 'currencies')
   @ApiOperation({ summary: 'Delete a currency' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 204, description: 'Currency deleted successfully' })
   @ApiResponse({ status: 404, description: 'Currency not found' })
   @ApiResponse({
@@ -116,7 +132,7 @@ export class CurrencyController {
     description: 'System-managed currency cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.currencyService.deleteCurrency(id);
     if (!deleted) {

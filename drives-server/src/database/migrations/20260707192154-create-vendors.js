@@ -3,23 +3,21 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "vendors_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`
-    );
-
+    // 1. Create the Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('vendors', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"vendors_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(64),
         allowNull: false,
       },
       country_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match countries.id
         allowNull: false,
         references: { model: 'countries', key: 'id' },
         onUpdate: 'RESTRICT',
@@ -57,6 +55,7 @@ module.exports = {
       },
     });
 
+    // 2. Create Lookup Index
     await queryInterface.addIndex('vendors', ['name'], {
       name: 'vendors_name_idx',
       using: 'btree',
@@ -64,7 +63,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop table safely (sequences are no longer used)
     await queryInterface.dropTable('vendors');
-    await queryInterface.sequelize.query(`DROP SEQUENCE IF EXISTS "vendors_id_seq";`);
   },
 };

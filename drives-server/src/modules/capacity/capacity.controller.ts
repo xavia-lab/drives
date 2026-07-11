@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,10 +56,18 @@ export class CapacityController {
   @Public()
   // @CheckPolicy('show', 'capacities')
   @ApiOperation({ summary: 'Get capacity by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Capacity retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Capacity not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Capacity> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<Capacity> {
+    // 3. Set version '7' validation and changed type to string
     const capacity = await this.capacityService.findOne(id);
     if (!capacity) {
       throw new NotFoundException(`Capacity with ID ${id} not found`);
@@ -83,7 +91,11 @@ export class CapacityController {
   @Public()
   // @CheckPolicy('edit', 'capacities')
   @ApiOperation({ summary: 'Update a capacity' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Capacity updated successfully' })
   @ApiResponse({ status: 404, description: 'Capacity not found' })
   @ApiResponse({
@@ -91,7 +103,7 @@ export class CapacityController {
     description: 'System-managed capacity cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateCapacityDto: UpdateCapacityDto,
   ): Promise<Capacity> {
     const result = await this.capacityService.updateCapacity(
@@ -108,7 +120,11 @@ export class CapacityController {
   @Public()
   // @CheckPolicy('delete', 'capacities')
   @ApiOperation({ summary: 'Delete a capacity' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 204, description: 'Capacity deleted successfully' })
   @ApiResponse({ status: 404, description: 'Capacity not found' })
   @ApiResponse({
@@ -116,7 +132,7 @@ export class CapacityController {
     description: 'System-managed capacity cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.capacityService.deleteCapacity(id);
     if (!deleted) {

@@ -6,9 +6,10 @@ import {
   ForeignKey,
   BelongsTo,
   PrimaryKey,
-  AutoIncrement,
+  Default,
   BeforeValidate,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
 import { Op } from 'sequelize';
 import { StorageModel } from '../../storage-model/entities/storage-model.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
@@ -19,12 +20,27 @@ import { Capacity } from '../../capacity/entities/capacity.entity';
   tableName: 'physical_drives',
   timestamps: true,
   underscored: true,
+  indexes: [
+    {
+      name: 'physical_drives_serial_number_idx',
+      fields: ['serial_number'],
+      unique: true,
+    },
+    {
+      name: 'physical_drives_storage_model_idx',
+      fields: ['storage_model_id'],
+    },
+    {
+      name: 'physical_drives_financial_idx',
+      fields: ['currency_id', 'acquisition_cost'],
+    },
+  ],
 })
 export class PhysicalDrive extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string; // Changed type from number to string
 
   @Column({
     type: DataType.STRING(40),
@@ -75,22 +91,22 @@ export class PhysicalDrive extends Model {
 
   // --- Associations ---
   @ForeignKey(() => StorageModel)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare storageModelId: number;
+  @Column({ type: DataType.UUID, allowNull: false })
+  declare storageModelId: string;
 
   @BelongsTo(() => StorageModel, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare storageModel: StorageModel;
 
   @ForeignKey(() => Vendor)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare retailerVendorId: number;
+  @Column({ type: DataType.UUID, allowNull: false })
+  declare retailerVendorId: string;
 
   @BelongsTo(() => Vendor, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare retailerVendor: Vendor;
 
   @ForeignKey(() => Currency)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare currencyId: number;
+  @Column({ type: DataType.UUID, allowNull: false })
+  declare currencyId: string;
 
   @BelongsTo(() => Currency, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare currency: Currency;

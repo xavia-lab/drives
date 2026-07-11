@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,13 +56,21 @@ export class StorageTypeController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get StorageType by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'StorageType retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'StorageType not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<StorageType> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<StorageType> {
+    // 3. Tightened validation to version '7' and updated parameter type
     const StorageType = await this.StorageTypeService.findOne(id);
     if (!StorageType) {
       throw new NotFoundException(`StorageType with ID ${id} not found`);
@@ -87,7 +95,11 @@ export class StorageTypeController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a StorageType' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'StorageType updated successfully',
@@ -98,7 +110,7 @@ export class StorageTypeController {
     description: 'System-managed StorageType cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Enforced validation and changed type to string
     @Body() updateStorageTypeDto: UpdateStorageTypeDto,
   ): Promise<StorageType> {
     const result = await this.StorageTypeService.updateStorageType(
@@ -114,7 +126,11 @@ export class StorageTypeController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a StorageType' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'StorageType deleted successfully',
@@ -125,7 +141,7 @@ export class StorageTypeController {
     description: 'System-managed StorageType cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Enforced validation and changed type to string
   ): Promise<{ message: string }> {
     const deleted = await this.StorageTypeService.deleteStorageType(id);
     if (!deleted) {

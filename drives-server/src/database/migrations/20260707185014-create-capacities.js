@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "capacities_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`
-    );
-
-    // 2. Create Table
+    // 1. Create Table with UUIDv7
     await queryInterface.createTable('capacities', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"capacities_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(32),
@@ -42,7 +38,7 @@ module.exports = {
       },
     });
 
-    // 3. Create Index for immediate capacity searches
+    // 2. Create Index for immediate capacity searches
     await queryInterface.addIndex('capacities', ['name'], {
       name: 'capacities_name',
       using: 'btree',
@@ -50,9 +46,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop table safely (sequences are no longer used)
     await queryInterface.dropTable('capacities');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "capacities_id_seq";`
-    );
   },
 };

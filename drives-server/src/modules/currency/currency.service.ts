@@ -79,7 +79,7 @@ export class CurrencyService
   }
 
   async updateCurrency(
-    id: number,
+    id: string,
     updateCurrencyDto: UpdateCurrencyDto,
   ): Promise<Currency> {
     const currency = await super.findOne(id);
@@ -133,7 +133,7 @@ export class CurrencyService
     return result;
   }
 
-  async deleteCurrency(id: number): Promise<boolean> {
+  async deleteCurrency(id: string): Promise<boolean> {
     const currency = await super.findOne(id);
 
     if (!currency) {

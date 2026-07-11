@@ -1,7 +1,23 @@
-import { IsString, IsNotEmpty, Length, IsNumber } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  Length,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateInterfaceDto {
+  @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
   @ApiProperty({
     description: 'Name of the Interface',
     maxLength: 32,
@@ -31,7 +47,7 @@ export class CreateInterfaceDto {
     description: 'The bus protocol id',
     required: true,
   })
-  @IsNumber()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
   @IsNotEmpty()
-  busProtocolId: number;
+  busProtocolId: string;
 }

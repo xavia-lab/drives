@@ -4,11 +4,11 @@ import {
   Column,
   Model,
   PrimaryKey,
-  AutoIncrement,
   DataType,
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
 
 import { BusProtocol } from '../../bus-protocol/entities/bus-protocol.entity';
 
@@ -30,9 +30,9 @@ import { BusProtocol } from '../../bus-protocol/entities/bus-protocol.entity';
 })
 export class Interface extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string;
 
   @Column({
     type: DataType.STRING(32),
@@ -72,7 +72,7 @@ export class Interface extends Model {
     allowNull: false,
     field: 'bus_protocol_id',
   })
-  declare busProtocolId: number;
+  declare busProtocolId: string;
 
   @BelongsTo(() => BusProtocol, 'bus_protocol_id')
   declare bus_protocol: BusProtocol;

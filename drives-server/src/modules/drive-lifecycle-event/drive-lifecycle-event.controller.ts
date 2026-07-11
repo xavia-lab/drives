@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -58,14 +58,19 @@ export class DriveLifecycleEventController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get DriveLifecycleEvent by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'DriveLifecycleEvent retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'DriveLifecycleEvent not found' })
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 3. Set version '7' validation and changed type to string
   ): Promise<DriveLifecycleEvent> {
     const driveLifecycleEventObject =
       await this.driveLifecycleEventService.findOne(id);
@@ -99,7 +104,11 @@ export class DriveLifecycleEventController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a drive-lifecycle-event' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'DriveLifecycleEvent updated successfully',
@@ -110,7 +119,7 @@ export class DriveLifecycleEventController {
     description: 'System-managed drive-lifecycle-event cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateDriveLifecycleEventDto: UpdateDriveLifecycleEventDto,
   ): Promise<DriveLifecycleEvent> {
     const result =
@@ -129,7 +138,11 @@ export class DriveLifecycleEventController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a drive-lifecycle-event' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'DriveLifecycleEvent deleted successfully',
@@ -140,7 +153,7 @@ export class DriveLifecycleEventController {
     description: 'System-managed drive-lifecycle-event cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted =
       await this.driveLifecycleEventService.deleteDriveLifecycleEvent(id);

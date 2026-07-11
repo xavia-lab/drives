@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Servers
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "servers_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Servers Table with Bare-Metal Hardware Specs
+    // 1. Create Servers Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('servers', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"servers_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       hostname: {
         type: Sequelize.STRING(128),
@@ -30,7 +26,7 @@ module.exports = {
         allowNull: false, // Stored in MB to execute dynamic resource capacity calculations
       },
       cpu_model_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match cpu_models.id
         allowNull: false, // Relational pointer enforcing structural CPU lookup mapping
         references: {
           model: 'cpu_models',
@@ -45,7 +41,7 @@ module.exports = {
         defaultValue: 1, // Enforces multi-socket processor board accounting (e.g., dual-socket servers)
       },
       datacenter_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match datacenters.id
         allowNull: false,
         references: {
           model: 'datacenters',
@@ -98,12 +94,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to release constraints
+    // Drop target table cleanly to release constraints (sequences are no longer used)
     await queryInterface.dropTable('servers');
-
-    // Purge the sequential ID generator
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "servers_id_seq";`,
-    );
   },
 };

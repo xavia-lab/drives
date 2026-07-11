@@ -69,7 +69,7 @@ export class CapacityService
   }
 
   async updateCapacity(
-    id: number,
+    id: string,
     updateCapacityDto: UpdateCapacityDto,
   ): Promise<Capacity> {
     const capacity = await super.findOne(id);
@@ -112,7 +112,7 @@ export class CapacityService
     return result;
   }
 
-  async deleteCapacity(id: number): Promise<boolean> {
+  async deleteCapacity(id: string): Promise<boolean> {
     const capacity = await super.findOne(id);
 
     if (!capacity) {

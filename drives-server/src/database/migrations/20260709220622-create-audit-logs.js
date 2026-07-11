@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Audit Log Records
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "audit_logs_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure with Refine-Compatible Layout
+    // 1. Create Table Structure with UUIDv7 Primary Key
     await queryInterface.createTable('audit_logs', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"audit_logs_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       user_id: {
         type: Sequelize.UUID, // Preserved as UUID to match your Keycloak-federated users table
@@ -33,7 +29,7 @@ module.exports = {
       },
       resource_id: {
         type: Sequelize.STRING(64),
-        allowNull: false, // Stores the record primary key (cast to string to safely support both int/uuid schemas)
+        allowNull: false, // Perfect as-is! Safely supports your newly migrated 36-character UUID strings
       },
       payload: {
         type: Sequelize.JSONB,
@@ -81,9 +77,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop target table cleanly to remove dependencies (sequences are no longer used)
     await queryInterface.dropTable('audit_logs');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "audit_logs_id_seq";`,
-    );
   },
 };

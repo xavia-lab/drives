@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -58,13 +58,21 @@ export class BusProtocolController {
   @Public()
   // @CheckPolicy('show', 'bus-protocols')
   @ApiOperation({ summary: 'Get BusProtocol by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'BusProtocol retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'BusProtocol not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<BusProtocol> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<BusProtocol> {
+    // 3. Set version '7' validation and changed type to string
     const BusProtocol = await this.BusProtocolService.findOne(id);
     if (!BusProtocol) {
       throw new NotFoundException(`BusProtocol with ID ${id} not found`);
@@ -91,7 +99,11 @@ export class BusProtocolController {
   @Public()
   // @CheckPolicy('edit', 'bus-protocols')
   @ApiOperation({ summary: 'Update a BusProtocol' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'BusProtocol updated successfully',
@@ -102,7 +114,7 @@ export class BusProtocolController {
     description: 'System-managed BusProtocol cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateBusProtocolDto: UpdateBusProtocolDto,
   ): Promise<BusProtocol> {
     const result = await this.BusProtocolService.updateBusProtocol(
@@ -119,7 +131,11 @@ export class BusProtocolController {
   @Public()
   // @CheckPolicy('delete', 'bus-protocols')
   @ApiOperation({ summary: 'Delete a BusProtocol' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'BusProtocol deleted successfully',
@@ -130,7 +146,7 @@ export class BusProtocolController {
     description: 'System-managed BusProtocol cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.BusProtocolService.deleteBusProtocol(id);
     if (!deleted) {

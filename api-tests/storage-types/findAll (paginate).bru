@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/storage-types?pageNumber=1&pageSize=2&sortField=createdAt&sortOrder=desc&filterField=id&filterValue=2&filterOperator=eq
+  url: http://localhost:5000/api/v1/storage-types?pageNumber=1&pageSize=2&sortField=createdAt&sortOrder=desc&filterField=name&filterValue=CXL&filterOperator=like
   body: none
   auth: none
 }
@@ -15,7 +15,7 @@ params:query {
   pageSize: 2
   sortField: createdAt
   sortOrder: desc
-  filterField: id
-  filterValue: 2
-  filterOperator: eq
+  filterField: name
+  filterValue: CXL
+  filterOperator: like
 }

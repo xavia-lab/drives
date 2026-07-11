@@ -24,10 +24,10 @@ export class AuditLogDeltaPayloadDto {
 export class AuditLogResponseDto {
   @ApiProperty({
     description: 'The sequential primary index configuration key',
-    example: 7421,
+    type: String,
   })
   @Expose()
-  id: number;
+  id: string;
 
   @ApiProperty({
     description:

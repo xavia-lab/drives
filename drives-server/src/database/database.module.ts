@@ -4,8 +4,8 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { DatabaseService } from './database.service';
 
 import { AuditLog } from '../modules/audit-log/entities/audit-log.entity';
+import { Role } from '../modules/role/entities/role.entity';
 import { User } from '../modules/user/entities/user.entity';
-import { Role } from '../modules/auth/entities/role.entity';
 
 import { Media } from '../modules/media/entities/media.entity';
 import { QRLink } from '../modules/qrcode/entities/qr-link.entity';

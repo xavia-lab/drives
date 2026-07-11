@@ -3,10 +3,10 @@ import {
   Column,
   Model,
   PrimaryKey,
-  AutoIncrement,
   DataType,
   Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
 
 @Table({
   tableName: 'countries',
@@ -27,9 +27,9 @@ import {
 })
 export class Country extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string; // Changed type from number to string
 
   @Column({
     type: DataType.STRING(64),

@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,13 +56,21 @@ export class PhysicalDriveController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get PhysicalDrive by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'PhysicalDrive retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'PhysicalDrive not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<PhysicalDrive> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<PhysicalDrive> {
+    // 3. Set version '7' validation and changed type to string
     const storageModelObject = await this.storageModelService.findOne(id);
     if (!storageModelObject) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
@@ -87,7 +95,11 @@ export class PhysicalDriveController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a physical-drive' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'PhysicalDrive updated successfully',
@@ -98,7 +110,7 @@ export class PhysicalDriveController {
     description: 'System-managed physical-drive cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updatePhysicalDriveDto: UpdatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
     const result = await this.storageModelService.updatePhysicalDrive(
@@ -114,7 +126,11 @@ export class PhysicalDriveController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a physical-drive' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'PhysicalDrive deleted successfully',
@@ -125,7 +141,7 @@ export class PhysicalDriveController {
     description: 'System-managed physical-drive cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.storageModelService.deletePhysicalDrive(id);
     if (!deleted) {

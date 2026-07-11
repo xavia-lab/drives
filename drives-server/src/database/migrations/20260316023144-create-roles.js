@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the Sequence
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "roles_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;`,
-    );
-
-    // 2. Create the Table
+    // Create the Table with UUIDv7
     await queryInterface.createTable('roles', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal("nextval('roles_id_seq')"),
+        // Uses PostgreSQL 18's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(32),
@@ -37,9 +33,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop the table safely
     await queryInterface.dropTable('roles');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "roles_id_seq";`,
-    );
   },
 };

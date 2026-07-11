@@ -7,18 +7,21 @@ import {
   BelongsTo,
   HasMany,
   PrimaryKey,
-  AutoIncrement,
+  Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
+
 import { Country } from '../../country/entities/country.entity';
+
 // Import your StorageModel entity path here when ready
 // import { StorageModel } from '../../storage-model/entities/storage-model.entity';
 
 @Table({ tableName: 'vendors', timestamps: true, underscored: true })
 export class Vendor extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string; // Changed type from number to string
 
   @Column({
     type: DataType.STRING(64),

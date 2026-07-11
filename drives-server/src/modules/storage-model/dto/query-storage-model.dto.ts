@@ -1,13 +1,5 @@
-import {
-  IsOptional,
-  IsIn,
-  IsString,
-  Length,
-  IsInt,
-  Min,
-} from 'class-validator';
+import { IsOptional, IsIn, IsString, Length, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class QueryStorageModelDto extends PaginationQueryDto {
@@ -68,55 +60,40 @@ export class QueryStorageModelDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({
     description: 'Filter explicitly by a specific manufacturer vendor ID',
-    example: 1,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  manufacturerId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  manufacturerId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter explicitly by a specific storage type lookup ID',
-    example: 2,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  storageTypeId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  storageTypeId?: string;
 
   @ApiPropertyOptional({
     description:
       'Filter explicitly by a specific physical form factor lookup ID',
-    example: 10,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  formFactorId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  formFactorId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter explicitly by a specific link protocol interface ID',
-    example: 52,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  interfaceId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  interfaceId?: string;
 
   @ApiPropertyOptional({
     description:
       'Filter explicitly by a specific hardware byte capacity record ID',
-    example: 101,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  capacityId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  capacityId?: string;
 
   @ApiPropertyOptional({
     example: 'PM17',

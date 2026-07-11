@@ -41,7 +41,7 @@ export abstract class BaseCrudService<T extends Model> {
     }
   }
 
-  public async findOne(id: number, include?: any[]): Promise<T | null> {
+  public async findOne(id: string, include?: any[]): Promise<T | null> {
     return (this.model as any).findByPk(id, { include });
   }
 
@@ -49,7 +49,7 @@ export abstract class BaseCrudService<T extends Model> {
     return (this.model as any).create(data, options);
   }
 
-  public async update(id: number, data: any, options?: any): Promise<T | null> {
+  public async update(id: string, data: any, options?: any): Promise<T | null> {
     const record = await (this.model as any).findByPk(id);
     if (!record) {
       return null;
@@ -57,7 +57,7 @@ export abstract class BaseCrudService<T extends Model> {
     return record.update(data, options);
   }
 
-  public async delete(id: number, options?: any): Promise<boolean> {
+  public async delete(id: string, options?: any): Promise<boolean> {
     const result = await (this.model as any).destroy({
       where: { id },
       ...options,

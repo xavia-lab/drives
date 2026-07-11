@@ -9,12 +9,22 @@ import {
   IsInt,
   Min,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CreateCountryDto } from '../../country/dto/create-country.dto';
 
 export class CreateVendorDto {
+  @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
   @ApiProperty({
     description: 'The global business name of the hardware vendor',
     example: 'Solidigm',
@@ -80,13 +90,12 @@ export class CreateVendorDto {
   @ApiProperty({
     description:
       'The primary key numerical identifier matching the country database record',
-    example: 1,
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  countryId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  countryId: string;
 
   @ApiProperty({
     description:

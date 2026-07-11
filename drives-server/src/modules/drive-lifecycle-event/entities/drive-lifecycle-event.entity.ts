@@ -6,8 +6,10 @@ import {
   ForeignKey,
   BelongsTo,
   PrimaryKey,
-  AutoIncrement,
+  Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
+
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
@@ -27,9 +29,9 @@ export enum DriveLifecycleEventType {
 })
 export class DriveLifecycleEvent extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string;
 
   @Column({
     type: DataType.ENUM(...Object.values(DriveLifecycleEventType)),
@@ -67,11 +69,11 @@ export class DriveLifecycleEvent extends Model {
 
   @ForeignKey(() => PhysicalDrive)
   @Column({
-    type: DataType.INTEGER, // Matches the updated integer primary key of physical_drives
+    type: DataType.UUID, // Matches the updated integer primary key of physical_drives
     allowNull: false,
     field: 'physical_drive_id',
   })
-  declare physicalDriveId: number;
+  declare physicalDriveId: string;
 
   @BelongsTo(() => PhysicalDrive, {
     onDelete: 'RESTRICT',

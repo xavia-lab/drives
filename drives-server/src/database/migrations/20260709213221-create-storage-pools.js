@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Storage Pools
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "storage_pools_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure with Consolidated Integer Layouts
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('storage_pools', {
       id: {
-        type: Sequelize.INTEGER, // FIX: Converted from UUID to common INTEGER primary key index
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"storage_pools_id_seq"\')'), // Numerical generator sequencing
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       pool_name: {
         type: Sequelize.STRING(64),
@@ -37,15 +33,15 @@ module.exports = {
       },
       // --- Topographical Mapping Targets ---
       server_id: {
-        type: Sequelize.INTEGER, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
-        allowNull: true,
+        type: Sequelize.UUID, // Upgraded to UUID to match servers.id
+        allowNull: true, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
         references: { model: 'servers', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
       virtual_server_id: {
-        type: Sequelize.INTEGER, // Nullable: Only populated if the pool belongs to a virtualized guest VM/container
-        allowNull: true,
+        type: Sequelize.UUID, // Upgraded to UUID to match virtual_servers.id
+        allowNull: true, // Nullable: Only populated if the pool belongs to a virtualized guest VM/container
         references: { model: 'virtual_servers', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
@@ -60,14 +56,14 @@ module.exports = {
       },
     });
 
-    // 3. Database Check Constraint: Enforces that the storage pool is tied to EXACTLY ONE compute resource target
+    // 2. Database Check Constraint: Enforces that the storage pool is tied to EXACTLY ONE compute resource target
     await queryInterface.sequelize.query(`
-      ALTER TABLE "storage_pools" 
-      ADD CONSTRAINT "storage_pools_target_exclusivity_check" 
-      CHECK (
-        (server_id IS NOT NULL AND virtual_server_id IS NOT NULL) = FALSE AND
-        (server_id IS NOT NULL OR virtual_server_id IS NOT NULL) = TRUE
-      );
+      ALTER TABLE "storage_pools"
+        ADD CONSTRAINT "storage_pools_target_exclusivity_check"
+          CHECK (
+            (server_id IS NOT NULL AND virtual_server_id IS NOT NULL) = FALSE AND
+            (server_id IS NOT NULL OR virtual_server_id IS NOT NULL) = TRUE
+            );
     `);
 
     // --- Performance Optimization Indexes ---
@@ -88,13 +84,8 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies
+    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
     await queryInterface.dropTable('storage_pools');
-
-    // Purge the sequential ID generator sequence
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "storage_pools_id_seq";`,
-    );
 
     // Clean up localized PostgreSQL types created exclusively for this table state
     await queryInterface.sequelize.query(

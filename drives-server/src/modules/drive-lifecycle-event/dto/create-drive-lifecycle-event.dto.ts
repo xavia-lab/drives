@@ -1,27 +1,34 @@
 import {
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsObject,
   Length,
-  Min,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DriveLifecycleEventType } from '../entities/drive-lifecycle-event.entity';
 
 export class CreateDriveLifecycleEventDto {
+  @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
   @ApiProperty({
     description:
       'The primary key numerical index matching the targeted physical drive asset',
-    example: 45,
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  physicalDriveId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  physicalDriveId: string;
 
   @ApiProperty({
     description:

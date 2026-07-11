@@ -35,11 +35,11 @@ export class StorageModelService
       name: string;
       modelNumber: string;
       maxEnduranceTbw: number;
-      capacityId: number;
-      interfaceId: number;
-      formFactorId: number;
-      manufacturerId: number;
-      storageTypeId: number;
+      capacityId: string;
+      interfaceId: string;
+      formFactorId: string;
+      manufacturerId: string;
+      storageTypeId: string;
     }[] = [];
 
     for (const storageModelData of defaultStorageModels) {
@@ -80,7 +80,7 @@ export class StorageModelService
   }
 
   async updateStorageModel(
-    id: number,
+    id: string,
     updateStorageModelDto: UpdateStorageModelDto,
   ): Promise<StorageModel> {
     const storageModelObject = await super.findOne(id);
@@ -128,7 +128,7 @@ export class StorageModelService
     return result;
   }
 
-  async deleteStorageModel(id: number): Promise<boolean> {
+  async deleteStorageModel(id: string): Promise<boolean> {
     const storageModelObject = await super.findOne(id);
 
     if (!storageModelObject) {

@@ -2,7 +2,7 @@ import { Expose } from 'class-transformer';
 
 export class CapacityResponseDto {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
   name: string;
