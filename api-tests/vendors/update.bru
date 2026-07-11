@@ -1,0 +1,20 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/api/v1/vendors/19
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Seagate",
+    "isManufacturer": true,
+    "isRetailer": false,
+    "countryId": 1
+  }
+}

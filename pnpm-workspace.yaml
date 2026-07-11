@@ -1,7 +1,13 @@
 packages:
-  - 'server'
+  - 'cerbos'
+  - 'drives-server'
   - 'client'
 allowBuilds:
+  '@scarf/scarf': true
+  '@swc/core': set this to true or false
+  bcrypt: true
   deasync: true
+  protobufjs: true
+  sharp: true
   sqlite3: true
   unrs-resolver: true

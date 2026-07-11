@@ -1,0 +1,14 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "status"
+  rules:
+    # 1. Admin can do everything
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin
+        - owner
+        - manager
+        - inventory_operator
+        - sales_representative

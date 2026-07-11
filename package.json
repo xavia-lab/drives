@@ -1,6 +1,8 @@
 {
   "name": "drives-monorepo",
   "private": true,
+  "description": "A simple inventory of all your disk drives!",
+  "author": "Rehan Mahmood",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -13,7 +15,7 @@
   "devDependencies": {
     "@changesets/cli": "latest",
     "prettier": "^3.8.3",
-    "turbo": "^2.10.2"
+    "turbo": "^2.10.4"
   },
   "packageManager": "pnpm@11.9.0"
 }

@@ -1,0 +1,23 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/api/v1/storage-models/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exos X24",
+    "modelNumber": "ST16000NM007H",
+    "capacityId": 5,
+    "formFactorId": 1,
+    "interfaceId": 1,
+    "manufacturerId": 1,
+    "storageTypeId": 1
+  }
+}

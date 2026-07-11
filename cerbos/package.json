@@ -1,0 +1,16 @@
+{
+  "name": "@drives/policy",
+  "version": "0.0.0",
+  "description": "",
+  "author": "",
+  "private": true,
+  "scripts": {
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "build:image": "task build-policy"
+  },
+  "devDependencies": {
+    "@changesets/cli": "latest",
+    "turbo": "latest"
+  }
+}

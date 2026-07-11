@@ -1,18 +1,24 @@
 ---
+networks:
+  inner-net:
+    driver: bridge
+
 services:
   postgres:
     image: postgres:18-alpine
     container_name: "drives-postgres"
+    networks:
+      - inner-net
     ports:
       - "5432:5432/tcp"
     environment:
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DRIVES_BACKEND_DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DRIVES_BACKEND_DATABASE_PASSWORD}
+      POSTGRES_DB: ${DRIVES_BACKEND_DATABASE_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DRIVES_BACKEND_DATABASE_USERNAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,11 +28,32 @@ services:
   adminer:
     image: adminer:latest
     container_name: "drives-adminer"
+    networks:
+      - inner-net
     ports:
       - "8080:8080/tcp"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: "unless-stopped"
+
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:latest
+    container_name: "drives-policy"
+    networks:
+      - inner-net
+    ports:
+      - "3592:3592/tcp" # HTTP port
+      - "3593:3593/tcp" # gRPC port
+    environment:
+      - CERBOS_ALLOWED_ORIGIN=${CERBOS_ALLOWED_ORIGIN}
+      - CERBOS_ADMIN_USERNAME=${CERBOS_ADMIN_USERNAME}
+      - CERBOS_ADMIN_PASSWORD_HASH=${CERBOS_ADMIN_PASSWORD_HASH}
+    volumes:
+      - ./cerbos/policies:/policies
+      # Optional: uncomment if you have a custom config file
+      - ./cerbos/cerbos.yaml:/etc/cerbos/cerbos.yaml
+    command: ["server", "--config=/etc/cerbos/cerbos.yaml"]
     restart: "unless-stopped"
 
   # app:
