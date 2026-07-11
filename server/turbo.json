@@ -1,0 +1,24 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "migration:run": {
+      "cache": false
+    },
+    "migration:undo": {
+      "cache": false
+    },
+    "seed:run": {
+      "cache": false
+    },
+    "db:sync": {
+      "cache": false
+    },
+    "migration:generate": { "cache": false },
+    "migration:undo:all": { "cache": false },
+    "seed:generate": { "cache": false },
+    "seed:undo": { "cache": false },
+    "seed:undo:all": { "cache": false },
+    "db:sync:force": { "cache": false },
+    "db:sync:alter": { "cache": false }
+  }
+}

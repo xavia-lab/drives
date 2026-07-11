@@ -12,7 +12,7 @@
     "test:db:prep": "export NODE_ENV=test; node test/fixtures/server.js && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
     "test:db:reset": "export NODE_ENV=test; npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
     "test": "export PORT=4000 NODE_ENV=test; jest --runInBand --detectOpenHandles --forceExit",
-    "fmt": "npx prettier . --write"
+    "format": "npx prettier . --write"
   },
   "repository": {
     "type": "git",

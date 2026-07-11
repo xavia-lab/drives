@@ -55,8 +55,8 @@ export const dataProvider: DataProvider = {
 
     console.log(
       `Resource: ${resource}; Pagination parameters: ${JSON.stringify(
-        pagination
-      )}`
+        pagination,
+      )}`,
     );
     if (pagination && pagination.mode === "server") {
       params.append("pageNumber", pagination.current);
@@ -66,11 +66,11 @@ export const dataProvider: DataProvider = {
     if (sorters && sorters.length > 0) {
       params.append(
         "sortField",
-        sorters.map((sorter) => sorter.field).join(",")
+        sorters.map((sorter) => sorter.field).join(","),
       );
       params.append(
         "sortOrder",
-        sorters.map((sorter) => sorter.order).join(",")
+        sorters.map((sorter) => sorter.order).join(","),
       );
     }
 

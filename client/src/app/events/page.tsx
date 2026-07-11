@@ -105,7 +105,7 @@ export default function EventList() {
         minWidth: 80,
       },
     ],
-    [driveData]
+    [driveData],
   );
 
   return (

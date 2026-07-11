@@ -62,7 +62,7 @@ export default function InterfaceList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

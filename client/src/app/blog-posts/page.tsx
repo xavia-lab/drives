@@ -103,7 +103,7 @@ export default function BlogPostList() {
         minWidth: 80,
       },
     ],
-    [categoryData]
+    [categoryData],
   );
 
   return (

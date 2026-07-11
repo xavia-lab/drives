@@ -55,7 +55,7 @@ export default function StorageTypeList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

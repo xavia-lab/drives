@@ -45,7 +45,7 @@ export default function CategoryList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

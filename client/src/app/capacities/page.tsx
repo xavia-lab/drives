@@ -75,7 +75,7 @@ export default function CapacityList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

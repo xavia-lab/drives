@@ -125,7 +125,7 @@ export default function DriveList() {
         minWidth: 80,
       },
     ],
-    [modelData, retailerData]
+    [modelData, retailerData],
   );
 
   return (

@@ -11,7 +11,7 @@
     "start": "refine start",
     "lint": "eslint '**/*.{js,jsx,ts,tsx}'",
     "refine": "refine",
-    "fmt": "npx prettier . --write"
+    "format": "npx prettier . --write"
   },
   "dependencies": {
     "@refinedev/cli": "^2.16.21",

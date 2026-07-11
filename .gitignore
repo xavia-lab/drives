@@ -130,3 +130,7 @@ dist
 .pnp.*
 
 **/*sqlite
+
+.idea/*
+
+.turbo/*

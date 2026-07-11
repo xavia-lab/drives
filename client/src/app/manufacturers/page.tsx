@@ -87,7 +87,7 @@ export default function ManufacturerList() {
         minWidth: 80,
       },
     ],
-    []
+    [],
   );
 
   return (

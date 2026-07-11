@@ -19,7 +19,7 @@ type ColorModeContextType = {
 };
 
 export const ColorModeContext = createContext<ColorModeContextType>(
-  {} as ColorModeContextType
+  {} as ColorModeContextType,
 );
 
 type ColorModeContextProviderProps = {
