@@ -35,7 +35,7 @@ export class InterfaceService
       name: string;
       linkGeneration: number;
       throughput: number;
-      busProtocolId: number;
+      busProtocolId: string;
     }[] = [];
 
     for (const interfaceData of defaultInterfaces) {
@@ -70,7 +70,7 @@ export class InterfaceService
   }
 
   async updateInterface(
-    id: number,
+    id: string,
     updateInterfaceDto: UpdateInterfaceDto,
   ): Promise<Interface> {
     const interfaceObject = await super.findOne(id);
@@ -113,7 +113,7 @@ export class InterfaceService
     return result;
   }
 
-  async deleteInterface(id: number): Promise<boolean> {
+  async deleteInterface(id: string): Promise<boolean> {
     const interfaceObject = await super.findOne(id);
 
     if (!interfaceObject) {

@@ -6,8 +6,10 @@ import {
   ForeignKey,
   BelongsTo,
   PrimaryKey,
-  AutoIncrement,
+  Default,
 } from 'sequelize-typescript';
+import sequelize from 'sequelize';
+
 import { Vendor } from '../../vendor/entities/vendor.entity';
 import { StorageType } from '../../storage-type/entities/storage-type.entity';
 import { FormFactor } from '../../form-factor/entities/form-factor.entity';
@@ -44,9 +46,9 @@ import { Capacity } from '../../capacity/entities/capacity.entity';
 })
 export class StorageModel extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
+  @Column(DataType.UUID)
+  declare id: string; // Changed type from number to string
 
   @Column({
     type: DataType.STRING(64),
@@ -82,11 +84,11 @@ export class StorageModel extends Model {
   // 1. Manufacturer Relationship
   @ForeignKey(() => Vendor)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     allowNull: false,
     field: 'manufacturer_id',
   })
-  declare manufacturerId: number;
+  declare manufacturerId: string;
 
   @BelongsTo(() => Vendor, {
     onDelete: 'RESTRICT',
@@ -97,11 +99,11 @@ export class StorageModel extends Model {
   // 2. Storage Type Relationship
   @ForeignKey(() => StorageType)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     allowNull: false,
     field: 'storage_type_id',
   })
-  declare storageTypeId: number;
+  declare storageTypeId: string;
 
   @BelongsTo(() => StorageType, {
     onDelete: 'RESTRICT',
@@ -112,11 +114,11 @@ export class StorageModel extends Model {
   // 3. Form Factor Relationship
   @ForeignKey(() => FormFactor)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     allowNull: false,
     field: 'form_factor_id',
   })
-  declare formFactorId: number;
+  declare formFactorId: string;
 
   @BelongsTo(() => FormFactor, {
     onDelete: 'RESTRICT',
@@ -127,11 +129,11 @@ export class StorageModel extends Model {
   // 4. Interface Relationship
   @ForeignKey(() => Interface)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     allowNull: false,
     field: 'interface_id',
   })
-  declare interfaceId: number;
+  declare interfaceId: string;
 
   @BelongsTo(() => Interface, {
     onDelete: 'RESTRICT',
@@ -142,11 +144,11 @@ export class StorageModel extends Model {
   // 5. Capacity Relationship
   @ForeignKey(() => Capacity)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     allowNull: false,
     field: 'capacity_id',
   })
-  declare capacityId: number;
+  declare capacityId: string;
 
   @BelongsTo(() => Capacity, {
     onDelete: 'RESTRICT',

@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,13 +56,21 @@ export class StorageModelController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get StorageModel by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'StorageModel retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'StorageModel not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<StorageModel> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<StorageModel> {
+    // 3. Set version '7' validation and changed type to string
     const storageModelObject = await this.storageModelService.findOne(id);
     if (!storageModelObject) {
       throw new NotFoundException(`StorageModel with ID ${id} not found`);
@@ -87,7 +95,11 @@ export class StorageModelController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a storage-model' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'StorageModel updated successfully',
@@ -98,7 +110,7 @@ export class StorageModelController {
     description: 'System-managed storage-model cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateStorageModelDto: UpdateStorageModelDto,
   ): Promise<StorageModel> {
     const result = await this.storageModelService.updateStorageModel(
@@ -114,7 +126,11 @@ export class StorageModelController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a storage-model' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'StorageModel deleted successfully',
@@ -125,7 +141,7 @@ export class StorageModelController {
     description: 'System-managed storage-model cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.storageModelService.deleteStorageModel(id);
     if (!deleted) {

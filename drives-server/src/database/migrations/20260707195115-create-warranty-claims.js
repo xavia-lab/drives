@@ -3,37 +3,31 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Warranty Claims
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "warranty_claims_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure with Unified Integer References
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('warranty_claims', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal(
-          'nextval(\'"warranty_claims_id_seq"\')',
-        ), // Numerical generator sequencing
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       physical_drive_id: {
-        type: Sequelize.INTEGER, // FIX: Converted to INTEGER to match updated physical_drives layout
+        type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
         allowNull: false,
         references: { model: 'physical_drives', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
       triggering_event_id: {
-        type: Sequelize.INTEGER, // FIX: Converted to INTEGER to match updated drive_lifecycle_events layout
+        type: Sequelize.UUID, // Upgraded to UUID to match drive_lifecycle_events.id
         allowNull: true, // Nullable because some warranties might be bulk preventative returns
         references: { model: 'drive_lifecycle_events', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
       handled_by_vendor_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match vendors.id
         allowNull: false,
         references: { model: 'vendors', key: 'id' },
         onUpdate: 'CASCADE',
@@ -77,7 +71,7 @@ module.exports = {
       },
     });
 
-    // 3. Performance Optimization Indexes
+    // 2. Performance Optimization Indexes
     await queryInterface.addIndex('warranty_claims', ['triggering_event_id'], {
       name: 'warranty_claims_trigger_event_idx',
       using: 'btree',
@@ -90,15 +84,10 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies
+    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
     await queryInterface.dropTable('warranty_claims');
 
-    // Purge the sequential ID generator
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "warranty_claims_id_seq";`,
-    );
-
-    // Drop the specialized enum schema mapping type
+    // Drop the specialized enum schema mapping type safely
     await queryInterface.sequelize.query(
       `DROP TYPE IF EXISTS "enum_warranty_claims_claim_status";`,
     );

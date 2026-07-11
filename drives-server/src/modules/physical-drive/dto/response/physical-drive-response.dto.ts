@@ -5,7 +5,7 @@ import { CurrencyResponseDto } from '../../../currency/dto/response/currency-res
 
 export class PhysicalDriveResponseDto {
   @Expose()
-  id: number; // Updated to number to align with your migration sequence layout
+  id: string; // Updated to number to align with your migration sequence layout
 
   @Expose()
   label: string;
@@ -29,13 +29,13 @@ export class PhysicalDriveResponseDto {
   title: string;
 
   @Expose()
-  storageModelId: number;
+  storageModelId: string;
 
   @Expose()
-  retailerVendorId: number;
+  retailerVendorId: string;
 
   @Expose()
-  currencyId: number;
+  currencyId: string;
 
   @Expose()
   createdAt: Date;

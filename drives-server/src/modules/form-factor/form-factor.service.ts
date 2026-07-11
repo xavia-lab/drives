@@ -68,7 +68,7 @@ export class FormFactorService
   }
 
   async updateFormFactor(
-    id: number,
+    id: string,
     updateFormFactorDto: UpdateFormFactorDto,
   ): Promise<FormFactor> {
     const FormFactor = await super.findOne(id);
@@ -109,7 +109,7 @@ export class FormFactorService
     return result;
   }
 
-  async deleteFormFactor(id: number): Promise<boolean> {
+  async deleteFormFactor(id: string): Promise<boolean> {
     const FormFactor = await super.findOne(id);
 
     if (!FormFactor) {

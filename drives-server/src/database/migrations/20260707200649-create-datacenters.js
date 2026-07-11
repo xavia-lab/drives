@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Datacenters
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "datacenters_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Datacenters Table
+    // 1. Create Datacenters Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('datacenters', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"datacenters_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       code: {
         type: Sequelize.STRING(16),
@@ -26,11 +22,11 @@ module.exports = {
         allowNull: false, // User friendly description (e.g., 'Ashburn Corporate Center 1')
       },
       country_id: {
-        type: Sequelize.INTEGER, // FIX: Converted from STRING(2) code to unified INTEGER pointer
+        type: Sequelize.UUID, // Upgraded to UUID to match countries.id
         allowNull: false,
         references: {
           model: 'countries',
-          key: 'id', // Updated to match your common integer primary key strategy
+          key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
@@ -54,17 +50,15 @@ module.exports = {
       },
     });
 
-    // 3. Add Index for spatial/geopolitical reporting aggregations
+    // 2. Add Index for spatial/geopolitical reporting aggregations
     await queryInterface.addIndex('datacenters', ['country_id'], {
-      name: 'datacenters_country_id_idx', // Fixed index name to accurately track your column update
+      name: 'datacenters_country_id_idx',
       using: 'btree',
     });
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop target table cleanly to remove references (sequences are no longer used)
     await queryInterface.dropTable('datacenters');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "datacenters_id_seq";`,
-    );
   },
 };

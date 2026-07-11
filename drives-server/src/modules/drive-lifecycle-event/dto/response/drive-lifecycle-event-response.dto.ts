@@ -9,15 +9,15 @@ export class DriveLifecycleEventResponseDto {
     example: 1042,
   })
   @Expose()
-  id: number;
+  id: string;
 
   @ApiProperty({
     description:
       'The unique numerical foreign key identifier linking back to the asset record',
-    example: 45,
+    type: String,
   })
   @Expose()
-  physicalDriveId: number;
+  physicalDriveId: string;
 
   @ApiProperty({
     description: 'The distinct operational categorization milestone type',

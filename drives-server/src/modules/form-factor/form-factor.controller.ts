@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,13 +56,21 @@ export class FormFactorController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get FormFactor by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'FormFactor retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'FormFactor not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<FormFactor> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<FormFactor> {
+    // 3. Set version '7' validation and changed type to string
     const FormFactor = await this.FormFactorService.findOne(id);
     if (!FormFactor) {
       throw new NotFoundException(`FormFactor with ID ${id} not found`);
@@ -87,7 +95,11 @@ export class FormFactorController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a FormFactor' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'FormFactor updated successfully',
@@ -98,7 +110,7 @@ export class FormFactorController {
     description: 'System-managed FormFactor cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateFormFactorDto: UpdateFormFactorDto,
   ): Promise<FormFactor> {
     const result = await this.FormFactorService.updateFormFactor(
@@ -114,7 +126,11 @@ export class FormFactorController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a FormFactor' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'FormFactor deleted successfully',
@@ -125,7 +141,7 @@ export class FormFactorController {
     description: 'System-managed FormFactor cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.FormFactorService.deleteFormFactor(id);
     if (!deleted) {

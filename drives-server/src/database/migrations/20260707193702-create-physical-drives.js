@@ -3,23 +3,17 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Physical Drives
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "physical_drives_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Physical Drives Table
+    // 1. Create Physical Drives Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('physical_drives', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal(
-          'nextval(\'"physical_drives_id_seq"\')',
-        ), // Numerical generator sequencing
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       storage_model_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match storage_models.id
         allowNull: false,
         references: {
           model: 'storage_models',
@@ -29,7 +23,7 @@ module.exports = {
         onDelete: 'RESTRICT', // Blocks model deletions if physical drives exist in production inventory
       },
       retailer_vendor_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match vendors.id
         allowNull: false,
         references: {
           model: 'vendors',
@@ -58,11 +52,11 @@ module.exports = {
         allowNull: false, // Enforces procurement accountability tracking for hardware investments
       },
       currency_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match currencies.id
         allowNull: false,
         references: {
           model: 'currencies',
-          key: 'id', // Replaced old code layout string constraints with correct relational integer mapping
+          key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
@@ -104,19 +98,14 @@ module.exports = {
       'physical_drives',
       ['currency_id', 'acquisition_cost'],
       {
-        name: 'physical_drives_financial_idx', // Fixed query pointer tracking target column update path
+        name: 'physical_drives_financial_idx',
         using: 'btree',
       },
     );
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove dependencies
+    // Drop target table cleanly to remove dependencies (sequences are no longer used)
     await queryInterface.dropTable('physical_drives');
-
-    // Purge related sequence matching table definition
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "physical_drives_id_seq";`,
-    );
   },
 };

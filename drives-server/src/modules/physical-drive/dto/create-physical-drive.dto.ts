@@ -2,15 +2,24 @@ import {
   IsString,
   IsNotEmpty,
   Length,
-  IsInt,
   Min,
   IsNumber,
   IsOptional,
   IsDateString,
+  IsUUID,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePhysicalDriveDto {
+  @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
   @ApiProperty({
     description:
       'The unique alphanumeric serial number printed directly on the drive case chassis label',
@@ -68,33 +77,30 @@ export class CreatePhysicalDriveDto {
   @ApiProperty({
     description:
       'The primary index lookup key identifying the manufacturer device engineering template record',
-    example: 12,
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  storageModelId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  storageModelId: string;
 
   @ApiProperty({
     description:
       'The primary index lookup key pointing to the retail point-of-sale source vendor partner profile',
-    example: 8, // e.g., Amazon US
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  retailerVendorId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  retailerVendorId: string;
 
   @ApiProperty({
     description:
       'The primary index lookup key mapping the baseline denomination structure matching the acquisition price',
-    example: 1, // e.g., USD
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  currencyId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  currencyId: string;
 }

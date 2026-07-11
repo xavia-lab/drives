@@ -80,7 +80,7 @@ export class PhysicalDriveService
   }
 
   async updatePhysicalDrive(
-    id: number,
+    id: string,
     updatePhysicalDriveDto: UpdatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
     const physicalDriveObject = await super.findOne(id);
@@ -127,7 +127,7 @@ export class PhysicalDriveService
     return result;
   }
 
-  async deletePhysicalDrive(id: number): Promise<boolean> {
+  async deletePhysicalDrive(id: string): Promise<boolean> {
     const physicalDriveObject = await super.findOne(id);
 
     if (!physicalDriveObject) {

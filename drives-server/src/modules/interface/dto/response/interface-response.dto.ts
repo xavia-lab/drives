@@ -2,13 +2,13 @@ import { Expose } from 'class-transformer';
 
 export class InterfaceResponseDto {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
   name: string;
 
   @Expose()
-  busProtocolId: number;
+  busProtocolId: string;
 
   @Expose()
   linkGeneration: number;

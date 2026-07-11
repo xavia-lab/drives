@@ -3,32 +3,28 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Sequence for Interfaces
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "interfaces_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`
-    );
-
-    // 2. Create Interfaces Table with explicit Foreign Key relationship
+    // 1. Create Interfaces Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('interfaces', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"interfaces_id_seq"\')'),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(32),
         allowNull: false,
       },
       bus_protocol_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match bus_protocols.id
         allowNull: false,
         references: {
           model: 'bus_protocols', // Target parent table
-          key: 'id'               // Target primary key
+          key: 'id', // Target primary key
         },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT'    // Protect core database integrity constraints
+        onDelete: 'RESTRICT', // Protect core database integrity constraints
       },
       link_generation: {
         type: Sequelize.INTEGER,
@@ -52,7 +48,7 @@ module.exports = {
       },
     });
 
-    // 3. Add Index for high-velocity lookups and table JOIN optimization
+    // 2. Add Index for high-velocity lookups and table JOIN optimization
     await queryInterface.addIndex('interfaces', ['name'], {
       name: 'interfaces_name',
       unique: true,
@@ -65,12 +61,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop table first to cleanly release constraint bindings
+    // Drop table safely (sequences are no longer used)
     await queryInterface.dropTable('interfaces');
-    
-    // Clean up sequence
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "interfaces_id_seq";`
-    );
   },
 };

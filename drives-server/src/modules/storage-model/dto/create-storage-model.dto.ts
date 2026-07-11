@@ -6,12 +6,22 @@ import {
   Min,
   IsOptional,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CreateVendorDto } from '../../vendor/dto/create-vendor.dto';
 
 export class CreateStorageModelDto {
+  @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
   @ApiProperty({
     description:
       'The physical manufacturer model classification designation name',
@@ -49,57 +59,52 @@ export class CreateStorageModelDto {
   @ApiProperty({
     description:
       'The relational primary key index linking to the manufacturing vendor record',
-    example: 1,
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  manufacturerId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  manufacturerId: string;
 
   @ApiProperty({
     description:
       'The relational primary key index defining the core media physics technology type',
-    example: 2, // e.g., NAND Flash
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  storageTypeId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  storageTypeId: string;
 
   @ApiProperty({
     description:
       'The relational primary key index confirming physical slot shape properties',
-    example: 10, // e.g., U.2
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  formFactorId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  formFactorId: string;
 
   @ApiProperty({
     description:
       'The relational primary key index establishing link interface layer capabilities',
-    example: 52, // e.g., NVMe PCIe G4
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  interfaceId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  interfaceId: string;
 
   @ApiProperty({
     description:
       'The relational primary key index mapping the explicit block sector boundaries',
-    example: 101, // e.g., 7.68TB
+    type: String,
     required: true,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  capacityId: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  capacityId: string;
 
   @ApiProperty({
     description:

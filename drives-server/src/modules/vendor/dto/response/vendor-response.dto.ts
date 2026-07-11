@@ -3,7 +3,7 @@ import { CountryResponseDto } from '../../../country/dto/response/country-respon
 
 export class VendorResponseDto {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
   name: string;

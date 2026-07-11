@@ -69,7 +69,7 @@ export class BusProtocolService
   }
 
   async updateBusProtocol(
-    id: number,
+    id: string,
     updateBusProtocolDto: UpdateBusProtocolDto,
   ): Promise<BusProtocol> {
     const BusProtocol = await super.findOne(id);
@@ -112,7 +112,7 @@ export class BusProtocolService
     return result;
   }
 
-  async deleteBusProtocol(id: number): Promise<boolean> {
+  async deleteBusProtocol(id: string): Promise<boolean> {
     const BusProtocol = await super.findOne(id);
 
     if (!BusProtocol) {

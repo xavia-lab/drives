@@ -76,7 +76,7 @@ export class CountryService
   }
 
   async updateCountry(
-    id: number,
+    id: string,
     updateCountryDto: UpdateCountryDto,
   ): Promise<Country> {
     const country = await super.findOne(id);
@@ -126,7 +126,7 @@ export class CountryService
     return result;
   }
 
-  async deleteCountry(id: number): Promise<boolean> {
+  async deleteCountry(id: string): Promise<boolean> {
     const country = await super.findOne(id);
 
     if (!country) {

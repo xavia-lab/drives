@@ -1,13 +1,5 @@
-import {
-  IsOptional,
-  IsIn,
-  IsString,
-  Length,
-  IsInt,
-  Min,
-} from 'class-validator';
+import { IsOptional, IsIn, IsString, Length, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { DriveLifecycleEventType } from '../entities/drive-lifecycle-event.entity';
 
@@ -57,12 +49,10 @@ export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description:
       'Filter logs explicitly by a specific physical drive serial pointer ID',
-    example: 45,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
   physicalDriveId?: number;
 
   @ApiPropertyOptional({

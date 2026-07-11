@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the Sequence starting at 2
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "bus_protocols_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create the Table
+    // 1. Create the Table with UUIDv7
     await queryInterface.createTable('bus_protocols', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal("nextval('bus_protocols_id_seq')"),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(32),
@@ -42,7 +38,7 @@ module.exports = {
       },
     });
 
-    // 3. Create the Composite Unique Index (name, moniker)
+    // 2. Create the Unique Index
     await queryInterface.addIndex('bus_protocols', ['name'], {
       name: 'bus_protocols_name',
       unique: true,
@@ -51,9 +47,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop table safely (sequences are no longer used)
     await queryInterface.dropTable('bus_protocols');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "bus_protocols_id_seq";`,
-    );
   },
 };

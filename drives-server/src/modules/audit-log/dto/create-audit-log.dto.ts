@@ -13,6 +13,15 @@ import { Type } from 'class-transformer';
 
 export class CreateAuditLogDeltaPayloadDto {
   @ApiPropertyOptional({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description: 'Optional client-side generated UUIDv7 identifier',
+    type: String,
+  })
+  @IsOptional()
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  id?: string;
+
+  @ApiPropertyOptional({
     description:
       'The complete snapshot state of the record properties BEFORE the modification took place',
     example: { hostname: 'us-east-compute-41.infra', hostOs: 'Ubuntu Server' },

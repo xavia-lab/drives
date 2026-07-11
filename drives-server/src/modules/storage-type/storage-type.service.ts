@@ -67,7 +67,7 @@ export class StorageTypeService
   }
 
   async updateStorageType(
-    id: number,
+    id: string,
     updateStorageTypeDto: UpdateStorageTypeDto,
   ): Promise<StorageType> {
     const StorageType = await super.findOne(id);
@@ -108,7 +108,7 @@ export class StorageTypeService
     return result;
   }
 
-  async deleteStorageType(id: number): Promise<boolean> {
+  async deleteStorageType(id: string): Promise<boolean> {
     const StorageType = await super.findOne(id);
 
     if (!StorageType) {

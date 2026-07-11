@@ -3,18 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the Sequence
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "currencies_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;`,
-    );
-
-    // 2. Create the Table
+    // 1. Create the Table with UUIDv7
     await queryInterface.createTable('currencies', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal("nextval('currencies_id_seq')"),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       name: {
         type: Sequelize.STRING(32),
@@ -41,6 +37,8 @@ module.exports = {
         allowNull: false,
       },
     });
+
+    // 2. Create the Unique Indexes
     await queryInterface.addIndex('currencies', ['name'], {
       unique: true,
       name: 'currencies_name',
@@ -54,10 +52,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop table, then the sequence
+    // Drop table safely (sequences are no longer used)
     await queryInterface.dropTable('currencies');
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "currencies_id_seq";`,
-    );
   },
 };

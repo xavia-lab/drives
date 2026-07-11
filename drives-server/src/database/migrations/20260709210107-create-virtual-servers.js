@@ -3,23 +3,17 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Virtual Servers
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "virtual_servers_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('virtual_servers', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal(
-          'nextval(\'"virtual_servers_id_seq"\')',
-        ),
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       host_server_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID, // Upgraded to UUID to match servers.id
         allowNull: false,
         references: { model: 'servers', key: 'id' },
         onUpdate: 'CASCADE',
@@ -95,12 +89,10 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
     await queryInterface.dropTable('virtual_servers');
 
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "virtual_servers_id_seq";`,
-    );
-
+    // Drop the specialized enum schema mapping type safely
     await queryInterface.sequelize.query(
       `DROP TYPE IF EXISTS "enum_virtual_servers_type";`,
     );

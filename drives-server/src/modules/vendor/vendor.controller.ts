@@ -5,7 +5,7 @@ import {
   Get,
   NotFoundException,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
   Post,
   Put,
   Query,
@@ -61,13 +61,21 @@ export class VendorController {
   @Public()
   // @CheckPolicy('show', 'vendors')
   @ApiOperation({ summary: 'Get Vendor by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'Vendor retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'Vendor not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Vendor> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<Vendor> {
+    // 3. Set version '7' validation and changed type to string
     const vendor = await this.vendorService.findOne(id);
     if (!vendor) {
       throw new NotFoundException(`Vendor with ID ${id} not found`);
@@ -92,7 +100,11 @@ export class VendorController {
   @Public()
   // @CheckPolicy('edit', 'vendors')
   @ApiOperation({ summary: 'Update a vendor' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'Vendor updated successfully',
@@ -103,7 +115,7 @@ export class VendorController {
     description: 'System-managed vendor cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateVendorDto: UpdateVendorDto,
   ): Promise<Vendor> {
     const result = await this.vendorService.update(id, updateVendorDto);
@@ -117,7 +129,11 @@ export class VendorController {
   @Public()
   // @CheckPolicy('delete', 'vendors')
   @ApiOperation({ summary: 'Delete a vendor' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'Vendor deleted successfully',
@@ -128,7 +144,7 @@ export class VendorController {
     description: 'System-managed vendor cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.vendorService.delete(id);
     if (!deleted) {

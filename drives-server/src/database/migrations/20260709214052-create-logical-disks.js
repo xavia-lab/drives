@@ -3,28 +3,24 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Auto-increment Sequence for Logical Disks Mapping
-    await queryInterface.sequelize.query(
-      `CREATE SEQUENCE IF NOT EXISTS "logical_disks_id_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;`,
-    );
-
-    // 2. Create Table Structure with Unified Integer References
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('logical_disks', {
       id: {
-        type: Sequelize.INTEGER, // FIX: Converted from UUID to common INTEGER primary key index
+        type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.literal('nextval(\'"logical_disks_id_seq"\')'), // Numerical generator sequencing
+        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
+        defaultValue: Sequelize.literal('uuidv7()'),
       },
       logical_vdev_id: {
-        type: Sequelize.INTEGER, // FIX: Converted to INTEGER to match updated logical_vdevs layout
+        type: Sequelize.UUID, // Upgraded to UUID to match logical_vdevs.id
         allowNull: false,
         references: { model: 'logical_vdevs', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT', // Blocks removing a vdev configuration block if active drive links exist
       },
       physical_drive_id: {
-        type: Sequelize.INTEGER, // FIX: Converted to INTEGER to match updated physical_drives layout
+        type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
         allowNull: false,
         references: { model: 'physical_drives', key: 'id' }, // Points back to actual physical asset block
         onUpdate: 'CASCADE',
@@ -65,12 +61,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove dependencies
+    // Drop target table cleanly to remove dependencies (sequences are no longer used)
     await queryInterface.dropTable('logical_disks');
-
-    // Purge the sequential ID generator sequence
-    await queryInterface.sequelize.query(
-      `DROP SEQUENCE IF EXISTS "logical_disks_id_seq";`,
-    );
   },
 };

@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,10 +56,18 @@ export class CountryController {
   @Public()
   // @CheckPolicy('show', 'countries')
   @ApiOperation({ summary: 'Get country by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Country retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Country not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Country> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<Country> {
+    // 3. Set version '7' validation and changed type to string
     const country = await this.countryService.findOne(id);
     if (!country) {
       throw new NotFoundException(`Country with ID ${id} not found`);
@@ -81,7 +89,11 @@ export class CountryController {
   @Public()
   // @CheckPolicy('edit', 'countries')
   @ApiOperation({ summary: 'Update a country' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Country updated successfully' })
   @ApiResponse({ status: 404, description: 'Country not found' })
   @ApiResponse({
@@ -89,7 +101,7 @@ export class CountryController {
     description: 'System-managed country cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateCountryDto: UpdateCountryDto,
   ): Promise<Country> {
     const result = await this.countryService.updateCountry(
@@ -106,7 +118,11 @@ export class CountryController {
   @Public()
   // @CheckPolicy('delete', 'countries')
   @ApiOperation({ summary: 'Delete a country' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({ status: 204, description: 'Country deleted successfully' })
   @ApiResponse({ status: 404, description: 'Country not found' })
   @ApiResponse({
@@ -114,7 +130,7 @@ export class CountryController {
     description: 'System-managed country cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.countryService.deleteCountry(id);
     if (!deleted) {

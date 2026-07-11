@@ -30,7 +30,7 @@ export class DriveLifecycleEventService
   }
 
   async updateDriveLifecycleEvent(
-    id: number,
+    id: string,
     updateDriveLifecycleEventDto: UpdateDriveLifecycleEventDto,
   ): Promise<DriveLifecycleEvent> {
     const driveLifecycleEventObject = await super.findOne(id);
@@ -54,7 +54,7 @@ export class DriveLifecycleEventService
     return result;
   }
 
-  async deleteDriveLifecycleEvent(id: number): Promise<boolean> {
+  async deleteDriveLifecycleEvent(id: string): Promise<boolean> {
     const driveLifecycleEventObject = await super.findOne(id);
 
     if (!driveLifecycleEventObject) {

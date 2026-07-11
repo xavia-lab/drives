@@ -26,7 +26,7 @@
       "@products/components/*": ["./src/app/products/_components/*"],
       "@purchase-orders/components/*": [
         "./src/app/purchase-orders/_components/*"
-      ],
+      ]
     },
     "incremental": true
   },

@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
+  ParseUUIDPipe, // 1. Swapped ParseIntPipe for ParseUUIDPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,13 +56,21 @@ export class InterfaceController {
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get Interface by ID' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  // 2. Updated Swagger documentation metadata type hint
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'Interface retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'Interface not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Interface> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+  ): Promise<Interface> {
+    // 3. Set version '7' validation and changed type to string
     const interfaceObject = await this.interfaceService.findOne(id);
     if (!interfaceObject) {
       throw new NotFoundException(`Interface with ID ${id} not found`);
@@ -87,7 +95,11 @@ export class InterfaceController {
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a interface' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 200,
     description: 'Interface updated successfully',
@@ -98,7 +110,7 @@ export class InterfaceController {
     description: 'System-managed interface cannot be updated',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateInterfaceDto: UpdateInterfaceDto,
   ): Promise<Interface> {
     const result = await this.interfaceService.updateInterface(
@@ -114,7 +126,11 @@ export class InterfaceController {
   @Delete(':id')
   @Public()
   @ApiOperation({ summary: 'Delete a interface' })
-  @ApiParam({ name: 'id', description: 'The unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
   @ApiResponse({
     status: 204,
     description: 'Interface deleted successfully',
@@ -125,7 +141,7 @@ export class InterfaceController {
     description: 'System-managed interface cannot be deleted',
   })
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
     const deleted = await this.interfaceService.deleteInterface(id);
     if (!deleted) {

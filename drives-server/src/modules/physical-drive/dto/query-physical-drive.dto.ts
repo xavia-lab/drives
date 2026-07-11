@@ -6,6 +6,7 @@ import {
   IsInt,
   Min,
   IsDateString,
+  IsUUID,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -70,35 +71,26 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description:
       'Filter assets explicitly by a specific storage model catalog template ID',
-    example: 12,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  storageModelId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  storageModelId?: string;
 
   @ApiPropertyOptional({
     description:
       'Filter assets explicitly by a specific retail vendor source partner ID',
-    example: 8,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  retailerVendorId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  retailerVendorId?: string;
 
   @ApiPropertyOptional({
     description:
       'Filter assets explicitly by a specific purchase currency lookup ID',
-    example: 1,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  currencyId?: number;
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
+  currencyId?: string;
 
   // --- Advanced Procurement Date Window Filters ---
 
