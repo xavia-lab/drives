@@ -1,9 +1,24 @@
 'use strict';
 
 const currencies = [
-  { name: 'US Dollar', code: 'USD', symbol: '$' },
-  { name: 'Euro', code: 'EUR', symbol: '€' },
-  { name: 'British Pound', code: 'GBP', symbol: '£' },
+  {
+    id: '019f52ea-51fb-71f7-b8fa-bb537fe77078',
+    name: 'US Dollar',
+    code: 'USD',
+    symbol: '$',
+  },
+  {
+    id: '019f52ea-51fb-7c8a-9f9b-9e90cb765ce2',
+    name: 'Euro',
+    code: 'EUR',
+    symbol: '€',
+  },
+  {
+    id: '019f52ea-51fb-793d-ac52-3b0833c13d4a',
+    name: 'British Pound',
+    code: 'GBP',
+    symbol: '£',
+  },
 ];
 
 /** @type {import('sequelize-cli').Migration} */
