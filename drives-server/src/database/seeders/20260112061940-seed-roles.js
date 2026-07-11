@@ -1,8 +1,8 @@
 'use strict';
 
 const roles = [
-  { name: 'admin' },
-  { name: 'viewer' },
+  { id: '019f52b6-47c7-74b4-b9dd-734a5356dde4', name: 'admin' },
+  { id: '019f52b6-b6c9-7d97-9c2f-30e6d489ec3d', name: 'viewer' },
 ];
 
 /** @type {import('sequelize-cli').Migration} */

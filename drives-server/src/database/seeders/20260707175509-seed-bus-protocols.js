@@ -1,10 +1,30 @@
 'use strict';
 
 const data = [
-  { name: 'SATA', command_set: 'ATA', supports_hot_plug: true },
-  { name: 'SAS', command_set: 'SCSI', supports_hot_plug: true },
-  { name: 'NVMe', command_set: 'NVMe', supports_hot_plug: true },
-  { name: 'CXL', command_set: 'CXL', supports_hot_plug: true },
+  {
+    id: '019f52be-9ac9-73ba-9332-bab8dbe0d98a',
+    name: 'SATA',
+    command_set: 'ATA',
+    supports_hot_plug: true,
+  },
+  {
+    id: '019f52be-9ac9-740f-af4b-c562b641c1f3',
+    name: 'SAS',
+    command_set: 'SCSI',
+    supports_hot_plug: true,
+  },
+  {
+    id: '019f52be-9ac9-7e26-9690-0269e8133283',
+    name: 'NVMe',
+    command_set: 'NVMe',
+    supports_hot_plug: true,
+  },
+  {
+    id: '019f52be-9ac9-78c6-90e0-b440d25eb894',
+    name: 'CXL',
+    command_set: 'CXL',
+    supports_hot_plug: true,
+  },
 ];
 
 /** @type {import('sequelize-cli').Migration} */
