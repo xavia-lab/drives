@@ -1,10 +1,10 @@
 'use strict';
 
 const data = [
-  { id: 1, name: 'SATA', command_set: 'ATA', supports_hot_plug: true },
-  { id: 2, name: 'SAS', command_set: 'SCSI', supports_hot_plug: true },
-  { id: 3, name: 'NVMe', command_set: 'NVMe', supports_hot_plug: true },
-  { id: 4, name: 'CXL', command_set: 'CXL', supports_hot_plug: true },
+  { name: 'SATA', command_set: 'ATA', supports_hot_plug: true },
+  { name: 'SAS', command_set: 'SCSI', supports_hot_plug: true },
+  { name: 'NVMe', command_set: 'NVMe', supports_hot_plug: true },
+  { name: 'CXL', command_set: 'CXL', supports_hot_plug: true },
 ];
 
 /** @type {import('sequelize-cli').Migration} */

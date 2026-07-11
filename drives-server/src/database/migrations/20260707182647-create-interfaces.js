@@ -55,6 +55,7 @@ module.exports = {
     // 3. Add Index for high-velocity lookups and table JOIN optimization
     await queryInterface.addIndex('interfaces', ['name'], {
       name: 'interfaces_name',
+      unique: true,
       using: 'btree',
     });
     await queryInterface.addIndex('interfaces', ['bus_protocol_id'], {

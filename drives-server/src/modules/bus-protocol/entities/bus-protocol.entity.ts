@@ -15,6 +15,7 @@ import {
   indexes: [
     {
       name: 'bus_protocols_name',
+      unique: true,
       fields: ['name'],
     },
   ],

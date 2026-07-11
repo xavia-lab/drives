@@ -3,6 +3,8 @@ resourcePolicy:
   version: "default"
   resource: "system"
   rules:
-    - actions: ["list", "view"]
+    - actions: ["show", "list"]
       effect: EFFECT_ALLOW
-      roles: ["admin", "owner", "manager", "inventory_operator", "sales_representative"]
+      roles:
+        - admin
+        - viewer

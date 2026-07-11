@@ -19,11 +19,11 @@ import { BusProtocol } from '../../bus-protocol/entities/bus-protocol.entity';
   indexes: [
     {
       name: 'interfaces_name',
+      unique: true,
       fields: ['name'],
     },
     {
       name: 'interfaces_bus_protocol_id_idx',
-      unique: true,
       fields: ['bus_protocol_id'],
     },
   ],

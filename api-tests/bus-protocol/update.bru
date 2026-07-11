@@ -5,13 +5,16 @@ meta {
 }
 
 put {
-  url: http://localhost:5000/api/v1/bus-protocols/3
+  url: http://localhost:5000/api/v1/bus-protocols/5
   body: json
   auth: none
 }
 
 body:json {
   {
-    "name": "ATA"
+    "name": "ABC",
+    "commandSet": "XYZ",
+    "supportsHotPlug": true
   }
+  
 }

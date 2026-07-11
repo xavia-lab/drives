@@ -1,0 +1,81 @@
+{
+  "name": "@drives/drives-ui",
+  "version": "0.0.0",
+  "description": "A Refine.dev based UI frontend!",
+  "author": "Rehan Mahmood",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "dev": "npm run start:dev",
+    "start:dev": "cross-env NODE_OPTIONS=--max_old_space_size=4096 refine dev",
+    "build": "refine build",
+    "build:image": "task build-ui",
+    "start": "refine start",
+    "format": "npx prettier . --write",
+    "lint": "next lint",
+    "refine": "refine",
+    "refine:update": "refine update"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.1",
+    "@ant-design/nextjs-registry": "^1.0.0",
+    "@ant-design/pro-components": "^2.8.10",
+    "@cerbos/http": "^0.28.1",
+    "@refinedev/antd": "^6.0.1",
+    "@refinedev/cli": "^2.16.52",
+    "@refinedev/core": "^5.0.11",
+    "@refinedev/devtools": "^2.0.5",
+    "@refinedev/kbar": "^2.0.1",
+    "@refinedev/nextjs-router": "^7.0.5",
+    "@refinedev/simple-rest": "^6.0.1",
+    "@tanstack/react-query": "^5.101.2",
+    "antd": "^5.23.0",
+    "axios": "^1.18.1",
+    "big.js": "^7.0.1",
+    "dayjs": "^1.11.21",
+    "js-cookie": "^3.0.5",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.577.0",
+    "next": "^16.2.0",
+    "next-auth": "^4.24.13",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-to-print": "^3.3.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/big.js": "^7.0.0",
+    "@types/js-cookie": "^3.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.2.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/ui": "^4.1.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.0.3",
+    "eslint-config-next": "^16.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "jsdom": "^29.0.0",
+    "postcss": "^8.5.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  },
+  "refine": {
+    "projectId": "SlVCvi-0DuNp2-PA6Rg7"
+  },
+  "overrides": {
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3"
+  }
+}

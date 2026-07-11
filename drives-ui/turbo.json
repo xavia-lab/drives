@@ -1,0 +1,35 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "NEXT_PUBLIC_DRIVES_FRONTEND_CERBOS_URL",
+        "DRIVES_FRONTEND_API_URL",
+        "DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID",
+        "DRIVES_FRONTEND_KEYCLOAK_ISSUER",
+        "DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET"
+      ]
+    },
+    "build": {
+      "env": [
+        "DRIVES_FRONTEND_CERBOS_URL",
+        "DRIVES_FRONTEND_API_URL",
+        "DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID",
+        "DRIVES_FRONTEND_KEYCLOAK_ISSUER",
+        "DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET"
+      ]
+    },
+    "refine": {
+      "cache": false
+    },
+    "refine:update": {
+      "cache": false
+    }
+  }
+}
