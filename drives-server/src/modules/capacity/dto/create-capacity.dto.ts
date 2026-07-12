@@ -2,12 +2,24 @@ import {
   IsString,
   IsNotEmpty,
   Length,
-  IsBoolean,
   IsOptional,
   IsNumber,
   IsUUID,
+  IsEnum,
+  Max,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+// Exported Enum to maintain standard data structure across validation layers
+export enum CapacityUnit {
+  B = 'B',
+  KB = 'KB',
+  MB = 'MB',
+  GB = 'GB',
+  TB = 'TB',
+  PB = 'PB',
+}
 
 export class CreateCapacityDto {
   @ApiPropertyOptional({
@@ -25,19 +37,29 @@ export class CreateCapacityDto {
   @Length(1, 32)
   name: string;
 
-  @ApiProperty({ example: '120.00', description: 'Capacity value' })
-  @IsNumber()
+  @ApiProperty({
+    example: 120.0,
+    description: 'Capacity value matching DECIMAL(6,2) layout bounds',
+    minimum: 0,
+    maximum: 9999.99,
+  })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Value must be a number with maximum 2 decimal places' },
+  )
   @IsNotEmpty()
+  @Min(0, { message: 'Value cannot be negative' })
+  @Max(9999.99, { message: 'Value cannot exceed 9999.99' })
   value: number;
 
-  @ApiProperty({ example: 'GB', description: 'Capacity unit' })
-  @IsString()
+  @ApiProperty({
+    example: 'GB',
+    description: 'Capacity unit enum token',
+    enum: CapacityUnit,
+  })
+  @IsEnum(CapacityUnit, {
+    message: `Unit must be one of the following values: ${Object.values(CapacityUnit).join(', ')}`,
+  })
   @IsNotEmpty()
-  @Length(1, 3)
-  unit: string;
-
-  @ApiPropertyOptional({ example: false, description: 'Is system-managed' })
-  @IsOptional()
-  @IsBoolean()
-  managed?: boolean;
+  unit: CapacityUnit;
 }

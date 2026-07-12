@@ -29,7 +29,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { KeycloakRoles } from '../../common/decorators/keycloak-roles.decorator';
 import { NotFoundException } from '@nestjs/common';
 import { QueryUserDto } from './dto/query-user.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 

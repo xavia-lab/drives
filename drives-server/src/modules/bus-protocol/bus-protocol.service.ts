@@ -6,25 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { BusProtocol } from './entities/bus-protocol.entity';
-import { BaseCrudService } from '../base/base-crud.service';
 import { CreateBusProtocolDto } from './dto/create-bus-protocol.dto';
 import { UpdateBusProtocolDto } from './dto/update-bus-protocol.dto';
 import { QueryBusProtocolDto } from './dto/query-bus-protocol.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class BusProtocolService
-  extends BaseCrudService<BusProtocol>
-  implements OnModuleInit
-{
+export class BusProtocolService implements OnModuleInit {
   constructor(
     @InjectModel(BusProtocol)
-    private BusProtocolModel: typeof BusProtocol,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(BusProtocolModel, queryBuilder);
-  }
+    private readonly busProtocolModel: typeof BusProtocol,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultBusProtocols();
@@ -37,25 +31,39 @@ export class BusProtocolService
       supportsHotPlug: boolean;
     }[] = [];
 
-    for (const BusProtocolData of defaultBusProtocols) {
-      const existing = await this.BusProtocolModel.findOne({
-        where: { name: BusProtocolData.name },
+    for (const busProtocolData of defaultBusProtocols) {
+      const existing = await this.busProtocolModel.findOne({
+        where: { name: busProtocolData.name },
       });
 
       if (!existing) {
-        await this.BusProtocolModel.create({
-          ...BusProtocolData,
+        await this.busProtocolModel.create({
+          ...busProtocolData,
           managed: true,
         });
-        console.log(`Seeded default BusProtocol: ${BusProtocolData.name}`);
+        console.log(`Seeded default BusProtocol: ${busProtocolData.name}`);
       }
     }
+  }
+
+  async findAll(
+    query?: QueryBusProtocolDto,
+  ): Promise<PaginatedResponse<BusProtocol & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<BusProtocol>(
+      this.busProtocolModel,
+      query,
+    );
+  }
+
+  async findOne(id: string): Promise<BusProtocol | null> {
+    return this.busProtocolModel.findByPk(id);
   }
 
   async createBusProtocol(
     createBusProtocolDto: CreateBusProtocolDto,
   ): Promise<BusProtocol> {
-    const existingByName = await this.BusProtocolModel.findOne({
+    const existingByName = await this.busProtocolModel.findOne({
       where: { name: createBusProtocolDto.name },
     });
 
@@ -65,27 +73,27 @@ export class BusProtocolService
       );
     }
 
-    return super.create(createBusProtocolDto);
+    return this.busProtocolModel.create(createBusProtocolDto as any);
   }
 
   async updateBusProtocol(
     id: string,
     updateBusProtocolDto: UpdateBusProtocolDto,
   ): Promise<BusProtocol> {
-    const BusProtocol = await super.findOne(id);
+    const busProtocol = await this.busProtocolModel.findByPk(id);
 
-    if (!BusProtocol) {
+    if (!busProtocol) {
       throw new NotFoundException(`BusProtocol with ID ${id} not found`);
     }
 
-    if (BusProtocol.managed) {
+    if (busProtocol.managed) {
       throw new ConflictException(
         'System-managed BusProtocols cannot be updated',
       );
     }
 
     if (updateBusProtocolDto.name) {
-      const existing = await this.BusProtocolModel.findOne({
+      const existing = await this.busProtocolModel.findOne({
         where: { name: updateBusProtocolDto.name },
       });
       if (existing && existing.id !== id) {
@@ -95,6 +103,7 @@ export class BusProtocolService
       }
     }
 
+    // Filter down to only passed payload items to keep the query clean
     const updateData: Partial<BusProtocol> = {};
     if (updateBusProtocolDto.name !== undefined)
       updateData.name = updateBusProtocolDto.name;
@@ -105,32 +114,23 @@ export class BusProtocolService
     if (updateBusProtocolDto.managed !== undefined)
       updateData.managed = updateBusProtocolDto.managed;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`BusProtocol with ID ${id} not found`);
-    }
-    return result;
+    return busProtocol.update(updateData);
   }
 
   async deleteBusProtocol(id: string): Promise<boolean> {
-    const BusProtocol = await super.findOne(id);
+    const busProtocol = await this.busProtocolModel.findByPk(id);
 
-    if (!BusProtocol) {
+    if (!busProtocol) {
       throw new NotFoundException(`BusProtocol with ID ${id} not found`);
     }
 
-    if (BusProtocol.managed) {
+    if (busProtocol.managed) {
       throw new ConflictException(
         'System-managed BusProtocols cannot be deleted',
       );
     }
 
-    return super.delete(id);
-  }
-
-  async findAllBusProtocols(
-    query?: QueryBusProtocolDto,
-  ): Promise<PaginatedResponse<BusProtocol>> {
-    return super.findAll(query);
+    const deletedCount = await this.busProtocolModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

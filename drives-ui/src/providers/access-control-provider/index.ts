@@ -9,6 +9,7 @@ const MANAGED_RESOURCES = [
   "form-factors",
   "bus-protocols",
   "interfaces",
+  "capacities",
 ];
 
 export const createAccessControlProvider = (): AccessControlProvider => ({

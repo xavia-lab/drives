@@ -21,23 +21,14 @@ export default function CountryList() {
     syncWithLocation: true, // Persists state in the URL
   });
 
-  // Safely extract pagination defaults by checking if it is an object
-  const pagination =
-    typeof tableProps.pagination === "object" ? tableProps.pagination : null;
-
-  const current = pagination?.current ?? 1;
-  const pageSize = pagination?.pageSize ?? 10;
-
   return (
     <List>
       <Table {...tableProps} rowKey="id">
-        {/* Sequential Index Column */}
         <Table.Column
-          title="#"
+          dataIndex="itemNumber"
+          title={"#"}
           width={70}
-          render={(_, __, index) => {
-            return (current - 1) * pageSize + index + 1;
-          }}
+          align={"right"}
         />
         <Table.Column
           dataIndex="name"

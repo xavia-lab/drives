@@ -6,84 +6,119 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { PhysicalDrive } from './entities/physical-drive.entity';
-import { BaseCrudService } from '../base/base-crud.service';
+import { StorageModel } from '../storage-model/entities/storage-model.entity';
+import { Vendor } from '../vendor/entities/vendor.entity';
+import { Currency } from '../currency/entities/currency.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class PhysicalDriveService
-  extends BaseCrudService<PhysicalDrive>
-  implements OnModuleInit
-{
+export class PhysicalDriveService implements OnModuleInit {
   constructor(
     @InjectModel(PhysicalDrive)
-    private physicalDriveModel: typeof PhysicalDrive,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(physicalDriveModel, queryBuilder);
-  }
+    private readonly physicalDriveModel: typeof PhysicalDrive,
+    @InjectModel(StorageModel)
+    private readonly storageModelModel: typeof StorageModel,
+    @InjectModel(Vendor)
+    private readonly vendorModel: typeof Vendor,
+    @InjectModel(Currency)
+    private readonly currencyModel: typeof Currency,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
-  async onModuleInit() {
-    await this.seedDefaultPhysicalDrives();
-  }
+  async onModuleInit() {}
 
-  private async seedDefaultPhysicalDrives(): Promise<void> {
-    const defaultPhysicalDrives: {
-      serialNumber: string;
-      worldwideNameWwn: string;
-      acquisitionCost: number;
-      purchaseDate: string;
-      warrantyExpiryDate: string;
-      storageModelId: number;
-      retailerVendorId: number;
-      currencyId: number;
-    }[] = [];
+  // 🌟 Optimized private helper to check foreign key constraints concurrently and aggregate errors
+  private async validateForeignKeys(ids: {
+    storageModelId?: string;
+    retailerVendorId?: string;
+    currencyId?: string;
+  }): Promise<void> {
+    const checkPromises: Promise<string | null>[] = [];
 
-    for (const physicalDriveData of defaultPhysicalDrives) {
-      const existing = await this.physicalDriveModel.findOne({
-        where: {
-          serialNumber: physicalDriveData.serialNumber,
-        },
-      });
+    if (ids.storageModelId) {
+      checkPromises.push(
+        this.storageModelModel
+          .findByPk(ids.storageModelId)
+          .then((exists) =>
+            exists
+              ? null
+              : `StorageModel with ID ${ids.storageModelId} not found`,
+          ),
+      );
+    }
+    if (ids.retailerVendorId) {
+      checkPromises.push(
+        this.vendorModel
+          .findByPk(ids.retailerVendorId)
+          .then((exists) =>
+            exists
+              ? null
+              : `Retailer Vendor with ID ${ids.retailerVendorId} not found`,
+          ),
+      );
+    }
+    if (ids.currencyId) {
+      checkPromises.push(
+        this.currencyModel
+          .findByPk(ids.currencyId)
+          .then((exists) =>
+            exists ? null : `Currency with ID ${ids.currencyId} not found`,
+          ),
+      );
+    }
 
-      if (!existing) {
-        await this.physicalDriveModel.create({
-          ...physicalDriveData,
-          managed: true,
-        });
-        console.log(
-          `Seeded default physical drive: ${physicalDriveData.serialNumber}`,
-        );
-      }
+    const results = await Promise.all(checkPromises);
+    const errors = results.filter((error): error is string => error !== null);
+
+    if (errors.length > 0) {
+      throw new NotFoundException(errors.join('\n'));
     }
   }
 
-  async createPhysicalDrive(
+  async findAll(
+    query?: QueryPhysicalDriveDto,
+  ): Promise<PaginatedResponse<PhysicalDrive & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<PhysicalDrive>(
+      this.physicalDriveModel,
+      query,
+    );
+  }
+
+  async findOne(id: string): Promise<PhysicalDrive | null> {
+    return this.physicalDriveModel.findByPk(id);
+  }
+
+  async create(
     createPhysicalDriveDto: CreatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    const existingByName = await this.physicalDriveModel.findOne({
+    const existingBySerial = await this.physicalDriveModel.findOne({
       where: {
         serialNumber: createPhysicalDriveDto.serialNumber,
       },
     });
 
-    if (existingByName) {
+    if (existingBySerial) {
       throw new ConflictException(
-        `PhysicalDrive with name "${createPhysicalDriveDto.serialNumber}" already exists`,
+        `PhysicalDrive with serial number "${createPhysicalDriveDto.serialNumber}" already exists`,
       );
     }
 
-    return super.create(createPhysicalDriveDto);
+    // 🌟 Aggregate check for all incoming foreign keys concurrently
+    await this.validateForeignKeys(createPhysicalDriveDto as any);
+
+    return this.physicalDriveModel.create(createPhysicalDriveDto as any);
   }
 
-  async updatePhysicalDrive(
+  async update(
     id: string,
     updatePhysicalDriveDto: UpdatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    const physicalDriveObject = await super.findOne(id);
+    const physicalDriveObject = await this.physicalDriveModel.findByPk(id);
 
     if (!physicalDriveObject) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
@@ -97,10 +132,13 @@ export class PhysicalDriveService
       });
       if (existing && existing.id !== id) {
         throw new ConflictException(
-          `PhysicalDrive with name "${updatePhysicalDriveDto.serialNumber}" already exists`,
+          `PhysicalDrive with serial number "${updatePhysicalDriveDto.serialNumber}" already exists`,
         );
       }
     }
+
+    // 🌟 Validate passed keys for existence before performing the data update loop
+    await this.validateForeignKeys(updatePhysicalDriveDto as any);
 
     const updateData: Partial<PhysicalDrive> = {};
     if (updatePhysicalDriveDto.serialNumber !== undefined)
@@ -120,26 +158,19 @@ export class PhysicalDriveService
     if (updatePhysicalDriveDto.currencyId !== undefined)
       updateData.currencyId = updatePhysicalDriveDto.currencyId;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
-    }
-    return result;
+    return physicalDriveObject.update(updateData);
   }
 
-  async deletePhysicalDrive(id: string): Promise<boolean> {
-    const physicalDriveObject = await super.findOne(id);
+  async delete(id: string): Promise<boolean> {
+    const physicalDriveObject = await this.physicalDriveModel.findByPk(id);
 
     if (!physicalDriveObject) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     }
 
-    return super.delete(id);
-  }
-
-  async findAllPhysicalDrives(
-    query?: QueryPhysicalDriveDto,
-  ): Promise<PaginatedResponse<PhysicalDrive>> {
-    return super.findAll(query);
+    const deletedCount = await this.physicalDriveModel.destroy({
+      where: { id },
+    });
+    return deletedCount > 0;
   }
 }

@@ -28,6 +28,9 @@ export class InterfaceResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  itemNumber: number;
+
   constructor(partial: Partial<InterfaceResponseDto>) {
     Object.assign(this, partial);
   }

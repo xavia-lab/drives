@@ -1,72 +1,70 @@
 import {
-  BadRequestException,
-  ConflictException,
   Injectable,
-  InternalServerErrorException,
-  Logger,
+  ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Vendor } from './entities/vendor.entity';
-import { Country } from '../country/entities/country.entity';
-import { Sequelize } from 'sequelize-typescript';
-import { Transaction } from 'sequelize';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
+import { Country } from '../country/entities/country.entity'; // 🌟 Explicit context reference
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { QueryVendorDto } from './dto/query-vendor.dto';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
 export class VendorService {
   constructor(
-    @InjectModel(Vendor) private vendorRepository: typeof Vendor,
-    @InjectModel(Country) private countryRepository: typeof Country,
-    private sequelize: Sequelize,
-    protected queryBuilder: QueryBuilderService,
+    @InjectModel(Vendor)
+    private readonly vendorModel: typeof Vendor,
+    @InjectModel(Country)
+    private readonly countryModel: typeof Country, // 🌟 Inject relation model dependency
+    private readonly paginationService: PaginationService,
   ) {}
 
-  private readonly logger = new Logger(VendorService.name);
+  // 🌟 Private helper to check foreign key constraints concurrently and aggregate errors
+  private async validateForeignKeys(ids: {
+    countryId?: string;
+  }): Promise<void> {
+    const checkPromises: Promise<string | null>[] = [];
 
-  public async findAll(
-    query?: PaginationQueryDto,
-  ): Promise<PaginatedResponse<Vendor>> {
-    try {
-      const options = this.queryBuilder.buildQueryOptions(query ?? {});
-
-      const { count, rows } = await this.vendorRepository.findAndCountAll({
-        ...options,
-        include: [Country],
-        distinct: true,
-      });
-
-      // TypeScript is happy now because query is guaranteed to exist
-      const limit = options.limit || Number(query?.pageSize) || 10;
-      const page = Number(query?.pageNumber) || 1;
-      const totalPages = Math.ceil(count / limit);
-
-      return new PaginatedResponse(rows, count, page, limit, totalPages);
-    } catch (error) {
-      this.logger.error('Error in finding all vendor records:', error);
-      throw new InternalServerErrorException(
-        `Could not retrieve vendor records`,
-        error,
+    if (ids.countryId) {
+      checkPromises.push(
+        this.countryModel
+          .findByPk(ids.countryId)
+          .then((exists) =>
+            exists ? null : `Country with ID ${ids.countryId} not found`,
+          ),
       );
+    }
+
+    const results = await Promise.all(checkPromises);
+    const errors = results.filter((error): error is string => error !== null);
+
+    if (errors.length > 0) {
+      throw new NotFoundException(errors.join('\n'));
     }
   }
 
-  async findOne(id: string): Promise<Vendor> {
-    const vendor = await this.vendorRepository.findByPk(id, {
-      include: [Country],
-    });
+  async findAll(
+    query?: QueryVendorDto,
+  ): Promise<PaginatedResponse<Vendor & { itemNumber: number }>> {
+    return this.paginationService.paginate<Vendor>(this.vendorModel, query);
+  }
+
+  async findOne(id: string): Promise<Vendor | null> {
+    const vendor = await this.vendorModel.findByPk(id);
+
     if (!vendor) {
-      throw new NotFoundException('Vendor not found');
+      throw new NotFoundException(`Vendor with ID ${id} not found`);
     }
+
     return vendor;
   }
 
   async create(createVendorDto: CreateVendorDto): Promise<Vendor> {
-    const existingByName = await this.vendorRepository.findOne({
+    const existingByName = await this.vendorModel.findOne({
       where: { name: createVendorDto.name },
     });
 
@@ -80,70 +78,69 @@ export class VendorService {
       throw new BadRequestException('countryId is required');
     }
 
-    return this.sequelize.transaction(async (t: Transaction) => {
-      const vendor = await this.vendorRepository.create(
-        {
-          ...createVendorDto,
-        },
-        { transaction: t },
-      );
+    // 🌟 Validate countryId exists before committing creation block
+    await this.validateForeignKeys(createVendorDto);
 
-      return vendor.reload({ include: [Country], transaction: t });
-    });
+    const vendor = await this.vendorModel.create(createVendorDto as any);
+
+    return vendor.reload();
   }
 
   async update(id: string, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
-    const {
-      name,
-      isManufacturer,
-      isRetailer,
-      supportContactEmail,
-      portalUrl,
-      countryId,
-    } = updateVendorDto;
+    const vendor = await this.vendorModel.findByPk(id);
 
-    return this.sequelize.transaction(async (t: Transaction) => {
-      const vendor = await this.vendorRepository.findByPk(id, {
-        transaction: t,
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${id} not found`);
+    }
+
+    if (vendor.managed) {
+      throw new ConflictException('System-managed vendors cannot be updated');
+    }
+
+    if (updateVendorDto.name) {
+      const existing = await this.vendorModel.findOne({
+        where: { name: updateVendorDto.name },
       });
-
-      if (!vendor) {
-        throw new NotFoundException('Vendor not found');
+      if (existing && existing.id !== id) {
+        throw new ConflictException(
+          `Vendor with name "${updateVendorDto.name}" already exists`,
+        );
       }
+    }
 
-      // 1. Update Vendor fields
-      await vendor.update(
-        {
-          name: name,
-          isManufacturer: isManufacturer,
-          isRetailer: isRetailer,
-          supportContactEmail: supportContactEmail || null,
-          portalUrl: portalUrl || null,
-          countryId: countryId,
-        },
-        { transaction: t },
-      );
+    // 🌟 Validate countryId exists if passed down as a modification parameter
+    await this.validateForeignKeys(updateVendorDto);
 
-      return vendor.reload({ include: [Country], transaction: t });
-    });
+    const updateData: Partial<Vendor> = {};
+    if (updateVendorDto.name !== undefined)
+      updateData.name = updateVendorDto.name;
+    if (updateVendorDto.isManufacturer !== undefined)
+      updateData.isManufacturer = updateVendorDto.isManufacturer;
+    if (updateVendorDto.isRetailer !== undefined)
+      updateData.isRetailer = updateVendorDto.isRetailer;
+    if (updateVendorDto.supportContactEmail !== undefined)
+      updateData.supportContactEmail = updateVendorDto.supportContactEmail;
+    if (updateVendorDto.portalUrl !== undefined)
+      updateData.portalUrl = updateVendorDto.portalUrl;
+    if (updateVendorDto.countryId !== undefined)
+      updateData.countryId = updateVendorDto.countryId;
+
+    await vendor.update(updateData);
+    return vendor.reload({ include: [Country] });
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.sequelize.transaction(async (t: Transaction) => {
-      // 1. Fetch with explicit attributes
-      const vendor = await this.vendorRepository.findByPk(id, {
-        transaction: t,
-        attributes: ['id'],
-      });
+    const vendor = await this.vendorModel.findByPk(id);
 
-      if (!vendor) {
-        throw new NotFoundException(`Vendor with ID ${id} not found`);
-      }
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${id} not found`);
+    }
 
-      // 5. Delete the vendor
-      await vendor.destroy({ transaction: t });
+    if (vendor.managed) {
+      throw new ConflictException('System-managed vendors cannot be deleted');
+    }
 
-      return true;
-    });
+    const deletedCount = await this.vendorModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

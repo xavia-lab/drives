@@ -35,11 +35,6 @@ module.exports = {
         type: Sequelize.STRING(64),
         allowNull: false, // e.g., 'Ashburn', 'Slough'
       },
-      managed: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

@@ -19,18 +19,19 @@ import {
   AccountBookOutlined,
   AlignCenterOutlined,
   BarChartOutlined,
-  BgColorsOutlined,
   BookOutlined,
+  BoxPlotOutlined,
   CheckCircleOutlined,
+  CloudSyncOutlined,
   DashboardOutlined,
   DashboardTwoTone,
   DatabaseOutlined,
-  DollarOutlined,
   GlobalOutlined,
   GoldOutlined,
   HomeOutlined,
+  PoundOutlined,
   ProductOutlined,
-  RubyOutlined,
+  ReadOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
 import { createAuthProvider } from "@providers/auth-provider";
@@ -205,6 +206,18 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "capacities",
+                  list: "/capacities",
+                  create: "/capacities/create",
+                  edit: "/capacities/edit/:id",
+                  show: "/capacities/show/:id",
+                  meta: {
+                    canDelete: true,
+                    parent: "storage",
+                    icon: <BarChartOutlined />,
+                  },
+                },
+                {
                   name: "interfaces",
                   list: "/interfaces",
                   create: "/interfaces/create",
@@ -213,7 +226,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     parent: "storage",
-                    icon: <BarChartOutlined />,
+                    icon: <CloudSyncOutlined />,
                   },
                 },
                 {
@@ -239,7 +252,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Bus Protocols",
                     parent: "storage",
-                    icon: <RubyOutlined />,
+                    icon: <ReadOutlined />,
                   },
                 },
                 {
@@ -252,7 +265,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Storage Types",
                     parent: "storage",
-                    icon: <BgColorsOutlined />,
+                    icon: <BoxPlotOutlined />,
                   },
                 },
                 {
@@ -285,7 +298,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     parent: "general",
-                    icon: <DollarOutlined />,
+                    icon: <PoundOutlined />,
                   },
                 },
                 {

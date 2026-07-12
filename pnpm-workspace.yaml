@@ -4,7 +4,7 @@ packages:
   - 'drives-ui'
 allowBuilds:
   '@scarf/scarf': true
-  '@swc/core': set this to true or false
+  '@swc/core': true
   bcrypt: true
   deasync: true
   protobufjs: true

@@ -1,6 +1,6 @@
 import { IsOptional, IsIn, IsString, Length } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryVendorDto extends PaginationQueryDto {
   // Override parent constraint to enforce strict sort field whitelisting for vendors

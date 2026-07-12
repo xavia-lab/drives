@@ -22,6 +22,9 @@ export class FormFactorResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  itemNumber: number;
+
   constructor(partial: Partial<FormFactorResponseDto>) {
     Object.assign(this, partial);
   }

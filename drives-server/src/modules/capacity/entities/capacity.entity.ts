@@ -10,6 +10,9 @@ import sequelize from 'sequelize';
 
 import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
+// Strong type alignment for your allowed database ENUM values
+export type CapacityUnit = 'B' | 'KB' | 'MB' | 'GB' | 'TB' | 'PB';
+
 @Table({
   tableName: 'capacities',
   timestamps: true,
@@ -41,10 +44,11 @@ export class Capacity extends Model {
   declare value: number;
 
   @Column({
-    type: DataType.STRING(8),
+    // Updated from STRING(8) to ENUM matching your migration values
+    type: DataType.ENUM('B', 'KB', 'MB', 'GB', 'TB', 'PB'),
     allowNull: false,
   })
-  declare unit: string;
+  declare unit: CapacityUnit; // Applied TypeScript union type here
 
   @Default(false)
   @Column(DataType.BOOLEAN)

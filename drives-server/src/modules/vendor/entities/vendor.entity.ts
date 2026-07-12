@@ -84,11 +84,11 @@ export class Vendor extends Model {
   // Associations
   @ForeignKey(() => Country)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.UUID,
     field: 'country_id',
     allowNull: false,
   })
-  declare countryId: number;
+  declare countryId: string;
 
   @BelongsTo(() => Country, {
     onDelete: 'RESTRICT',

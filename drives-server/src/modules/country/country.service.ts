@@ -6,25 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Country } from './entities/country.entity';
-import { BaseCrudService } from '../base/base-crud.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { QueryCountryDto } from './dto/query-country.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class CountryService
-  extends BaseCrudService<Country>
-  implements OnModuleInit
-{
+export class CountryService implements OnModuleInit {
   constructor(
     @InjectModel(Country)
-    private countryModel: typeof Country,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(countryModel, queryBuilder);
-  }
+    private readonly countryModel: typeof Country,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultCountries();
@@ -51,6 +45,17 @@ export class CountryService
     }
   }
 
+  async findAll(
+    query?: QueryCountryDto,
+  ): Promise<PaginatedResponse<Country & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<Country>(this.countryModel, query);
+  }
+
+  async findOne(id: string): Promise<Country | null> {
+    return this.countryModel.findByPk(id);
+  }
+
   async createCountry(createCountryDto: CreateCountryDto): Promise<Country> {
     const existingByName = await this.countryModel.findOne({
       where: { name: createCountryDto.name },
@@ -72,14 +77,14 @@ export class CountryService
       );
     }
 
-    return super.create(createCountryDto);
+    return this.countryModel.create(createCountryDto as any);
   }
 
   async updateCountry(
     id: string,
     updateCountryDto: UpdateCountryDto,
   ): Promise<Country> {
-    const country = await super.findOne(id);
+    const country = await this.countryModel.findByPk(id);
 
     if (!country) {
       throw new NotFoundException(`Country with ID ${id} not found`);
@@ -111,6 +116,7 @@ export class CountryService
       }
     }
 
+    // Filter down to only passed payload items to keep the query clean
     const updateData: Partial<Country> = {};
     if (updateCountryDto.name !== undefined)
       updateData.name = updateCountryDto.name;
@@ -119,15 +125,11 @@ export class CountryService
     if (updateCountryDto.managed !== undefined)
       updateData.managed = updateCountryDto.managed;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`Country with ID ${id} not found`);
-    }
-    return result;
+    return country.update(updateData);
   }
 
   async deleteCountry(id: string): Promise<boolean> {
-    const country = await super.findOne(id);
+    const country = await this.countryModel.findByPk(id);
 
     if (!country) {
       throw new NotFoundException(`Country with ID ${id} not found`);
@@ -137,12 +139,7 @@ export class CountryService
       throw new ConflictException('System-managed countries cannot be deleted');
     }
 
-    return super.delete(id);
-  }
-
-  async findAllCurrencies(
-    query?: QueryCountryDto,
-  ): Promise<PaginatedResponse<Country>> {
-    return super.findAll(query);
+    const deletedCount = await this.countryModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

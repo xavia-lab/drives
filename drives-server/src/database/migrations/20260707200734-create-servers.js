@@ -3,13 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Servers Table with UUIDv7 Primary and Foreign Keys
     await queryInterface.createTable('servers', {
       id: {
         type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
       },
       hostname: {
@@ -17,46 +15,39 @@ module.exports = {
         allowNull: false,
         unique: true, // e.g., 'us-east-compute-42.infra'
       },
-      host_os: {
-        type: Sequelize.STRING(64),
-        allowNull: false, // e.g., 'Proxmox VE', 'TrueNAS SCALE', 'Ubuntu Server'
+      operating_system_id: {
+        type: Sequelize.UUID, // 🌟 Normalized structural lookup pointer
+        allowNull: false,
+        references: { model: 'operating_systems', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       total_ram_mb: {
         type: Sequelize.INTEGER,
-        allowNull: false, // Stored in MB to execute dynamic resource capacity calculations
+        allowNull: false,
       },
       cpu_model_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match cpu_models.id
-        allowNull: false, // Relational pointer enforcing structural CPU lookup mapping
-        references: {
-          model: 'cpu_models',
-          key: 'id',
-        },
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: { model: 'cpu_models', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
       cpu_count: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        defaultValue: 1, // Enforces multi-socket processor board accounting (e.g., dual-socket servers)
-      },
-      datacenter_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match datacenters.id
-        allowNull: false,
-        references: {
-          model: 'datacenters',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT', // Blocks facility profiles deletion if nodes reside inside it
+        defaultValue: 1,
       },
       rack_id: {
-        type: Sequelize.STRING(32),
-        allowNull: false, // e.g., 'RACK-B12'
+        type: Sequelize.UUID, // 🌟 Upgraded from String to normalized UUIDv7 relation mapping
+        allowNull: false,
+        references: { model: 'racks', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT', // Blocks cabinet teardowns if operational nodes are registered inside it
       },
       rack_unit_position: {
         type: Sequelize.INTEGER,
-        allowNull: false, // Position index inside the physical cabinet enclosure (e.g., 22)
+        allowNull: false, // Elevation tracking inside the physical cabinet enclosure (e.g., 22)
       },
       created_at: {
         type: Sequelize.DATE,
@@ -70,31 +61,36 @@ module.exports = {
 
     // --- Performance Optimization Indexes ---
 
-    // Fast lookup for finding servers grouped inside a single datacenter location
-    await queryInterface.addIndex('servers', ['datacenter_id'], {
-      name: 'servers_datacenter_id_idx',
+    // Optimization for inventory searches grouped inside a specific physical cabinet enclosure location
+    await queryInterface.addIndex('servers', ['rack_id'], {
+      name: 'servers_rack_id_idx',
       using: 'btree',
     });
 
-    // Fast layout grouping index for asset planning layouts inside physical locations
+    // Enforce unique structural grid footprints: Blocks two physical chassis devices from claiming the same Rack Elevation slot
     await queryInterface.addIndex(
       'servers',
-      ['datacenter_id', 'rack_id', 'rack_unit_position'],
+      ['rack_id', 'rack_unit_position'],
       {
-        name: 'servers_physical_placement_idx',
-        using: 'btree',
+        name: 'servers_physical_placement_unique_idx',
+        unique: true,
       },
     );
 
-    // B-Tree indexing optimization for grouping node capacities by raw processing chips
+    // B-Tree indexing optimization for capacity accounting by matching architecture chipsets
     await queryInterface.addIndex('servers', ['cpu_model_id'], {
       name: 'servers_cpu_model_id_idx',
+      using: 'btree',
+    });
+
+    // Fast metric lookup index for calculating total OS system allocations app-wide
+    await queryInterface.addIndex('servers', ['operating_system_id'], {
+      name: 'servers_operating_system_id_idx',
       using: 'btree',
     });
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to release constraints (sequences are no longer used)
     await queryInterface.dropTable('servers');
   },
 };

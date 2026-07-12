@@ -3,12 +3,12 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { DriveLifecycleEventController } from './drive-lifecycle-event.controller';
 import { DriveLifecycleEventService } from './drive-lifecycle-event.service';
 import { DriveLifecycleEvent } from './entities/drive-lifecycle-event.entity';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
+import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([DriveLifecycleEvent])],
+  imports: [SequelizeModule.forFeature([DriveLifecycleEvent, PhysicalDrive])],
   controllers: [DriveLifecycleEventController],
-  providers: [DriveLifecycleEventService, QueryBuilderService],
+  providers: [DriveLifecycleEventService],
   exports: [DriveLifecycleEventService],
 })
 export class DriveLifecycleEventModule {}

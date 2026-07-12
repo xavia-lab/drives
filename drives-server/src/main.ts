@@ -61,7 +61,7 @@ async function bootstrap() {
 
   // API Versioning
   app.setGlobalPrefix('api', {
-    exclude: ['system/(.*)'], // Excludes /system/version, /system/health, etc.
+    exclude: ['system/*path'], // Excludes /system/version, /system/health, etc.
   });
   app.enableVersioning({
     type: VersioningType.URI,

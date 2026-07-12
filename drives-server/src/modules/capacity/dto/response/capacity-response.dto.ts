@@ -28,6 +28,9 @@ export class CapacityResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  itemNumber: number;
+
   constructor(partial: Partial<CapacityResponseDto>) {
     Object.assign(this, partial);
   }
