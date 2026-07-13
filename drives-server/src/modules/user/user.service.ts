@@ -2,27 +2,29 @@ import {
   Injectable,
   Logger,
   ConflictException,
+  OnModuleInit,
   NotFoundException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Op } from 'sequelize';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
 import { QueryUserDto } from './dto/query-user.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   private readonly logger = new Logger(UserService.name);
 
   constructor(
     @InjectModel(User)
     private userModel: typeof User,
-    protected queryBuilder: QueryBuilderService,
+    private readonly paginationService: PaginationService,
   ) {}
+
+  async onModuleInit() {}
 
   /**
    * JIT (Just-In-Time) user creation/update from Keycloak token
@@ -73,38 +75,15 @@ export class UserService {
     }
   }
 
-  async findAll(query: QueryUserDto = {}): Promise<PaginatedResponse<User>> {
-    try {
-      const options = this.queryBuilder.buildQueryOptions(query);
-
-      const { count, rows } = await this.userModel.findAndCountAll({
-        ...options,
-        distinct: true,
-      });
-
-      // TypeScript is happy now because query is guaranteed to exist
-      const limit = options.limit || Number(query?.pageSize) || 10;
-      const page = Number(query?.pageNumber) || 1;
-      const totalPages = Math.ceil(count / limit);
-
-      return new PaginatedResponse(rows, count, page, limit, totalPages);
-    } catch (error) {
-      this.logger.error('Error in finding all users:', error);
-      throw new InternalServerErrorException(
-        `Could not retrieve user records`,
-        error,
-      );
-    }
+  async findAll(
+    query?: QueryUserDto,
+  ): Promise<PaginatedResponse<User & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<User>(this.userModel, query);
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.userModel.findByPk(id);
-
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    return user;
+  async findOne(id: string): Promise<User | null> {
+    return this.userModel.findByPk(id);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -136,11 +115,19 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
     return user.update(updateUserDto);
   }
 
   async delete(id: string): Promise<void> {
     const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
     // Soft delete (if paranoid is enabled) or hard delete
     await user.destroy();
@@ -148,6 +135,10 @@ export class UserService {
 
   async deactivate(id: string): Promise<User> {
     const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
     return user.update({
       isActive: false,
@@ -158,6 +149,10 @@ export class UserService {
   async activate(id: string): Promise<User> {
     const user = await this.findOne(id);
 
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
     return user.update({
       isActive: true,
       lastLogin: new Date(),
@@ -166,6 +161,10 @@ export class UserService {
 
   async updateLastLogin(id: string): Promise<User> {
     const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
     return user.update({
       lastLogin: new Date(),

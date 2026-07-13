@@ -27,13 +27,16 @@ export class VendorResponseDto {
   managed: boolean;
 
   @Expose()
-  countryId: number; // Updated to match the numerical identifier change
+  countryId: string;
 
   @Expose()
   createdAt: Date;
 
   @Expose()
   updatedAt: Date;
+
+  @Expose()
+  itemNumber: number;
 
   // --- Nested Associations ---
   @Expose()

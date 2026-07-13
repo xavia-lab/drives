@@ -1,7 +1,10 @@
 import { IsOptional, IsObject } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { CreateDriveLifecycleEventDto } from './create-drive-lifecycle-event.dto';
 
-export class UpdateDriveLifecycleEventDto {
+export class UpdateDriveLifecycleEventDto extends PartialType(
+  CreateDriveLifecycleEventDto,
+) {
   @ApiPropertyOptional({
     description:
       'Append or update metadata tags, notes, or resolution details inside the flexible telemetry block',

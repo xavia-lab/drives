@@ -13,7 +13,7 @@ module.exports = {
         defaultValue: Sequelize.literal('uuidv7()'),
       },
       host_server_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match servers.id
+        type: Sequelize.UUID,
         allowNull: false,
         references: { model: 'servers', key: 'id' },
         onUpdate: 'CASCADE',
@@ -35,9 +35,12 @@ module.exports = {
         defaultValue: 'VM',
         allowNull: false,
       },
-      os_type: {
-        type: Sequelize.STRING(32),
-        allowNull: false, // e.g., 'debian', 'freebsd', 'alpine'
+      operating_system_id: {
+        type: Sequelize.UUID, // 🌟 Normalized structural lookup pointer
+        allowNull: false,
+        references: { model: 'operating_systems', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       allocated_vcpus: {
         type: Sequelize.INTEGER,
@@ -86,10 +89,16 @@ module.exports = {
         },
       },
     );
+
+    // 🌟 Fast metric lookup index for calculating total virtual OS instances
+    await queryInterface.addIndex('virtual_servers', ['operating_system_id'], {
+      name: 'virtual_servers_operating_system_id_idx',
+      using: 'btree',
+    });
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
+    // Drop target table cleanly to remove structural dependencies
     await queryInterface.dropTable('virtual_servers');
 
     // Drop the specialized enum schema mapping type safely

@@ -28,7 +28,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { StorageModelResponseDto } from './dto/response/storage-model-response.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('storage-models')
@@ -89,7 +89,7 @@ export class StorageModelController {
   async create(
     @Body() createStorageModelDto: CreateStorageModelDto,
   ): Promise<StorageModel> {
-    return this.storageModelService.createStorageModel(createStorageModelDto);
+    return this.storageModelService.create(createStorageModelDto);
   }
 
   @Put(':id')
@@ -113,7 +113,7 @@ export class StorageModelController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateStorageModelDto: UpdateStorageModelDto,
   ): Promise<StorageModel> {
-    const result = await this.storageModelService.updateStorageModel(
+    const result = await this.storageModelService.update(
       id,
       updateStorageModelDto,
     );
@@ -143,7 +143,7 @@ export class StorageModelController {
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
-    const deleted = await this.storageModelService.deleteStorageModel(id);
+    const deleted = await this.storageModelService.delete(id);
     if (!deleted) {
       throw new NotFoundException(`StorageModel with ID ${id} not found`);
     } else {

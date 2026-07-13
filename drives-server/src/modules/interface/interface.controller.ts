@@ -28,7 +28,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { InterfaceResponseDto } from './dto/response/interface-response.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('interfaces')
@@ -89,7 +89,7 @@ export class InterfaceController {
   async create(
     @Body() createInterfaceDto: CreateInterfaceDto,
   ): Promise<Interface> {
-    return this.interfaceService.createInterface(createInterfaceDto);
+    return this.interfaceService.create(createInterfaceDto);
   }
 
   @Put(':id')
@@ -113,10 +113,7 @@ export class InterfaceController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateInterfaceDto: UpdateInterfaceDto,
   ): Promise<Interface> {
-    const result = await this.interfaceService.updateInterface(
-      id,
-      updateInterfaceDto,
-    );
+    const result = await this.interfaceService.update(id, updateInterfaceDto);
     if (!result) {
       throw new NotFoundException(`Interface with ID ${id} not found`);
     }
@@ -143,7 +140,7 @@ export class InterfaceController {
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
-    const deleted = await this.interfaceService.deleteInterface(id);
+    const deleted = await this.interfaceService.delete(id);
     if (!deleted) {
       throw new NotFoundException(`Interface with ID ${id} not found`);
     } else {

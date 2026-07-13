@@ -6,25 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StorageType } from './entities/storage-type.entity';
-import { BaseCrudService } from '../base/base-crud.service';
 import { CreateStorageTypeDto } from './dto/create-storage-type.dto';
 import { UpdateStorageTypeDto } from './dto/update-storage-type.dto';
 import { QueryStorageTypeDto } from './dto/query-storage-type.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class StorageTypeService
-  extends BaseCrudService<StorageType>
-  implements OnModuleInit
-{
+export class StorageTypeService implements OnModuleInit {
   constructor(
     @InjectModel(StorageType)
-    private StorageTypeModel: typeof StorageType,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(StorageTypeModel, queryBuilder);
-  }
+    private readonly storageTypeModel: typeof StorageType,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultStorageTypes();
@@ -35,25 +29,39 @@ export class StorageTypeService
       name: string;
     }[] = [];
 
-    for (const StorageTypeData of defaultStorageTypes) {
-      const existing = await this.StorageTypeModel.findOne({
-        where: { name: StorageTypeData.name },
+    for (const storageTypeData of defaultStorageTypes) {
+      const existing = await this.storageTypeModel.findOne({
+        where: { name: storageTypeData.name },
       });
 
       if (!existing) {
-        await this.StorageTypeModel.create({
-          ...StorageTypeData,
+        await this.storageTypeModel.create({
+          ...storageTypeData,
           managed: true,
         });
-        console.log(`Seeded default StorageType: ${StorageTypeData.name}`);
+        console.log(`Seeded default StorageType: ${storageTypeData.name}`);
       }
     }
+  }
+
+  async findAll(
+    query?: QueryStorageTypeDto,
+  ): Promise<PaginatedResponse<StorageType & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<StorageType>(
+      this.storageTypeModel,
+      query,
+    );
+  }
+
+  async findOne(id: string): Promise<StorageType | null> {
+    return this.storageTypeModel.findByPk(id);
   }
 
   async createStorageType(
     createStorageTypeDto: CreateStorageTypeDto,
   ): Promise<StorageType> {
-    const existingByName = await this.StorageTypeModel.findOne({
+    const existingByName = await this.storageTypeModel.findOne({
       where: { name: createStorageTypeDto.name },
     });
 
@@ -63,27 +71,27 @@ export class StorageTypeService
       );
     }
 
-    return super.create(createStorageTypeDto);
+    return this.storageTypeModel.create(createStorageTypeDto as any);
   }
 
   async updateStorageType(
     id: string,
     updateStorageTypeDto: UpdateStorageTypeDto,
   ): Promise<StorageType> {
-    const StorageType = await super.findOne(id);
+    const storageType = await this.storageTypeModel.findByPk(id);
 
-    if (!StorageType) {
+    if (!storageType) {
       throw new NotFoundException(`StorageType with ID ${id} not found`);
     }
 
-    if (StorageType.managed) {
+    if (storageType.managed) {
       throw new ConflictException(
         'System-managed StorageTypes cannot be updated',
       );
     }
 
     if (updateStorageTypeDto.name) {
-      const existing = await this.StorageTypeModel.findOne({
+      const existing = await this.storageTypeModel.findOne({
         where: { name: updateStorageTypeDto.name },
       });
       if (existing && existing.id !== id) {
@@ -93,6 +101,7 @@ export class StorageTypeService
       }
     }
 
+    // Filter down to only passed payload items to keep the query clean
     const updateData: Partial<StorageType> = {};
     if (updateStorageTypeDto.name !== undefined)
       updateData.name = updateStorageTypeDto.name;
@@ -101,32 +110,23 @@ export class StorageTypeService
     if (updateStorageTypeDto.managed !== undefined)
       updateData.managed = updateStorageTypeDto.managed;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`StorageType with ID ${id} not found`);
-    }
-    return result;
+    return storageType.update(updateData);
   }
 
   async deleteStorageType(id: string): Promise<boolean> {
-    const StorageType = await super.findOne(id);
+    const storageType = await this.storageTypeModel.findByPk(id);
 
-    if (!StorageType) {
+    if (!storageType) {
       throw new NotFoundException(`StorageType with ID ${id} not found`);
     }
 
-    if (StorageType.managed) {
+    if (storageType.managed) {
       throw new ConflictException(
         'System-managed StorageTypes cannot be deleted',
       );
     }
 
-    return super.delete(id);
-  }
-
-  async findAllStorageTypes(
-    query?: QueryStorageTypeDto,
-  ): Promise<PaginatedResponse<StorageType>> {
-    return super.findAll(query);
+    const deletedCount = await this.storageTypeModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

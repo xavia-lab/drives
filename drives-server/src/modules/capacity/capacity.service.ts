@@ -6,25 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Capacity } from './entities/capacity.entity';
-import { BaseCrudService } from '../base/base-crud.service';
 import { CreateCapacityDto } from './dto/create-capacity.dto';
 import { UpdateCapacityDto } from './dto/update-capacity.dto';
 import { QueryCapacityDto } from './dto/query-capacity.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class CapacityService
-  extends BaseCrudService<Capacity>
-  implements OnModuleInit
-{
+export class CapacityService implements OnModuleInit {
   constructor(
     @InjectModel(Capacity)
-    private capacityModel: typeof Capacity,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(capacityModel, queryBuilder);
-  }
+    private readonly capacityModel: typeof Capacity,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultCapacities();
@@ -52,6 +46,17 @@ export class CapacityService
     }
   }
 
+  async findAll(
+    query?: QueryCapacityDto,
+  ): Promise<PaginatedResponse<Capacity & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<Capacity>(this.capacityModel, query);
+  }
+
+  async findOne(id: string): Promise<Capacity | null> {
+    return this.capacityModel.findByPk(id);
+  }
+
   async createCapacity(
     createCapacityDto: CreateCapacityDto,
   ): Promise<Capacity> {
@@ -65,14 +70,14 @@ export class CapacityService
       );
     }
 
-    return super.create(createCapacityDto);
+    return this.capacityModel.create(createCapacityDto as any);
   }
 
   async updateCapacity(
     id: string,
     updateCapacityDto: UpdateCapacityDto,
   ): Promise<Capacity> {
-    const capacity = await super.findOne(id);
+    const capacity = await this.capacityModel.findByPk(id);
 
     if (!capacity) {
       throw new NotFoundException(`Capacity with ID ${id} not found`);
@@ -95,6 +100,7 @@ export class CapacityService
       }
     }
 
+    // Filter down to only passed payload items to keep the query clean
     const updateData: Partial<Capacity> = {};
     if (updateCapacityDto.name !== undefined)
       updateData.name = updateCapacityDto.name;
@@ -102,18 +108,12 @@ export class CapacityService
       updateData.value = updateCapacityDto.value;
     if (updateCapacityDto.unit !== undefined)
       updateData.unit = updateCapacityDto.unit;
-    if (updateCapacityDto.managed !== undefined)
-      updateData.managed = updateCapacityDto.managed;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`Capacity with ID ${id} not found`);
-    }
-    return result;
+    return capacity.update(updateData);
   }
 
   async deleteCapacity(id: string): Promise<boolean> {
-    const capacity = await super.findOne(id);
+    const capacity = await this.capacityModel.findByPk(id);
 
     if (!capacity) {
       throw new NotFoundException(`Capacity with ID ${id} not found`);
@@ -125,12 +125,7 @@ export class CapacityService
       );
     }
 
-    return super.delete(id);
-  }
-
-  async findAllCurrencies(
-    query?: QueryCapacityDto,
-  ): Promise<PaginatedResponse<Capacity>> {
-    return super.findAll(query);
+    const deletedCount = await this.capacityModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

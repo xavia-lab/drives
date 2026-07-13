@@ -6,56 +6,65 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Interface } from './entities/interface.entity';
-import { BaseCrudService } from '../base/base-crud.service';
+import { BusProtocol } from '../bus-protocol/entities/bus-protocol.entity'; // 🌟 Import required relation entity
 import { CreateInterfaceDto } from './dto/create-interface.dto';
 import { UpdateInterfaceDto } from './dto/update-interface.dto';
 import { QueryInterfaceDto } from './dto/query-interface.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class InterfaceService
-  extends BaseCrudService<Interface>
-  implements OnModuleInit
-{
+export class InterfaceService implements OnModuleInit {
   constructor(
     @InjectModel(Interface)
-    private interfaceModel: typeof Interface,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(interfaceModel, queryBuilder);
-  }
+    private readonly interfaceModel: typeof Interface,
+    @InjectModel(BusProtocol)
+    private readonly busProtocolModel: typeof BusProtocol, // 🌟 Inject the related dependency repo
+    private readonly paginationService: PaginationService,
+  ) {}
 
-  async onModuleInit() {
-    await this.seedDefaultInterfaces();
-  }
+  async onModuleInit() {}
 
-  private async seedDefaultInterfaces(): Promise<void> {
-    const defaultInterfaces: {
-      name: string;
-      linkGeneration: number;
-      throughput: number;
-      busProtocolId: string;
-    }[] = [];
+  // 🌟 Private helper to check foreign key constraints concurrently and aggregate errors
+  private async validateForeignKeys(ids: {
+    busProtocolId?: string;
+  }): Promise<void> {
+    const checkPromises: Promise<string | null>[] = [];
 
-    for (const interfaceData of defaultInterfaces) {
-      const existing = await this.interfaceModel.findOne({
-        where: { name: interfaceData.name },
-      });
+    if (ids.busProtocolId) {
+      checkPromises.push(
+        this.busProtocolModel
+          .findByPk(ids.busProtocolId)
+          .then((exists) =>
+            exists
+              ? null
+              : `BusProtocol with ID ${ids.busProtocolId} not found`,
+          ),
+      );
+    }
 
-      if (!existing) {
-        await this.interfaceModel.create({
-          ...interfaceData,
-          managed: true,
-        });
-        console.log(`Seeded default interface: ${interfaceData.name}`);
-      }
+    const results = await Promise.all(checkPromises);
+    const errors = results.filter((error): error is string => error !== null);
+
+    if (errors.length > 0) {
+      throw new NotFoundException(errors.join('\n'));
     }
   }
 
-  async createInterface(
-    createInterfaceDto: CreateInterfaceDto,
-  ): Promise<Interface> {
+  async findAll(
+    query?: QueryInterfaceDto,
+  ): Promise<PaginatedResponse<Interface & { itemNumber: number }>> {
+    return this.paginationService.paginate<Interface>(
+      this.interfaceModel,
+      query,
+    );
+  }
+
+  async findOne(id: string): Promise<Interface | null> {
+    return this.interfaceModel.findByPk(id);
+  }
+
+  async create(createInterfaceDto: CreateInterfaceDto): Promise<Interface> {
     const existingByName = await this.interfaceModel.findOne({
       where: { name: createInterfaceDto.name },
     });
@@ -66,14 +75,17 @@ export class InterfaceService
       );
     }
 
-    return super.create(createInterfaceDto);
+    // 🌟 Check incoming relation constraints before writing record
+    await this.validateForeignKeys(createInterfaceDto);
+
+    return this.interfaceModel.create(createInterfaceDto as any);
   }
 
-  async updateInterface(
+  async update(
     id: string,
     updateInterfaceDto: UpdateInterfaceDto,
   ): Promise<Interface> {
-    const interfaceObject = await super.findOne(id);
+    const interfaceObject = await this.interfaceModel.findByPk(id);
 
     if (!interfaceObject) {
       throw new NotFoundException(`Interface with ID ${id} not found`);
@@ -96,6 +108,9 @@ export class InterfaceService
       }
     }
 
+    // 🌟 Check relation constraints for changes passed in payload
+    await this.validateForeignKeys(updateInterfaceDto);
+
     const updateData: Partial<Interface> = {};
     if (updateInterfaceDto.name !== undefined)
       updateData.name = updateInterfaceDto.name;
@@ -106,15 +121,11 @@ export class InterfaceService
     if (updateInterfaceDto.busProtocolId !== undefined)
       updateData.busProtocolId = updateInterfaceDto.busProtocolId;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`Interface with ID ${id} not found`);
-    }
-    return result;
+    return interfaceObject.update(updateData);
   }
 
-  async deleteInterface(id: string): Promise<boolean> {
-    const interfaceObject = await super.findOne(id);
+  async delete(id: string): Promise<boolean> {
+    const interfaceObject = await this.interfaceModel.findByPk(id);
 
     if (!interfaceObject) {
       throw new NotFoundException(`Interface with ID ${id} not found`);
@@ -126,12 +137,7 @@ export class InterfaceService
       );
     }
 
-    return super.delete(id);
-  }
-
-  async findAllInterfaces(
-    query?: QueryInterfaceDto,
-  ): Promise<PaginatedResponse<Interface>> {
-    return super.findAll(query);
+    const deletedCount = await this.interfaceModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

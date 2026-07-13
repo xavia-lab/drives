@@ -21,7 +21,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { QueryVendorDto } from './dto/query-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -31,7 +31,7 @@ import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { VendorResponseDto } from './dto/response/vendor-response.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 
 @ApiTags('vendors')

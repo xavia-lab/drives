@@ -3,12 +3,12 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { InterfaceController } from './interface.controller';
 import { InterfaceService } from './interface.service';
 import { Interface } from './entities/interface.entity';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
+import { BusProtocol } from '../bus-protocol/entities/bus-protocol.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Interface])],
+  imports: [SequelizeModule.forFeature([Interface, BusProtocol])],
   controllers: [InterfaceController],
-  providers: [InterfaceService, QueryBuilderService],
+  providers: [InterfaceService],
   exports: [InterfaceService],
 })
 export class InterfaceModule {}

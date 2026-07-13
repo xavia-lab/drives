@@ -28,7 +28,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('physical-drives')
@@ -89,7 +89,7 @@ export class PhysicalDriveController {
   async create(
     @Body() createPhysicalDriveDto: CreatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    return this.storageModelService.createPhysicalDrive(createPhysicalDriveDto);
+    return this.storageModelService.create(createPhysicalDriveDto);
   }
 
   @Put(':id')
@@ -113,7 +113,7 @@ export class PhysicalDriveController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updatePhysicalDriveDto: UpdatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    const result = await this.storageModelService.updatePhysicalDrive(
+    const result = await this.storageModelService.update(
       id,
       updatePhysicalDriveDto,
     );
@@ -143,7 +143,7 @@ export class PhysicalDriveController {
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
-    const deleted = await this.storageModelService.deletePhysicalDrive(id);
+    const deleted = await this.storageModelService.delete(id);
     if (!deleted) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     } else {

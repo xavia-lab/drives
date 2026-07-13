@@ -21,8 +21,9 @@ module.exports = {
         allowNull: false,
       },
       unit: {
-        type: Sequelize.STRING(8),
-        allowNull: false, // e.g., 'GB' or 'TB'
+        // Defined as ENUM with standard capacity units
+        type: Sequelize.ENUM('B', 'KB', 'MB', 'GB', 'TB', 'PB'),
+        allowNull: false,
       },
       managed: {
         type: Sequelize.BOOLEAN,
@@ -46,7 +47,13 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop table safely (sequences are no longer used)
+    // 1. Drop table safely
     await queryInterface.dropTable('capacities');
+
+    // 2. Clean up Postgres ENUM type created by Sequelize
+    // Sequelize names ENUM types as enum_TableName_ColumnName by default
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_capacities_unit";',
+    );
   },
 };

@@ -42,6 +42,9 @@ export class StorageModelResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  itemNumber: number;
+
   // --- Nested Associations ---
 
   @Expose()

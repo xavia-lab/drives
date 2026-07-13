@@ -6,25 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Currency } from './entities/currency.entity';
-import { BaseCrudService } from '../base/base-crud.service';
 import { CreateCurrencyDto } from './dto/create-currency.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
 import { QueryCurrencyDto } from './dto/query-currency.dto';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 
 @Injectable()
-export class CurrencyService
-  extends BaseCrudService<Currency>
-  implements OnModuleInit
-{
+export class CurrencyService implements OnModuleInit {
   constructor(
     @InjectModel(Currency)
-    private currencyModel: typeof Currency,
-    protected queryBuilder: QueryBuilderService,
-  ) {
-    super(currencyModel, queryBuilder);
-  }
+    private readonly currencyModel: typeof Currency,
+    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultCurrencies();
@@ -52,6 +46,17 @@ export class CurrencyService
     }
   }
 
+  async findAll(
+    query?: QueryCurrencyDto,
+  ): Promise<PaginatedResponse<Currency & { itemNumber: number }>> {
+    // 🌟 Clean delegation to the standalone service
+    return this.paginationService.paginate<Currency>(this.currencyModel, query);
+  }
+
+  async findOne(id: string): Promise<Currency | null> {
+    return this.currencyModel.findByPk(id);
+  }
+
   async createCurrency(
     createCurrencyDto: CreateCurrencyDto,
   ): Promise<Currency> {
@@ -75,14 +80,14 @@ export class CurrencyService
       );
     }
 
-    return super.create(createCurrencyDto);
+    return this.currencyModel.create(createCurrencyDto as any);
   }
 
   async updateCurrency(
     id: string,
     updateCurrencyDto: UpdateCurrencyDto,
   ): Promise<Currency> {
-    const currency = await super.findOne(id);
+    const currency = await this.currencyModel.findByPk(id);
 
     if (!currency) {
       throw new NotFoundException(`Currency with ID ${id} not found`);
@@ -116,6 +121,7 @@ export class CurrencyService
       }
     }
 
+    // Filter down to only passed payload items to keep the query clean
     const updateData: Partial<Currency> = {};
     if (updateCurrencyDto.name !== undefined)
       updateData.name = updateCurrencyDto.name;
@@ -126,15 +132,11 @@ export class CurrencyService
     if (updateCurrencyDto.managed !== undefined)
       updateData.managed = updateCurrencyDto.managed;
 
-    const result = await super.update(id, updateData);
-    if (!result) {
-      throw new NotFoundException(`Currency with ID ${id} not found`);
-    }
-    return result;
+    return currency.update(updateData);
   }
 
   async deleteCurrency(id: string): Promise<boolean> {
-    const currency = await super.findOne(id);
+    const currency = await this.currencyModel.findByPk(id);
 
     if (!currency) {
       throw new NotFoundException(`Currency with ID ${id} not found`);
@@ -146,12 +148,7 @@ export class CurrencyService
       );
     }
 
-    return super.delete(id);
-  }
-
-  async findAllCurrencies(
-    query?: QueryCurrencyDto,
-  ): Promise<PaginatedResponse<Currency>> {
-    return super.findAll(query);
+    const deletedCount = await this.currencyModel.destroy({ where: { id } });
+    return deletedCount > 0;
   }
 }

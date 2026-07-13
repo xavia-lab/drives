@@ -3,12 +3,16 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { PhysicalDriveController } from './physical-drive.controller';
 import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
-import { QueryBuilderService } from '../../common/services/query-builder/query-builder.service';
+import { StorageModel } from '../storage-model/entities/storage-model.entity';
+import { Vendor } from '../vendor/entities/vendor.entity';
+import { Currency } from '../currency/entities/currency.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([PhysicalDrive])],
+  imports: [
+    SequelizeModule.forFeature([PhysicalDrive, StorageModel, Vendor, Currency]),
+  ],
   controllers: [PhysicalDriveController],
-  providers: [PhysicalDriveService, QueryBuilderService],
+  providers: [PhysicalDriveService],
   exports: [PhysicalDriveService],
 })
 export class PhysicalDriveModule {}

@@ -28,7 +28,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { DriveLifecycleEventResponseDto } from './dto/response/drive-lifecycle-event-response.dto';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('drive-lifecycle-events')
@@ -96,9 +96,7 @@ export class DriveLifecycleEventController {
   async create(
     @Body() createDriveLifecycleEventDto: CreateDriveLifecycleEventDto,
   ): Promise<DriveLifecycleEvent> {
-    return this.driveLifecycleEventService.createDriveLifecycleEvent(
-      createDriveLifecycleEventDto,
-    );
+    return this.driveLifecycleEventService.create(createDriveLifecycleEventDto);
   }
 
   @Put(':id')
@@ -122,11 +120,10 @@ export class DriveLifecycleEventController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updateDriveLifecycleEventDto: UpdateDriveLifecycleEventDto,
   ): Promise<DriveLifecycleEvent> {
-    const result =
-      await this.driveLifecycleEventService.updateDriveLifecycleEvent(
-        id,
-        updateDriveLifecycleEventDto,
-      );
+    const result = await this.driveLifecycleEventService.update(
+      id,
+      updateDriveLifecycleEventDto,
+    );
     if (!result) {
       throw new NotFoundException(
         `DriveLifecycleEvent with ID ${id} not found`,
@@ -155,8 +152,7 @@ export class DriveLifecycleEventController {
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
-    const deleted =
-      await this.driveLifecycleEventService.deleteDriveLifecycleEvent(id);
+    const deleted = await this.driveLifecycleEventService.delete(id);
     if (!deleted) {
       throw new NotFoundException(
         `DriveLifecycleEvent with ID ${id} not found`,
