@@ -102,7 +102,9 @@ export class LogicalDiskService {
     // 2. Validate all incoming foreign keys concurrently before creation
     await this.validateForeignKeys(createDto);
 
-    const disk = await this.logicalDiskModel.create(createDto as any);
+    const disk = await this.logicalDiskModel.create(
+      createDto as Partial<LogicalDisk>,
+    );
     return disk.reload({ include: [LogicalVdev, PhysicalDrive] });
   }
 

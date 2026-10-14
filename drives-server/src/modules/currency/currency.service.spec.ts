@@ -9,7 +9,8 @@ import { UpdateCurrencyDto } from './dto/update-currency.dto';
 
 describe('CurrencyService', () => {
   let service: CurrencyService;
-  let mockCurrencyModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockCurrencyModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,10 +22,10 @@ describe('CurrencyService', () => {
       destroy: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,10 +66,14 @@ describe('CurrencyService', () => {
     });
 
     it('should throw ConflictException if currency name already exists', async () => {
-      mockCurrencyModel.findOne.mockImplementation(({ where }) => {
-        if (where.name) return { id: 'existing-id', name: 'US Dollar' };
-        return null;
-      });
+      mockCurrencyModel.findOne.mockImplementation(
+        ({ where }: { where: Record<string, unknown> }) => {
+          if (where && typeof where === 'object' && 'name' in where) {
+            return Promise.resolve({ id: 'existing-id', name: 'US Dollar' });
+          }
+          return Promise.resolve(null);
+        },
+      );
 
       await expect(service.createCurrency(createDto)).rejects.toThrow(
         ConflictException,
@@ -134,14 +139,18 @@ describe('CurrencyService', () => {
   describe('findAllCurrencies', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (Currency & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCurrencyModel,
+        mockCurrencyModel as unknown as typeof Currency,
         mockQuery,
       );
     });

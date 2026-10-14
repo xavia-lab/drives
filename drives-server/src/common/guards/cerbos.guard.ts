@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { GRPC as Cerbos } from '@cerbos/grpc';
+import { Value } from '@cerbos/core';
 import { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 import { PolicyMetadata } from '../decorators/check-policy.decorator';
 
@@ -41,9 +42,13 @@ export class CerbosGuard implements CanActivate {
     );
     if (!policy) return true;
 
-    // 3. Get user from request (populated by KeycloakAuthGuard)
-    const request = context.switchToHttp().getRequest();
-    const user: AuthenticatedUser = request.user;
+    // 3. Get user from request with explicit type arguments
+    const request = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUser;
+      params: Record<string, string | undefined>;
+    }>();
+
+    const user = request.user;
 
     if (!user) {
       this.logger.error('No user found in request.');
@@ -53,17 +58,17 @@ export class CerbosGuard implements CanActivate {
     // 4. Pure RBAC Check (No DB fetch)
     const id = request.params.id;
 
-    // Force managed to false, to ensure the policy check passes
-    // without needing a DB lookup for the 'managed' status.
-    let attributes: Record<string, any> = {};
+    // Use unknown record type to safely avoid explicit "any" casting rules
+    let attributes: Record<string, Value> = {};
 
     const managedResources = [
-      'colors',
-      'categories',
       'currencies',
-      'materials',
-      'metals',
-      'quantity-units',
+      'countries',
+      'storage-types',
+      'form-factors',
+      'bus-protocols',
+      'interfaces',
+      'capacities',
     ];
     if (id && managedResources.includes(policy.resource)) {
       attributes = { managed: false };

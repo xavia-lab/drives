@@ -10,8 +10,9 @@ import { UpdateInterfaceDto } from './dto/update-interface.dto';
 
 describe('InterfaceService', () => {
   let service: InterfaceService;
-  let mockInterfaceModel: any;
-  let mockBusProtocolModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockInterfaceModel: Record<string, jest.Mock>;
+  let mockBusProtocolModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -27,10 +28,10 @@ describe('InterfaceService', () => {
       findByPk: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -173,14 +174,18 @@ describe('InterfaceService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (Interface & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockInterfaceModel,
+        mockInterfaceModel as unknown as typeof Interface,
         mockQuery,
       );
     });

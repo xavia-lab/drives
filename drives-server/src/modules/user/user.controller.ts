@@ -32,6 +32,7 @@ import { QueryUserDto } from './dto/query-user.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
+import { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface'; // 👈 Import the interface context
 
 @ApiTags('users')
 @Controller('users')
@@ -77,7 +78,13 @@ export class UserController {
     status: 200,
     description: 'User profile retrieved successfully',
   })
-  async getMe(@Request() req) {
+  // Fixed: Add explicit type parameters to the Request parameter container block
+  async getMe(@Request() req: { user: AuthenticatedUser }) {
+    if (!req.user?.id) {
+      throw new NotFoundException(
+        'User credentials context missing from request profile',
+      );
+    }
     // This will trigger JIT user creation if not exists
     const user = await this.userService.findOne(req.user.id);
     return user;

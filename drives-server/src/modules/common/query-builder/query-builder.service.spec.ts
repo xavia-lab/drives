@@ -9,11 +9,11 @@ jest.mock('../../../lib/utils/objects.util', () => ({
   isNotEmpty: jest.fn(),
 }));
 
-jest.mock('../../../lib/builders/id.query.params.builder', () => ({
+jest.mock('./id.query.params.builder', () => ({
   build: jest.fn(),
 }));
 
-jest.mock('../../../lib/builders/pagination.query.params.builder', () => ({
+jest.mock('./pagination.query.params.builder', () => ({
   build: jest.fn(),
 }));
 
@@ -23,8 +23,8 @@ import {
   isObjectEmpty,
   isNotEmpty,
 } from '../../../lib/utils/objects.util';
-import { build as buildById } from '../../../lib/builders/id.query.params.builder';
-import { build as buildPagination } from '../../../lib/builders/pagination.query.params.builder';
+import { build as buildById } from './id.query.params.builder';
+import { build as buildPagination } from './pagination.query.params.builder';
 
 describe('QueryBuilderService', () => {
   let service: QueryBuilderService;
@@ -66,11 +66,14 @@ describe('QueryBuilderService', () => {
     const expectedMockedOutput = {
       where: { id: '019f4fa1-57db-72d7-b037-2f35d54f2794' },
     };
-    (buildById as jest.Mock).mockReturnValue(expectedMockedOutput);
+    // Fixed: Cast the mock function to a typed jest.Mock instance to secure the argument assignment boundary
+    (buildById as unknown as jest.Mock<unknown>).mockReturnValue(
+      expectedMockedOutput,
+    );
 
     const query: PaginationQueryDto = {
       id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
-    } as any;
+    };
 
     // Act
     const result = service.buildQueryOptions(query);
@@ -93,7 +96,10 @@ describe('QueryBuilderService', () => {
       offset: 0,
       order: [['id', 'ASC']],
     };
-    (buildPagination as jest.Mock).mockReturnValue(expectedMockedOutput);
+    // Fixed: Cast the mock function to a typed jest.Mock instance to secure the argument assignment boundary
+    (buildPagination as unknown as jest.Mock<unknown>).mockReturnValue(
+      expectedMockedOutput,
+    );
 
     const query: PaginationQueryDto = { pageNumber: 1, pageSize: 10 };
 

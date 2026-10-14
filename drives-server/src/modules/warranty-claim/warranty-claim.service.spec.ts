@@ -15,10 +15,11 @@ import { UpdateWarrantyClaimDto } from './dto/update-warranty-claim.dto';
 
 describe('WarrantyClaimService', () => {
   let service: WarrantyClaimService;
-  let mockWarrantyClaimModel: any;
-  let mockPhysicalDriveModel: any;
-  let mockEventModel: any;
-  let mockVendorModel: any;
+  // Fixed: Replaced 'any' with explicit mock dictionary records
+  let mockWarrantyClaimModel: Record<string, jest.Mock>;
+  let mockPhysicalDriveModel: Record<string, jest.Mock>;
+  let mockEventModel: Record<string, jest.Mock>;
+  let mockVendorModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -31,7 +32,11 @@ describe('WarrantyClaimService', () => {
     mockPhysicalDriveModel = { findByPk: jest.fn() };
     mockEventModel = { findByPk: jest.fn() };
     mockVendorModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Cast mock using unknown instead of any to safely satisfy strict boundaries
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,14 +65,18 @@ describe('WarrantyClaimService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit type assertion mapping data structures safely
+      const expectedOutput = { data: [], meta: {} } as unknown as {
+        data: (WarrantyClaim & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockWarrantyClaimModel,
+        mockWarrantyClaimModel as unknown as typeof WarrantyClaim,
         mockQuery,
       );
     });

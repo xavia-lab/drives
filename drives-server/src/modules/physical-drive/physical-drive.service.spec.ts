@@ -12,10 +12,12 @@ import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 
 describe('PhysicalDriveService', () => {
   let service: PhysicalDriveService;
-  let mockPhysicalDriveRepo: any;
-  let mockStorageModelRepo: any;
-  let mockVendorRepo: any;
-  let mockCurrencyRepo: any;
+
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockPhysicalDriveRepo: Record<string, jest.Mock>;
+  let mockStorageModelRepo: Record<string, jest.Mock>;
+  let mockVendorRepo: Record<string, jest.Mock>;
+  let mockCurrencyRepo: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -30,8 +32,10 @@ describe('PhysicalDriveService', () => {
     mockVendorRepo = { findByPk: jest.fn() };
     mockCurrencyRepo = { findByPk: jest.fn() };
 
-    // 2. Mock the PaginationService
-    mockPaginationService = { paginate: jest.fn() } as any;
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,14 +61,18 @@ describe('PhysicalDriveService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedOutput = { data: [], meta: {} } as unknown as {
+        data: (PhysicalDrive & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockPhysicalDriveRepo,
+        mockPhysicalDriveRepo as unknown as typeof PhysicalDrive,
         mockQuery,
       );
     });
@@ -92,7 +100,7 @@ describe('PhysicalDriveService', () => {
       storageModelId: 'sm-uuid',
       retailerVendorId: 'vendor-uuid',
       currencyId: 'currency-uuid',
-    } as any;
+    };
 
     it('should successfully create a physical drive when serial number is unique and all keys exist', async () => {
       mockPhysicalDriveRepo.findOne.mockResolvedValue(null); // No serial number duplicate
@@ -144,7 +152,7 @@ describe('PhysicalDriveService', () => {
     const updateDto: UpdatePhysicalDriveDto = {
       serialNumber: 'NEW-SERIAL-123',
       retailerVendorId: 'missing-vendor-uuid',
-    } as any;
+    };
 
     it('should successfully update field variables if inputs are unique and exist', async () => {
       const mockInstance = {

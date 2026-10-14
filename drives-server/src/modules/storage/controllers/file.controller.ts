@@ -10,6 +10,12 @@ import {
 import { ContentAddressableStorageService } from '../services/content-addressable-storage.service';
 import { Public } from '../../../common/decorators/public.decorator';
 
+// Define a safe platform-agnostic interface layout for the response parameter
+interface PlatformResponse {
+  setHeader?: (name: string, value: string) => void;
+  set?: (headers: Record<string, string>) => void;
+}
+
 @Controller('files')
 export class FileController {
   constructor(private readonly cas: ContentAddressableStorageService) {}
@@ -20,7 +26,8 @@ export class FileController {
   @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   async getFile(
     @Param('fileId') fileId: string,
-    @Res({ passthrough: true }) res: any, // Change 'Response' to 'any' or an abstract object record to sever the express link
+    // Fixed: Swapped out 'any' for the clear structural layout template interface
+    @Res({ passthrough: true }) res: PlatformResponse,
   ): Promise<StreamableFile> {
     try {
       const metadata = await this.cas.getMetadata(fileId);
@@ -30,22 +37,29 @@ export class FileController {
 
       const buffer = await this.cas.getFileBuffer(fileId);
 
-      // Determine the filename from metadata
-      const displayName = metadata.originalName || metadata.fileName || fileId;
+      const originalName =
+        typeof metadata.originalName === 'string'
+          ? metadata.originalName
+          : null;
+      const fileName =
+        typeof metadata.fileName === 'string' ? metadata.fileName : null;
 
-      // Platform-agnostic manual resolution header maps
-      if (typeof res.setHeader === 'function') {
+      const displayName = originalName || fileName || fileId;
+
+      // Safe conditional checking against our structural type definitions
+      if (res.setHeader) {
         res.setHeader(
           'Content-Type',
-          metadata.mimetype || 'application/octet-stream',
+          (metadata.mimetype as string) || 'application/octet-stream',
         );
         res.setHeader(
           'Content-Disposition',
           `inline; filename="${encodeURIComponent(displayName)}"`,
         );
-      } else if (typeof res.set === 'function') {
+      } else if (res.set) {
         res.set({
-          'Content-Type': metadata.mimetype || 'application/octet-stream',
+          'Content-Type':
+            (metadata.mimetype as string) || 'application/octet-stream',
           'Content-Disposition': `inline; filename="${encodeURIComponent(displayName)}"`,
         });
       }

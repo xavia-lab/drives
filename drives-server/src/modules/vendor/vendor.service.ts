@@ -81,7 +81,10 @@ export class VendorService {
     // 🌟 Validate countryId exists before committing creation block
     await this.validateForeignKeys(createVendorDto);
 
-    const vendor = await this.vendorModel.create(createVendorDto as any);
+    // Fixed: Cast creation parameters using a model schema layer instead of any
+    const vendor = await this.vendorModel.create(
+      createVendorDto as Partial<Vendor>,
+    );
 
     return vendor.reload();
   }

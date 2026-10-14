@@ -103,4 +103,8 @@ async function bootstrap() {
   logger.log(`Public URL: ${configService.get('app.publicUrl')}`);
   logger.log(`Auth enabled: ${configService.get('app.authEnabled')}`);
 }
-bootstrap();
+
+void bootstrap().catch((err: unknown) => {
+  console.error('Application failed to start:', err);
+  process.exit(1);
+});

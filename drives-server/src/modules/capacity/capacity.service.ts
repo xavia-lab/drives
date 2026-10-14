@@ -70,7 +70,7 @@ export class CapacityService implements OnModuleInit {
       );
     }
 
-    return this.capacityModel.create(createCapacityDto as any);
+    return this.capacityModel.create(createCapacityDto as Partial<Capacity>);
   }
 
   async updateCapacity(

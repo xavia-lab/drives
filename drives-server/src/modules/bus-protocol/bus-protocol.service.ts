@@ -73,7 +73,9 @@ export class BusProtocolService implements OnModuleInit {
       );
     }
 
-    return this.busProtocolModel.create(createBusProtocolDto as any);
+    return this.busProtocolModel.create(
+      createBusProtocolDto as Partial<BusProtocol>,
+    );
   }
 
   async updateBusProtocol(

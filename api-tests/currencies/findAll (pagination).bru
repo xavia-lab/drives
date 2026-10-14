@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/currencies?pageNumber=1&pageSize=2&sortField=name&sortOrder=asc&filterField=code&filterValue=GBP&filterOperator=in
+  url: http://localhost:5000/api/v1/currencies?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=code&filterValue=GBP&filterOperator=in
   body: none
   auth: none
 }
@@ -14,7 +14,7 @@ params:query {
   pageNumber: 1
   pageSize: 2
   sortField: name
-  sortOrder: asc
+  sortOrder: desc
   filterField: code
   filterValue: GBP
   filterOperator: in

@@ -10,15 +10,16 @@ import { ServerSlot } from '../server-slot/entities/server-slot.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateServerSlotAllocationDto } from './dto/create-server-slot-allocation.dto';
-import { UpdateServerSlotAllocationDto } from './dto/update-server-slot-allocation.dto';
+import { CreateServerSlotAllocationDto } from './dto/create-server-slot-allocation.dto'; // Fixed: Removed unused UpdateServerSlotAllocationDto import
 
 describe('ServerSlotAllocationService', () => {
   let service: ServerSlotAllocationService;
-  let mockAllocationModel: any;
-  let mockServerSlotModel: any;
-  let mockPhysicalDriveModel: any;
-  let mockUserModel: any;
+
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockAllocationModel: Record<string, jest.Mock>;
+  let mockServerSlotModel: Record<string, jest.Mock>;
+  let mockPhysicalDriveModel: Record<string, jest.Mock>;
+  let mockUserModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -31,7 +32,11 @@ describe('ServerSlotAllocationService', () => {
     mockServerSlotModel = { findByPk: jest.fn() };
     mockPhysicalDriveModel = { findByPk: jest.fn() };
     mockUserModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,14 +64,18 @@ describe('ServerSlotAllocationService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (ServerSlotAllocation & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockAllocationModel,
+        mockAllocationModel as unknown as typeof ServerSlotAllocation,
         mockQuery,
         { include: [ServerSlot, PhysicalDrive, User] },
       );
@@ -103,7 +112,7 @@ describe('ServerSlotAllocationService', () => {
       });
     });
 
-    it('should aggregate multiple missing parent foreign keys into a single multiline NotFoundException', async () => {
+    it('should throw an aggregated multiline NotFoundException if multiple foreign keys are missing', async () => {
       mockServerSlotModel.findByPk.mockResolvedValue(null); // Missing
       mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' }); // Exists
       mockUserModel.findByPk.mockResolvedValue(null); // Missing

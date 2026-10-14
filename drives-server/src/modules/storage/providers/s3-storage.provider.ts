@@ -8,17 +8,22 @@ import {
 } from '@aws-sdk/client-s3';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IStorageProvider } from '../interfaces/storage-provider.interface';
+import { S3StorageConfig } from '../interfaces/s3-storage-config.interface';
 
 export class S3StorageProvider implements IStorageProvider {
   private client: S3Client;
   private bucket: string;
 
-  constructor(config: any) {
+  // 2. Apply the interface to the constructor parameters
+  constructor(config: S3StorageConfig) {
     this.bucket = config.bucket;
     this.client = new S3Client({
       region: config.region,
       endpoint: config.endpoint,
-      credentials: { accessKeyId: config.key, secretAccessKey: config.secret },
+      credentials: {
+        accessKeyId: config.key,
+        secretAccessKey: config.secret,
+      },
       forcePathStyle: true,
     });
   }
@@ -39,7 +44,6 @@ export class S3StorageProvider implements IStorageProvider {
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
     );
 
-    // FIX: Check if Body exists to satisfy TS18048
     if (!res.Body) {
       throw new InternalServerErrorException(
         `S3 Object body is empty for key: ${key}`,
@@ -71,7 +75,6 @@ export class S3StorageProvider implements IStorageProvider {
       new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix }),
     );
 
-    // FIX: Filter out undefined keys and map to string[] to satisfy TS2322
     if (!res.Contents) return [];
 
     return res.Contents.map((c) => c.Key).filter((key): key is string => !!key);

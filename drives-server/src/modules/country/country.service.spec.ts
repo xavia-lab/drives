@@ -9,7 +9,8 @@ import { UpdateCountryDto } from './dto/update-country.dto';
 
 describe('CountryService', () => {
   let service: CountryService;
-  let mockCountryModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockCountryModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,10 +22,10 @@ describe('CountryService', () => {
       destroy: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,10 +62,17 @@ describe('CountryService', () => {
     });
 
     it('should throw ConflictException if country name already exists', async () => {
-      mockCountryModel.findOne.mockImplementation(({ where }) => {
-        if (where.name) return { id: 'existing-id', name: 'United States' };
-        return null;
-      });
+      mockCountryModel.findOne.mockImplementation(
+        ({ where }: { where: Record<string, unknown> }) => {
+          if (where && typeof where === 'object' && 'name' in where) {
+            return Promise.resolve({
+              id: 'existing-id',
+              name: 'United States',
+            });
+          }
+          return Promise.resolve(null);
+        },
+      );
 
       await expect(service.createCountry(createDto)).rejects.toThrow(
         ConflictException,
@@ -131,14 +139,18 @@ describe('CountryService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (Country & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCountryModel,
+        mockCountryModel as unknown as typeof Country,
         mockQuery,
       );
     });

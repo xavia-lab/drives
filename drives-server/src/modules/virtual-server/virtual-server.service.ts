@@ -25,7 +25,7 @@ export class VirtualServerService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  // 🌟 Private helper to check foreign key constraints concurrently and aggregate errors
+  // Private helper to check foreign key constraints concurrently and aggregate errors
   private async validateForeignKeys(ids: {
     hostServerId?: string;
     operatingSystemId?: string;
@@ -64,7 +64,6 @@ export class VirtualServerService {
   async findAll(
     query?: QueryVirtualServerDto,
   ): Promise<PaginatedResponse<VirtualServer & { itemNumber: number }>> {
-    // Clean delegation to the standalone pagination service with relational inclusions
     return this.paginationService.paginate<VirtualServer>(
       this.virtualServerModel,
       query,
@@ -114,11 +113,12 @@ export class VirtualServerService {
       }
     }
 
-    // 🌟 Validate all incoming foreign keys concurrently before creation
+    // Validate all incoming foreign keys concurrently before creation
     await this.validateForeignKeys(createDto);
 
+    // Fixed: Cast creation structure safely to Partial<VirtualServer> instead of any
     const virtualServer = await this.virtualServerModel.create(
-      createDto as any,
+      createDto as Partial<VirtualServer>,
     );
     return virtualServer.reload({ include: [Server, OperatingSystem] });
   }
@@ -166,7 +166,7 @@ export class VirtualServerService {
       }
     }
 
-    // 🌟 Validate passed keys for existence if present in payload modification parameters
+    // Validate passed keys for existence if present in payload modification parameters
     await this.validateForeignKeys(updateDto);
 
     const updateData: Partial<VirtualServer> = {};

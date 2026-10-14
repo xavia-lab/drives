@@ -16,7 +16,7 @@ export class ContentAddressableStorageService {
 
   async uploadFile(
     file: Express.Multer.File,
-    extraMetadata: Record<string, any> = {},
+    extraMetadata: Record<string, unknown> = {}, // Fixed: Changed 'any' to 'unknown'
   ) {
     return this.upload(file.buffer, file.mimetype, {
       ...extraMetadata, // Merge custom metadata first
@@ -24,10 +24,11 @@ export class ContentAddressableStorageService {
       size: file.size,
     });
   }
+
   async upload(
     buffer: Buffer,
     mimetype: string,
-    metadata: Record<string, any> = {},
+    metadata: Record<string, unknown> = {}, // Fixed: Changed 'any' to 'unknown'
   ) {
     const fileId = createHash('sha256').update(buffer).digest('hex');
     const path = `${this.prefix}${fileId}`;
@@ -50,7 +51,8 @@ export class ContentAddressableStorageService {
       );
       return { fileId, isNew: true };
     } catch (e) {
-      throw new InternalServerErrorException(`Upload failed: ${e.message}`);
+      const err = e as Error; // Fixed: Explicitly typed 'err'
+      throw new InternalServerErrorException(`Upload failed: ${err.message}`);
     }
   }
 
@@ -64,11 +66,14 @@ export class ContentAddressableStorageService {
   /**
    * Retrieves and parses the sidecar .json metadata file
    */
-  async getMetadata(fileId: string): Promise<Record<string, any> | null> {
+  async getMetadata(fileId: string): Promise<Record<string, unknown> | null> {
+    // Fixed: Changed 'any' to 'unknown'
     try {
       const metaBuffer = await this.storage.get(`${this.prefix}${fileId}.json`);
-      return JSON.parse(metaBuffer.toString());
-    } catch (e) {
+      // Fixed: Cast the JSON output to avoid implicit 'any' return types
+      return JSON.parse(metaBuffer.toString()) as Record<string, unknown>;
+    } catch {
+      // Fixed: Removed the unused variable identifier 'e'
       // Return null if metadata doesn't exist to allow the controller to handle 404
       return null;
     }

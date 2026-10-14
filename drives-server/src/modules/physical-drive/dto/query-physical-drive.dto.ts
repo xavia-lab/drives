@@ -3,13 +3,10 @@ import {
   IsIn,
   IsString,
   Length,
-  IsInt,
-  Min,
   IsDateString,
   IsUUID,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryPhysicalDriveDto extends PaginationQueryDto {

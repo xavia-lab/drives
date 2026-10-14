@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { WarrantyClaim } from './entities/warranty-claim.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
@@ -28,7 +24,7 @@ export class WarrantyClaimService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  // 🌟 Optimized private helper to check foreign key constraints concurrently and aggregate errors
+  // Private helper to check foreign key constraints concurrently and aggregate errors
   private async validateForeignKeys(ids: {
     physicalDriveId?: string;
     triggeringEventId?: string;
@@ -100,11 +96,12 @@ export class WarrantyClaimService {
   async create(
     createWarrantyClaimDto: CreateWarrantyClaimDto,
   ): Promise<WarrantyClaim> {
-    // 🌟 Validate all incoming foreign keys concurrently before creation
+    // Validate all incoming foreign keys concurrently before creation
     await this.validateForeignKeys(createWarrantyClaimDto);
 
+    // Fixed: Cast input payload structure safely into a Partial entity instead of 'any'
     const claim = await this.warrantyClaimModel.create(
-      createWarrantyClaimDto as any,
+      createWarrantyClaimDto as Partial<WarrantyClaim>,
     );
     return claim.reload({
       include: [PhysicalDrive, DriveLifecycleEvent, Vendor],
@@ -121,7 +118,7 @@ export class WarrantyClaimService {
       throw new NotFoundException(`WarrantyClaim with ID ${id} not found`);
     }
 
-    // 🌟 Validate updated foreign keys if present in payload
+    // Validate updated foreign keys if present in payload
     await this.validateForeignKeys(updateWarrantyClaimDto);
 
     const updateData: Partial<WarrantyClaim> = {};

@@ -1,31 +1,33 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InternalServerErrorException } from '@nestjs/common';
+import { Model } from 'sequelize-typescript'; // 👈 Imported Model for safe structural type-casting
 import { PaginationService } from './pagination.service';
 import { QueryBuilderService } from '../query-builder/query-builder.service';
+// Fixed: Removed the unused 'InternalServerErrorException' token to satisfy the unused-vars check
 
 describe('PaginationService', () => {
   let service: PaginationService;
+  // Fixed: Swapped loose 'any' definitions for structured mock records
   let mockQueryBuilder: jest.Mocked<QueryBuilderService>;
-  let mockModelClass: any;
+  let mockModelClass: Record<string, jest.Mock>;
 
   beforeEach(async () => {
-    // Define the mock query builder functions
+    // 1. Initialize query builder mock using an unknown double-cast wrapper
     mockQueryBuilder = {
       buildQueryOptions: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<QueryBuilderService>;
 
+    // 2. Initialize the model repository class mock with structured spys
     mockModelClass = {
       name: 'TestModel',
       findAndCountAll: jest.fn(),
     };
 
-    // 🌟 Fix: Register BOTH the service and the mocked dependency token together
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaginationService,
         {
           provide: QueryBuilderService,
-          useValue: mockQueryBuilder, // Tells NestJS to inject our mock instead of the real class
+          useValue: mockQueryBuilder,
         },
       ],
     }).compile();
@@ -56,10 +58,15 @@ describe('PaginationService', () => {
       rows: mockRows,
     });
 
-    const result = await service.paginate(mockModelClass, {
-      pageNumber: 1,
-      pageSize: 10,
-    });
+    // Fixed: Cast mockModelClass using unknown instead of any to safely satisfy strict parameter bounds
+    const result = await service.paginate(
+      mockModelClass as unknown as typeof Model,
+      {
+        pageNumber: 1,
+        pageSize: 10,
+      },
+    );
+
     expect(result.data[0].itemNumber).toBe(1);
   });
 });

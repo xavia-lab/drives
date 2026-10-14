@@ -9,7 +9,8 @@ import { UpdateBusProtocolDto } from './dto/update-bus-protocol.dto';
 
 describe('BusProtocolService', () => {
   let service: BusProtocolService;
-  let mockBusProtocolModel: any;
+  // Fixed: Replaced 'any' with a structured Jest mock record
+  let mockBusProtocolModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,10 +22,10 @@ describe('BusProtocolService', () => {
       destroy: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using unknown type-casting instead of any
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -147,14 +148,18 @@ describe('BusProtocolService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Cast mock data payload to an unknown record structure
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: unknown[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockBusProtocolModel,
+        mockBusProtocolModel as unknown as typeof BusProtocol,
         mockQuery,
       );
     });

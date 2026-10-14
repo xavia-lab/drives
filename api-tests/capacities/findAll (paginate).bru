@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/capacities?pageNumber=1&pageSize=5&sortField=createdAt&sortOrder=desc&filterOperator=like&filterField=unit&filterValue=TB
+  url: http://localhost:5000/api/v1/capacities?pageNumber=1&pageSize=5&sortField=createdAt&sortOrder=desc&filterOperator=like&filterField=name&filterValue=TB
   body: none
   auth: none
 }
@@ -16,6 +16,6 @@ params:query {
   sortField: createdAt
   sortOrder: desc
   filterOperator: like
-  filterField: unit
+  filterField: name
   filterValue: TB
 }

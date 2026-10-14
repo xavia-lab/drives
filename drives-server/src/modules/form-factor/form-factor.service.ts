@@ -72,7 +72,9 @@ export class FormFactorService implements OnModuleInit {
       );
     }
 
-    return this.formFactorModel.create(createFormFactorDto as any);
+    return this.formFactorModel.create(
+      createFormFactorDto as Partial<FormFactor>,
+    );
   }
 
   async updateFormFactor(

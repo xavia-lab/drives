@@ -43,7 +43,7 @@ export class OperatingSystemService {
       throw new ConflictException(
         `OperatingSystem with name "${createDto.name}" already exists`,
       );
-    return this.osModel.create(createDto as any);
+    return this.osModel.create(createDto as Partial<OperatingSystem>);
   }
 
   async update(

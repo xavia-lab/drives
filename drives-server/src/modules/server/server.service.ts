@@ -109,7 +109,9 @@ export class ServerService {
     // 🌟 Concurrent check for all three normalized relational foreign keys
     await this.validateForeignKeys(createServerDto);
 
-    const server = await this.serverModel.create(createServerDto as any);
+    const server = await this.serverModel.create(
+      createServerDto as Partial<Server>,
+    );
     return server.reload({ include: [CpuModel, OperatingSystem, Rack] });
   }
 

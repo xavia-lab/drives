@@ -5,7 +5,6 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
-  HasMany,
   PrimaryKey,
   Default,
 } from 'sequelize-typescript';
@@ -95,8 +94,4 @@ export class Vendor extends Model {
     onUpdate: 'RESTRICT',
   })
   declare country: Country;
-
-  // Uncomment this relationship once you construct your StorageModel Nest entity
-  // @HasMany(() => StorageModel)
-  // declare storageModels: StorageModel[];
 }

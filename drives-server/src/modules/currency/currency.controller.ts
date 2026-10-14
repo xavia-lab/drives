@@ -28,7 +28,6 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CurrencyResponseDto } from './dto/response/currency-response.dto';
-import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('currencies')

@@ -31,11 +31,15 @@ export class AuditLogService {
         userId: createAuditLogDto.userId || null,
         timestamp: new Date(),
       });
-      return new AuditLogResponseDto(log.get({ plain: true }));
+      // Cast the plain model object to match what the DTO constructor expects
+      return new AuditLogResponseDto(
+        log.get({ plain: true }) as Partial<AuditLogResponseDto>,
+      );
     } catch (error) {
+      const err = error as Error;
       this.logger.error(
-        `Failed to write database audit entry: ${error.message}`,
-        error.stack,
+        `Failed to write database audit entry: ${err.message}`,
+        err.stack,
       );
       throw new InternalServerErrorException('Data monitoring entry failure');
     }
@@ -86,14 +90,18 @@ export class AuditLogService {
 
       return {
         data: rows.map(
-          (row) => new AuditLogResponseDto(row.get({ plain: true })),
+          (row) =>
+            new AuditLogResponseDto(
+              row.get({ plain: true }) as Partial<AuditLogResponseDto>,
+            ),
         ),
         total: count,
       };
     } catch (error) {
+      const err = error as Error;
       this.logger.error(
-        `Error querying tracking logs: ${error.message}`,
-        error.stack,
+        `Error querying tracking logs: ${err.message}`,
+        err.stack,
       );
       throw new InternalServerErrorException(
         'Audit log fetching pipeline error',

@@ -2,9 +2,6 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { ConfigService } from '@nestjs/config';
-import { Currency } from '../modules/currency/entities/currency.entity';
-import { User } from '../modules/user/entities/user.entity';
-// Import other entities
 
 @Injectable()
 export class DatabaseService implements OnApplicationBootstrap {
@@ -50,10 +47,12 @@ export class DatabaseService implements OnApplicationBootstrap {
     }
   }
 
-  async seedDatabase() {
+  // Fixed: Removed 'async' keyword since there are no active 'await' calls inside
+  seedDatabase() {
     console.log('Seeding database...');
     // Add your seed logic here
     // Example: await this.currencyService.seedDefaultCurrencies();
+    return Promise.resolve(); // Returns a promise to keep compatibility with 'await this.seedDatabase()'
   }
 
   async healthCheck(): Promise<boolean> {

@@ -80,7 +80,7 @@ export class CurrencyService implements OnModuleInit {
       );
     }
 
-    return this.currencyModel.create(createCurrencyDto as any);
+    return this.currencyModel.create(createCurrencyDto as Partial<Currency>);
   }
 
   async updateCurrency(

@@ -1,6 +1,14 @@
 import { Expose, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+// Define a safe interface signature layout for the incoming Transform parameter context
+interface TransformFnParams {
+  value: unknown;
+  key: string;
+  obj: Record<string, unknown>; // Maps the source object to a known indexable dictionary record structure
+  type: number;
+}
+
 export class MediaResponseDto {
   @ApiProperty({ example: 1 })
   @Expose()
@@ -39,18 +47,30 @@ export class MediaResponseDto {
     },
   })
   @Expose()
-  @Transform(({ value, obj }) => {
-    // Check if the current value is empty and the source object has data
-    const hasData = obj.metadata && Object.keys(obj.metadata).length > 0;
-    const isValueEmpty = !value || Object.keys(value).length === 0;
+  // Fixed: Passed explicit layouts to the callback parameters to destroy the implicit 'any' contexts
+  @Transform(({ value, obj }: TransformFnParams): Record<string, unknown> => {
+    // Extract safely using type-casting constraints to prevent checking boundary issues
+    const sourceMetadata =
+      obj.metadata && typeof obj.metadata === 'object'
+        ? (obj.metadata as Record<string, unknown>)
+        : null;
 
-    if (isValueEmpty && hasData) {
-      return obj.metadata;
+    const currentMetadata =
+      value && typeof value === 'object'
+        ? (value as Record<string, unknown>)
+        : null;
+
+    const hasData = sourceMetadata && Object.keys(sourceMetadata).length > 0;
+    const isValueEmpty =
+      !currentMetadata || Object.keys(currentMetadata).length === 0;
+
+    if (isValueEmpty && hasData && sourceMetadata) {
+      return sourceMetadata;
     }
 
-    return value || obj.metadata || {};
+    return currentMetadata || sourceMetadata || {};
   })
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>; // Fixed: Changed Record<string, any> over to 'unknown' to lock types completely
 
   @Expose()
   createdAt: Date;

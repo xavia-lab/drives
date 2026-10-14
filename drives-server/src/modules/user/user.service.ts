@@ -13,6 +13,7 @@ import { Op } from 'sequelize';
 import { QueryUserDto } from './dto/query-user.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { PaginationService } from '../common/pagination/pagination.service';
+import { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -29,7 +30,8 @@ export class UserService implements OnModuleInit {
   /**
    * JIT (Just-In-Time) user creation/update from Keycloak token
    */
-  async upsertUserFromKeycloak(keycloakUser: any): Promise<User> {
+  async upsertUserFromKeycloak(keycloakUser: AuthenticatedUser): Promise<User> {
+    // 👈 Fixed: Swapped any for AuthenticatedUser
     try {
       const userData: CreateUserDto = {
         id: keycloakUser.id,
@@ -48,7 +50,9 @@ export class UserService implements OnModuleInit {
       this.logger.log(
         `Upserting  user: ${keycloakUser.email} (${keycloakUser.id})`,
       );
-      const [user, updated] = await this.userModel.upsert({
+
+      // Fixed: Removed 'updated' from destructuring to clear the unused variable warning
+      const [user] = await this.userModel.upsert({
         ...userData,
         lastLogin: new Date(),
         isActive: true,
@@ -60,12 +64,13 @@ export class UserService implements OnModuleInit {
 
       return user;
     } catch (error) {
+      const err = error as Error; // 👈 Fixed: Cast error to Error layout structure
       this.logger.error(
-        `Failed to upsert user from Keycloak: ${error.message}`,
-        error.stack,
+        `Failed to upsert user from Keycloak: ${err.message}`,
+        err.stack,
       );
 
-      if (error.name === 'SequelizeUniqueConstraintError') {
+      if (err.name === 'SequelizeUniqueConstraintError') {
         throw new ConflictException(
           `User with email ${keycloakUser.email} already exists`,
         );
@@ -78,7 +83,6 @@ export class UserService implements OnModuleInit {
   async findAll(
     query?: QueryUserDto,
   ): Promise<PaginatedResponse<User & { itemNumber: number }>> {
-    // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<User>(this.userModel, query);
   }
 
@@ -171,7 +175,8 @@ export class UserService implements OnModuleInit {
     });
   }
 
-  async getUserStats(): Promise<any> {
+  async getUserStats(): Promise<Record<string, number>> {
+    // 👈 Fixed: Swapped any return for safe structured template
     const totalUsers = await this.userModel.count();
     const activeUsers = await this.userModel.count({
       where: { isActive: true },

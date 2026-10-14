@@ -35,7 +35,8 @@ export class SystemController {
     return {
       status: dbHealth ? 'ok' : 'unhealthy',
       timestamp: new Date().toISOString(),
-      environment: this.configService.get('app.nodeEnv'),
+      // Fixed: Pass explicit generic string argument to clean up any cascade
+      environment: this.configService.get<string>('app.nodeEnv', 'development'),
       database: dbHealth ? 'connected' : 'disconnected',
       service: 'Emerald API Server',
     };

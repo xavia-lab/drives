@@ -1,4 +1,4 @@
-import { isNotEmpty } from '../utils/objects.util';
+import { isNotEmpty } from '../../../lib/utils/objects.util';
 import { where as buildWhereClause } from './select.operators.builder';
 
 export interface PaginationQueryParams {

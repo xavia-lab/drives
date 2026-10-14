@@ -104,7 +104,9 @@ export class ServerSlotService {
     // 🌟 Validate all incoming foreign keys concurrently before creation
     await this.validateForeignKeys(createServerSlotDto);
 
-    const slot = await this.serverSlotModel.create(createServerSlotDto as any);
+    const slot = await this.serverSlotModel.create(
+      createServerSlotDto as Partial<ServerSlot>,
+    );
     return slot.reload({ include: [Server, Interface] });
   }
 

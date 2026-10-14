@@ -86,7 +86,7 @@ export class DatacenterService {
     await this.validateForeignKeys(createDatacenterDto);
 
     const datacenter = await this.datacenterModel.create(
-      createDatacenterDto as any,
+      createDatacenterDto as Partial<Datacenter>,
     );
     return datacenter.reload({ include: [Country] });
   }

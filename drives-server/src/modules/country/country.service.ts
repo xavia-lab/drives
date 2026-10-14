@@ -57,6 +57,18 @@ export class CountryService implements OnModuleInit {
   }
 
   async createCountry(createCountryDto: CreateCountryDto): Promise<Country> {
+    if (createCountryDto.id) {
+      const existingById = await this.countryModel.findByPk(
+        createCountryDto.id,
+      );
+
+      if (existingById) {
+        throw new ConflictException(
+          `Country with ID: ${createCountryDto.id} already exists`,
+        );
+      }
+    }
+
     const existingByName = await this.countryModel.findOne({
       where: { name: createCountryDto.name },
     });
@@ -67,17 +79,17 @@ export class CountryService implements OnModuleInit {
 
     if (existingByName) {
       throw new ConflictException(
-        `Country with name "${createCountryDto.name}" already exists`,
+        `Country with name: ${createCountryDto.name} already exists`,
       );
     }
 
     if (existingByCode) {
       throw new ConflictException(
-        `Country with code "${createCountryDto.code}" already exists`,
+        `Country with code: ${createCountryDto.code} already exists`,
       );
     }
 
-    return this.countryModel.create(createCountryDto as any);
+    return this.countryModel.create(createCountryDto as Partial<Country>);
   }
 
   async updateCountry(
@@ -132,7 +144,7 @@ export class CountryService implements OnModuleInit {
     const country = await this.countryModel.findByPk(id);
 
     if (!country) {
-      throw new NotFoundException(`Country with ID ${id} not found`);
+      throw new NotFoundException(`Country with ID: ${id} not found`);
     }
 
     if (country.managed) {

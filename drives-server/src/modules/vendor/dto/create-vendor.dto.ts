@@ -6,8 +6,6 @@ import {
   IsBoolean,
   IsEmail,
   IsUrl,
-  IsInt,
-  Min,
   ValidateNested,
   IsUUID,
 } from 'class-validator';

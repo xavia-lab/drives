@@ -138,10 +138,13 @@ export class StorageModelService implements OnModuleInit {
       );
     }
 
-    // 🌟 Check all incoming IDs for existence before creation
+    // Check all incoming IDs for existence before creation
     await this.validateForeignKeys(createStorageModelDto);
 
-    return this.storageModelModel.create(createStorageModelDto as any);
+    // Fixed: Cast creation parameters using a safe partial model layer instead of 'any'
+    return this.storageModelModel.create(
+      createStorageModelDto as Partial<StorageModel>,
+    );
   }
 
   async update(
@@ -169,7 +172,7 @@ export class StorageModelService implements OnModuleInit {
       }
     }
 
-    // 🌟 Check all passed IDs for existence before executing the update loop
+    // Check all passed IDs for existence before executing the update loop
     await this.validateForeignKeys(updateStorageModelDto);
 
     const updateData: Partial<StorageModel> = {};
