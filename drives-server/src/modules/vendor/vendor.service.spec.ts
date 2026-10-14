@@ -14,8 +14,9 @@ import { UpdateVendorDto } from './dto/update-vendor.dto';
 
 describe('VendorService', () => {
   let service: VendorService;
-  let mockVendorModel: any;
-  let mockCountryModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockVendorModel: Record<string, jest.Mock>;
+  let mockCountryModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -31,10 +32,10 @@ describe('VendorService', () => {
       findByPk: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using unknown type-casting instead of any
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,14 +62,18 @@ describe('VendorService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit type assertion mapping data structures safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (Vendor & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockVendorModel,
+        mockVendorModel as unknown as typeof Vendor,
         mockQuery,
       );
     });

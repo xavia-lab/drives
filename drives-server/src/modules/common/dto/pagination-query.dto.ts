@@ -10,6 +10,14 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
+// Define a safe interface signature layout for the incoming Transform parameter context
+interface TransformFnParams {
+  value: unknown;
+  key: string;
+  obj: Record<string, unknown>;
+  type: number;
+}
+
 export class PaginationQueryDto {
   // ====================== ID ======================
   @ApiPropertyOptional({
@@ -17,9 +25,15 @@ export class PaginationQueryDto {
     example: '1,2,3',
   })
   @IsOptional()
-  @Transform(({ value }) =>
-    Array.isArray(value) ? value : value?.toString()?.split(','),
-  )
+  // Fixed: Typed parameter context to destroy the implicit "any" and verify primitive boundaries
+  @Transform(({ value }: TransformFnParams): unknown => {
+    if (!value) return value;
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' || typeof value === 'number') {
+      return value.toString().split(',');
+    }
+    return value;
+  })
   id?: number | number[] | string | string[];
 
   // ====================== Pagination ======================
@@ -64,8 +78,8 @@ export class PaginationQueryDto {
   filterOperator?: string;
 
   @ApiPropertyOptional()
-  // Trigger validation for filterValue if filterField exists
-  @ValidateIf((o) => o.filterField !== undefined)
+  // Fixed: Add explicit type to the validating object parameter 'o' to satisfy line 68 limits
+  @ValidateIf((o: PaginationQueryDto) => o.filterField !== undefined)
   @IsNotEmpty({
     message: 'filterValue is required when filterField is provided',
   })

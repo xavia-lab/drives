@@ -66,7 +66,7 @@ export class RackService {
     }
 
     await this.validateForeignKeys(createDto);
-    const rack = await this.rackModel.create(createDto as any);
+    const rack = await this.rackModel.create(createDto as Partial<Rack>);
     return rack.reload({ include: [Datacenter] });
   }
 

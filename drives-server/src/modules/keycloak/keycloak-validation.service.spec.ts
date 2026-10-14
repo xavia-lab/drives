@@ -21,7 +21,8 @@ jest.mock('jwks-rsa', () => {
 describe('KeycloakValidationService', () => {
   let service: KeycloakValidationService;
 
-  const mockConfig = {
+  // Fixed: Strongly type the mock environment lookup object literal as a strict string dictionary
+  const mockConfig: Record<string, string> = {
     'keycloak.auth-server-url': 'https://keycloak.example.com',
     'keycloak.realm': 'my-realm',
     'keycloak.clientId': 'my-client',
@@ -39,7 +40,10 @@ describe('KeycloakValidationService', () => {
         KeycloakValidationService,
         {
           provide: ConfigService,
-          useValue: { get: jest.fn((key: string) => mockConfig[key]) },
+          // Fixed: String template lookup returns a safe, predictable primitive string boundary
+          useValue: {
+            get: jest.fn((key: string): string => mockConfig[key] || ''),
+          },
         },
       ],
     }).compile();

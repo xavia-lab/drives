@@ -78,7 +78,7 @@ export class InterfaceService implements OnModuleInit {
     // 🌟 Check incoming relation constraints before writing record
     await this.validateForeignKeys(createInterfaceDto);
 
-    return this.interfaceModel.create(createInterfaceDto as any);
+    return this.interfaceModel.create(createInterfaceDto as Partial<Interface>);
   }
 
   async update(

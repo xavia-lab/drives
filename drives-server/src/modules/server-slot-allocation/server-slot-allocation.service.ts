@@ -103,7 +103,9 @@ export class ServerSlotAllocationService {
     // 🌟 Validate all incoming foreign keys concurrently before adding to the ledger
     await this.validateForeignKeys(createDto);
 
-    const allocation = await this.allocationModel.create(createDto as any);
+    const allocation = await this.allocationModel.create(
+      createDto as Partial<ServerSlotAllocation>,
+    );
     return allocation.reload({ include: [ServerSlot, PhysicalDrive, User] });
   }
 

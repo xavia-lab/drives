@@ -91,7 +91,9 @@ export class LogicalVdevService {
     // 🌟 Validate that the parent storagePoolId exists concurrently before creating the record
     await this.validateForeignKeys(createDto);
 
-    const vdev = await this.logicalVdevModel.create(createDto as any);
+    const vdev = await this.logicalVdevModel.create(
+      createDto as Partial<LogicalVdev>,
+    );
     return vdev.reload({ include: [StoragePool] });
   }
 

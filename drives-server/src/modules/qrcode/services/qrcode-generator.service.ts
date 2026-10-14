@@ -28,8 +28,10 @@ export class QRCodeGeneratorService {
 
       return { svg: svg, originalContent: url };
     } catch (error) {
+      // Fixed: Cast the unknown error safely to an Error interface instance
+      const err = error as Error;
       throw new InternalServerErrorException(
-        `QR SVG generation failed: ${error.message}`,
+        `QR SVG generation failed: ${err.message}`,
       );
     }
   }

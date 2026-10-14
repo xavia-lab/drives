@@ -9,7 +9,8 @@ import { UpdateFormFactorDto } from './dto/update-form-factor.dto';
 
 describe('FormFactorService', () => {
   let service: FormFactorService;
-  let mockFormFactorModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockFormFactorModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,10 +22,10 @@ describe('FormFactorService', () => {
       destroy: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -132,14 +133,18 @@ describe('FormFactorService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (FormFactor & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockFormFactorModel,
+        mockFormFactorModel as unknown as typeof FormFactor,
         mockQuery,
       );
     });

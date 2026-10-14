@@ -9,8 +9,9 @@ import { CreateRackDto } from './dto/create-rack.dto';
 
 describe('RackService', () => {
   let service: RackService;
-  let mockRackRepo: any;
-  let mockDcRepo: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockRackRepo: Record<string, jest.Mock>;
+  let mockDcRepo: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,7 +22,11 @@ describe('RackService', () => {
       destroy: jest.fn(),
     };
     mockDcRepo = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

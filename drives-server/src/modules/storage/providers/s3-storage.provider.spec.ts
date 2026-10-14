@@ -23,7 +23,8 @@ describe('S3StorageProvider', () => {
     endpoint: 'http://localhost:4566',
   };
 
-  beforeEach(async () => {
+  // Fixed: Removed 'async' since there are no active 'await' calls inside this configuration hook
+  beforeEach(() => {
     s3Mock.reset();
     provider = new S3StorageProvider(config);
   });
@@ -52,8 +53,11 @@ describe('S3StorageProvider', () => {
           .mockResolvedValue(new Uint8Array([1, 2, 3])),
       };
 
+      // Fixed: Replaced 'as any' with an explicit type cast that satisfies the AWS S3 SDK body signature interface bounds
       s3Mock.on(GetObjectCommand).resolves({
-        Body: mockStream as any,
+        Body: mockStream as unknown as NonNullable<
+          import('@aws-sdk/client-s3').GetObjectCommandOutput['Body']
+        >,
       });
 
       const result = await provider.get('test-key');

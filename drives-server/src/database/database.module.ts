@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SequelizeModule } from '@nestjs/sequelize';
+import { SequelizeModule, SequelizeModuleOptions } from '@nestjs/sequelize'; // 👈 Import SequelizeModuleOptions
 import { DatabaseService } from './database.service';
 
 import { AuditLog } from '../modules/audit-log/entities/audit-log.entity';
@@ -40,7 +40,9 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const config = configService.getOrThrow('database');
+        // Fixed: Add explicit type parameters to the getOrThrow utility lookup
+        const config =
+          configService.getOrThrow<SequelizeModuleOptions>('database');
 
         return {
           ...config,
@@ -50,7 +52,6 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             QRLink,
             User,
             Role,
-            // Add other models here
             BusProtocol,
             Capacity,
             Country,

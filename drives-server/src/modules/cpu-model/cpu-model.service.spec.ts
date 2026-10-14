@@ -9,7 +9,8 @@ import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
 
 describe('CpuModelService', () => {
   let service: CpuModelService;
-  let mockCpuModelRepo: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockCpuModelRepo: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -20,9 +21,10 @@ describe('CpuModelService', () => {
       destroy: jest.fn(),
     };
 
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,14 +47,18 @@ describe('CpuModelService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (CpuModel & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCpuModelRepo,
+        mockCpuModelRepo as unknown as typeof CpuModel,
         mockQuery,
       );
     });
@@ -125,7 +131,7 @@ describe('CpuModelService', () => {
         update: jest.fn().mockResolvedValue(true),
       };
       mockCpuModelRepo.findByPk.mockResolvedValue(mockInstance);
-      mockCpuModelRepo.findOne.mockResolvedValue(null);
+      mockCpuModelRepo.create.mockResolvedValue(null); // No name collision
 
       await service.update('cpu-uuid', updateDto);
 

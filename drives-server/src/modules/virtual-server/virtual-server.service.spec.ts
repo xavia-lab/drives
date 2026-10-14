@@ -10,13 +10,13 @@ import { Server } from '../server/entities/server.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
-import { UpdateVirtualServerDto } from './dto/update-virtual-server.dto';
 
 describe('VirtualServerService', () => {
   let service: VirtualServerService;
-  let mockVirtualServerModel: any;
-  let mockServerModel: any;
-  let mockOsModel: any;
+  // Fixed: Swapped out loose 'any' definitions for typed mock records
+  let mockVirtualServerModel: Record<string, jest.Mock>;
+  let mockServerModel: Record<string, jest.Mock>;
+  let mockOsModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -28,7 +28,11 @@ describe('VirtualServerService', () => {
     };
     mockServerModel = { findByPk: jest.fn() };
     mockOsModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,14 +54,18 @@ describe('VirtualServerService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (VirtualServer & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockVirtualServerModel,
+        mockVirtualServerModel as unknown as typeof VirtualServer,
         mockQuery,
         { include: [Server, OperatingSystem] },
       );

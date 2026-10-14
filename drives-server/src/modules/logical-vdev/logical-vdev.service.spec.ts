@@ -8,13 +8,13 @@ import {
 } from './entities/logical-vdev.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
-import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
+import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto'; // Fixed: Removed unused UpdateLogicalVdevDto import
 
 describe('LogicalVdevService', () => {
   let service: LogicalVdevService;
-  let mockLogicalVdevModel: any;
-  let mockStoragePoolModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockLogicalVdevModel: Record<string, jest.Mock>;
+  let mockStoragePoolModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -25,7 +25,11 @@ describe('LogicalVdevService', () => {
       destroy: jest.fn(),
     };
     mockStoragePoolModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,14 +47,18 @@ describe('LogicalVdevService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (LogicalVdev & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockLogicalVdevModel,
+        mockLogicalVdevModel as unknown as typeof LogicalVdev,
         mockQuery,
         { include: [StoragePool] },
       );

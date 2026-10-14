@@ -9,7 +9,8 @@ import { UpdateCapacityDto } from './dto/update-capacity.dto';
 
 describe('CapacityService', () => {
   let service: CapacityService;
-  let mockCapacityModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockCapacityModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -21,10 +22,10 @@ describe('CapacityService', () => {
       destroy: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -113,7 +114,7 @@ describe('CapacityService', () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockCapacityModel.findByPk.mockResolvedValue(mockInstance);
 
-      // 🌟 Fix: Set the resolved value cleanly on the capacity mock model
+      // Set the resolved value cleanly on the capacity mock model
       mockCapacityModel.destroy.mockResolvedValue(1);
 
       // Act
@@ -138,14 +139,18 @@ describe('CapacityService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (Capacity & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCapacityModel,
+        mockCapacityModel as unknown as typeof Capacity,
         mockQuery,
       );
     });

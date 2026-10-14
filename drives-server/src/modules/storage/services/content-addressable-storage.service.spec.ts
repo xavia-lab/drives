@@ -20,7 +20,7 @@ describe('ContentAddressableStorageService', () => {
       exists: jest.fn(),
       delete: jest.fn(),
       list: jest.fn(),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

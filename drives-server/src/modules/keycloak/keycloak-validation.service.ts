@@ -6,6 +6,7 @@ import {
   KeycloakTokenPayload,
   KeycloakTokenInfo,
 } from '../../common/interfaces/authenticated-request.interface';
+import { DecodedCompleteToken } from './interfaces/main.interfaces';
 
 @Injectable()
 export class KeycloakValidationService {
@@ -26,14 +27,22 @@ export class KeycloakValidationService {
   /** Validates the JWT and returns the typed payload */
   async validateToken(token: string): Promise<KeycloakTokenPayload | null> {
     try {
-      const decoded = jwt.decode(token, { complete: true }) as any;
+      // Fixed: Replace 'as any' with an explicit decoded interface layout
+      const decoded = jwt.decode(token, {
+        complete: true,
+      }) as DecodedCompleteToken | null;
       if (!decoded?.header?.kid) throw new Error('Invalid token: missing kid');
 
       const key = await this.jwksClient.getSigningKey(decoded.header.kid);
       const signingKey = key.getPublicKey();
 
       const clientId = this.configService.get<string>('keycloak.clientId');
-      const issuer = `${this.configService.get('keycloak.auth-server-url')}/realms/${this.configService.get('keycloak.realm')}`;
+      // Fixed: Added string generics to config lookups to avoid raw any cascades
+      const serverUrl = this.configService.get<string>(
+        'keycloak.auth-server-url',
+      );
+      const realmName = this.configService.get<string>('keycloak.realm');
+      const issuer = `${serverUrl}/realms/${realmName}`;
 
       return jwt.verify(token, signingKey, {
         algorithms: ['RS256'],
@@ -41,7 +50,9 @@ export class KeycloakValidationService {
         issuer,
       }) as KeycloakTokenPayload;
     } catch (error) {
-      this.logger.error(`Token validation failed: ${error.message}`);
+      // Fixed: Cast the error parameter to a standard Error block
+      const err = error as Error;
+      this.logger.error(`Token validation failed: ${err.message}`);
       return null;
     }
   }

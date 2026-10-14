@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common'; // Fixed: Removed unused NotFoundException
 import { OperatingSystemService } from './operating-system.service';
 import { OperatingSystem } from './entities/operating-system.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateOperatingSystemDto } from './dto/create-operating-system.dto';
-import { UpdateOperatingSystemDto } from './dto/update-operating-system.dto';
+import { CreateOperatingSystemDto } from './dto/create-operating-system.dto'; // Fixed: Removed unused UpdateOperatingSystemDto import
 
 describe('OperatingSystemService', () => {
   let service: OperatingSystemService;
-  let mockOsRepo: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockOsRepo: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -19,7 +19,11 @@ describe('OperatingSystemService', () => {
       create: jest.fn(),
       destroy: jest.fn(),
     };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,13 +40,17 @@ describe('OperatingSystemService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedOutput = { data: [], meta: {} } as unknown as {
+        data: (OperatingSystem & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedOutput);
 
       const result = await service.findAll(mockQuery);
       expect(result).toEqual(expectedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockOsRepo,
+        mockOsRepo as unknown as typeof OperatingSystem,
         mockQuery,
       );
     });

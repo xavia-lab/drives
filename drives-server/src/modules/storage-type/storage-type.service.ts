@@ -17,7 +17,7 @@ export class StorageTypeService implements OnModuleInit {
   constructor(
     @InjectModel(StorageType)
     private readonly storageTypeModel: typeof StorageType,
-    private readonly paginationService: PaginationService, // 🌟 Clean composition injection
+    private readonly paginationService: PaginationService,
   ) {}
 
   async onModuleInit() {
@@ -47,7 +47,6 @@ export class StorageTypeService implements OnModuleInit {
   async findAll(
     query?: QueryStorageTypeDto,
   ): Promise<PaginatedResponse<StorageType & { itemNumber: number }>> {
-    // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<StorageType>(
       this.storageTypeModel,
       query,
@@ -71,7 +70,10 @@ export class StorageTypeService implements OnModuleInit {
       );
     }
 
-    return this.storageTypeModel.create(createStorageTypeDto as any);
+    // Fixed: Cast creation parameters using a safe partial model layer instead of 'any'
+    return this.storageTypeModel.create(
+      createStorageTypeDto as Partial<StorageType>,
+    );
   }
 
   async updateStorageType(

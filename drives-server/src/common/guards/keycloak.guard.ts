@@ -14,6 +14,14 @@ import { KeycloakValidationService } from '../../modules/keycloak/keycloak-valid
 import { UserService } from '../../modules/user/user.service';
 import { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 
+// Define a safe structural interface for the expected Request object context
+interface GuardRequest {
+  user?: AuthenticatedUser;
+  headers: {
+    authorization?: string;
+  };
+}
+
 @Injectable()
 export class KeycloakAuthGuard extends AuthGuard('keycloak') {
   private readonly logger = new Logger(KeycloakAuthGuard.name);
@@ -35,7 +43,8 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
 
     if (!authEnabled) {
       this.logger.warn('Authentication is disabled. Attaching mock user.');
-      context.switchToHttp().getRequest().user = this.getMockUser();
+      context.switchToHttp().getRequest<GuardRequest>().user =
+        this.getMockUser();
       return true;
     }
 
@@ -51,7 +60,7 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<GuardRequest>();
     const authHeader = request.headers.authorization;
 
     if (authHeader?.startsWith('Bearer ')) {
@@ -68,7 +77,7 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
 
   private async validateTokenAndUpsertUser(
     token: string,
-    request: any,
+    request: GuardRequest,
   ): Promise<boolean> {
     try {
       const keycloakUser =
@@ -97,7 +106,8 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
             isActive: true, // Ensuring status is set
           });
         } catch (error) {
-          this.logger.error(`JIT Database sync failed: ${error.message}`);
+          const err = error as Error;
+          this.logger.error(`JIT Database sync failed: ${err.message}`);
           // We continue even if DB sync fails, but the user won't have a dbUser property
         }
       }
@@ -105,7 +115,8 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
       request.user = user;
       return true;
     } catch (error) {
-      this.logger.error('Token validation process failed', error.stack);
+      const err = error as Error;
+      this.logger.error('Token validation process failed', err.stack);
       return false;
     }
   }

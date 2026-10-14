@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import { SequelizeModuleOptions } from '@nestjs/sequelize';
+import { Dialect } from 'sequelize'; // 👈 Import the explicit Dialect type union
 
 export default registerAs('database', (): SequelizeModuleOptions => {
   const nodeEnv = process.env.NODE_ENV || 'development';
@@ -14,7 +15,9 @@ export default registerAs('database', (): SequelizeModuleOptions => {
     host: process.env.DRIVES_BACKEND_DATABASE_HOST,
     // Docker env vars are ALWAYS strings, so parseInt is mandatory
     port: parseInt(portValue, 10),
-    dialect: (process.env.DRIVES_BACKEND_DATABASE_DIALECT as any) || 'postgres',
+    // Fixed: Cast directly to Dialect instead of using 'as any'
+    dialect:
+      (process.env.DRIVES_BACKEND_DATABASE_DIALECT as Dialect) || 'postgres',
     autoLoadModels: true,
   };
 

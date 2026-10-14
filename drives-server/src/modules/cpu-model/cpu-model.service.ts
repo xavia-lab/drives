@@ -47,7 +47,7 @@ export class CpuModelService {
       );
     }
 
-    return this.cpuModelModel.create(createCpuModelDto as any);
+    return this.cpuModelModel.create(createCpuModelDto as Partial<CpuModel>);
   }
 
   async update(

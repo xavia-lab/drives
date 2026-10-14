@@ -13,8 +13,9 @@ import { UpdateDriveLifecycleEventDto } from './dto/update-drive-lifecycle-event
 
 describe('DriveLifecycleEventService', () => {
   let service: DriveLifecycleEventService;
-  let mockEventModel: any;
-  let mockPhysicalDriveModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockEventModel: Record<string, jest.Mock>;
+  let mockPhysicalDriveModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -30,10 +31,10 @@ describe('DriveLifecycleEventService', () => {
       findByPk: jest.fn(),
     };
 
-    // 2. Mock the PaginationService
+    // 2. Mock the PaginationService using an unknown double-cast wrapper
     mockPaginationService = {
       paginate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,14 +63,18 @@ describe('DriveLifecycleEventService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (DriveLifecycleEvent & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockEventModel,
+        mockEventModel as unknown as typeof DriveLifecycleEvent,
         mockQuery,
       );
     });

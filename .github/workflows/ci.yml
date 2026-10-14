@@ -22,7 +22,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.9.0
+          version: 11.14.0
 
       - name: Get pnpm store directory
         shell: bash
@@ -40,5 +40,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run linting across workspace
+        run: pnpm turbo run lint --filter='!@drives/drives-ui'
+
       - name: Run tests across workspace
-        run: pnpm --filter=./packages/* test
+        run: pnpm turbo run test

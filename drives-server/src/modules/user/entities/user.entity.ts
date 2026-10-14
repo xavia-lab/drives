@@ -128,10 +128,11 @@ export class User extends Model {
   }
 
   // Helper method to convert to JSON safely
-  toJSON() {
-    const values = Object.assign({}, this.get());
+  override toJSON(): Record<string, unknown> {
+    // Cast the raw attributes safely into a structured dictionary record
+    const values = { ...(this.get() as Record<string, unknown>) };
 
-    // Remove sensitive or unnecessary fields
+    // Remove sensitive or unnecessary fields safely
     delete values.deletedAt;
 
     return values;

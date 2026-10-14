@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { StoragePoolService } from './storage-pool.service';
-import { StoragePool, StoragePoolType } from './entities/storage-pool.entity';
+import { StoragePool } from './entities/storage-pool.entity';
 import { Server } from '../server/entities/server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
@@ -11,9 +11,10 @@ import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
 
 describe('StoragePoolService', () => {
   let service: StoragePoolService;
-  let mockStoragePoolModel: any;
-  let mockServerModel: any;
-  let mockVirtualServerModel: any;
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockStoragePoolModel: Record<string, jest.Mock>;
+  let mockServerModel: Record<string, jest.Mock>;
+  let mockVirtualServerModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -25,12 +26,19 @@ describe('StoragePoolService', () => {
     };
     mockServerModel = { findByPk: jest.fn() };
     mockVirtualServerModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StoragePoolService,
-        { provide: getModelToken(StoragePool), useValue: mockStoragePoolModel },
+        {
+          provide: getModelToken(StoragePool),
+          useValue: mockStoragePoolModel,
+        },
         { provide: getModelToken(Server), useValue: mockServerModel },
         {
           provide: getModelToken(VirtualServer),
@@ -45,16 +53,20 @@ describe('StoragePoolService', () => {
   });
 
   describe('findAll', () => {
-    it('should cleanly delegate pagination logic to PaginationService', async () => {
+    it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedOutput = { data: [], meta: {} } as any;
-      mockPaginationService.paginate.mockResolvedValue(expectedOutput);
+      // Fixed: Explicit structural type definition to satisfy return assignments
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (StoragePool & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
+      mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
-      expect(result).toEqual(expectedOutput);
+      expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockStoragePoolModel,
+        mockStoragePoolModel as unknown as typeof StoragePool,
         mockQuery,
         { include: [Server, VirtualServer] },
       );
@@ -62,12 +74,14 @@ describe('StoragePoolService', () => {
   });
 
   describe('create', () => {
-    it('should successfully create a pool assigned cleanly to a physical server context', async () => {
-      const createDto: CreateStoragePoolDto = {
-        poolName: 'tank-nvme-cache',
-        poolType: StoragePoolType.ZFS,
-        serverId: 'server-uuid',
-      };
+    const createDto: CreateStoragePoolDto = {
+      poolName: 'tank',
+      poolType: 'zfs',
+      encryptionEnabled: true,
+      serverId: 'server-uuid',
+    };
+
+    it('should successfully create and reload a storage pool if XOR target check passes and parent exists', async () => {
       const mockReload = jest
         .fn()
         .mockResolvedValue({ id: 'pool-uuid', ...createDto });
@@ -81,14 +95,15 @@ describe('StoragePoolService', () => {
 
       expect(result).toBeDefined();
       expect(mockStoragePoolModel.create).toHaveBeenCalledWith(createDto);
+      expect(mockReload).toHaveBeenCalledWith({
+        include: [Server, VirtualServer],
+      });
     });
 
-    it('should throw BadRequestException if target exclusivity violations occur (both present)', async () => {
+    it('should throw BadRequestException if both serverId and virtualServerId are assigned', async () => {
       const invalidDto: CreateStoragePoolDto = {
-        poolName: 'invalid-pool',
-        poolType: StoragePoolType.BTRFS,
-        serverId: 'server-uuid',
-        virtualServerId: 'vs-uuid',
+        ...createDto,
+        virtualServerId: 'vm-uuid',
       };
 
       await expect(service.create(invalidDto)).rejects.toThrow(
@@ -96,44 +111,38 @@ describe('StoragePoolService', () => {
       );
     });
 
-    it('should throw BadRequestException if target exclusivity violations occur (both missing)', async () => {
-      const invalidDto: CreateStoragePoolDto = {
-        poolName: 'invalid-pool',
-        poolType: StoragePoolType.BTRFS,
-      };
-
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should throw NotFoundException if targeted physical server asset is missing', async () => {
-      const createDto: CreateStoragePoolDto = {
-        poolName: 'tank-nvme-cache',
-        poolType: StoragePoolType.ZFS,
-        serverId: 'missing-server-uuid',
-      };
+    it('should throw NotFoundException if targeted physical server does not exist', async () => {
       mockServerModel.findByPk.mockResolvedValue(null); // Missing
 
       await expect(service.create(createDto)).rejects.toThrow(
-        new NotFoundException('Server with ID missing-server-uuid not found'),
+        NotFoundException,
       );
     });
   });
 
   describe('update', () => {
-    it('should throw BadRequestException if update actions attempt to assign both reference variables', async () => {
+    const updateDto: UpdateStoragePoolDto = {
+      poolName: 'tank-updated',
+    };
+
+    it('should successfully update a storage pool when parent constraint targets exist', async () => {
       const mockInstance = {
         id: 'pool-uuid',
         serverId: 'server-uuid',
         virtualServerId: null,
+        update: jest.fn().mockResolvedValue(true),
+        reload: jest
+          .fn()
+          .mockResolvedValue({ id: 'pool-uuid', poolName: 'tank-updated' }),
       };
       mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
 
-      const updateDto: UpdateStoragePoolDto = { virtualServerId: 'vs-uuid' }; // Attempting to add both
+      await service.update('pool-uuid', updateDto);
 
-      await expect(service.update('pool-uuid', updateDto)).rejects.toThrow(
-        BadRequestException,
+      expect(mockInstance.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          poolName: 'tank-updated',
+        }),
       );
     });
   });

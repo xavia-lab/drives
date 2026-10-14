@@ -75,7 +75,7 @@ export class DriveLifecycleEventService {
     await this.validateForeignKeys(createDriveLifecycleEventDto);
 
     const event = await this.driveLifecycleEventModel.create(
-      createDriveLifecycleEventDto as any,
+      createDriveLifecycleEventDto as Partial<DriveLifecycleEvent>,
     );
     return event.reload({ include: [PhysicalDrive] });
   }

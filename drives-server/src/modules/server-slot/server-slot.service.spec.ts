@@ -7,13 +7,14 @@ import { Server } from '../server/entities/server.entity';
 import { Interface } from '../interface/entities/interface.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateServerSlotDto } from './dto/create-server-slot.dto';
-import { UpdateServerSlotDto } from './dto/update-warranty-claim.dto'; // or update-server-slot.dto.ts
 
 describe('ServerSlotService', () => {
   let service: ServerSlotService;
-  let mockServerSlotModel: any;
-  let mockServerModel: any;
-  let mockInterfaceModel: any;
+
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockServerSlotModel: Record<string, jest.Mock>;
+  let mockServerModel: Record<string, jest.Mock>;
+  let mockInterfaceModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -25,7 +26,11 @@ describe('ServerSlotService', () => {
     };
     mockServerModel = { findByPk: jest.fn() };
     mockInterfaceModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -44,14 +49,18 @@ describe('ServerSlotService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (ServerSlot & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockServerSlotModel,
+        mockServerSlotModel as unknown as typeof ServerSlot,
         mockQuery,
         { include: [Server, Interface] },
       );
@@ -93,7 +102,7 @@ describe('ServerSlotService', () => {
       );
     });
 
-    it('should aggregate multiple missing parent foreign keys into a single multiline NotFoundException', async () => {
+    it('should throw an aggregated multiline NotFoundException if multiple foreign keys are missing', async () => {
       mockServerSlotModel.findOne.mockResolvedValue(null);
       mockServerModel.findByPk.mockResolvedValue(null); // Missing
       mockInterfaceModel.findByPk.mockResolvedValue(null); // Missing

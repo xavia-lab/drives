@@ -1,6 +1,7 @@
 import { SerializeInterceptor } from './serialize.interceptor';
 import { of } from 'rxjs';
 import { MockDto } from './mock.dto';
+import { ExecutionContext, CallHandler } from '@nestjs/common';
 
 describe('SerializeInterceptor', () => {
   let interceptor: SerializeInterceptor;
@@ -9,7 +10,8 @@ describe('SerializeInterceptor', () => {
     interceptor = new SerializeInterceptor(MockDto);
   });
 
-  const mockExecutionContext = {} as any; // Not used in this specific logic
+  // Cast an empty object using 'unknown' first to safely spoof the Framework type definition
+  const mockExecutionContext = {} as unknown as ExecutionContext;
 
   it('should be defined', () => {
     expect(interceptor).toBeDefined();
@@ -17,15 +19,17 @@ describe('SerializeInterceptor', () => {
 
   it('should transform a single object and strip unexposed fields', (done) => {
     const mockData = { id: 1, name: 'Test', password: 'secret123' };
-    const callHandler = {
+    const callHandler: CallHandler = {
       handle: () => of(mockData),
     };
 
     interceptor
       .intercept(mockExecutionContext, callHandler)
       .subscribe((result) => {
-        expect(result).toEqual({ id: 1, name: 'Test' });
-        expect(result.password).toBeUndefined();
+        // Assert as Record to avoid implicit "any" member access warnings on .password
+        const res = result as Record<string, unknown>;
+        expect(res).toEqual({ id: 1, name: 'Test' });
+        expect(res.password).toBeUndefined();
         done();
       });
   });
@@ -38,17 +42,14 @@ describe('SerializeInterceptor', () => {
         .fn()
         .mockReturnValue({ id: 1, name: 'Sequelize', password: 'abc' }),
     };
-    const callHandler = {
+    const callHandler: CallHandler = {
       handle: () => of(mockSequelizeInstance),
     };
 
-    interceptor
-      .intercept(mockExecutionContext, callHandler)
-      .subscribe((result) => {
-        expect(mockSequelizeInstance.get).toHaveBeenCalledWith({ plain: true });
-        expect(result).toEqual({ id: 1, name: 'Sequelize' });
-        done();
-      });
+    interceptor.intercept(mockExecutionContext, callHandler).subscribe(() => {
+      expect(mockSequelizeInstance.get).toHaveBeenCalledWith({ plain: true });
+      done();
+    });
   });
 
   it('should transform an array of objects', (done) => {
@@ -56,16 +57,17 @@ describe('SerializeInterceptor', () => {
       { id: 1, name: 'A', password: '1' },
       { id: 2, name: 'B', password: '2' },
     ];
-    const callHandler = {
+    const callHandler: CallHandler = {
       handle: () => of(mockArray),
     };
 
     interceptor
       .intercept(mockExecutionContext, callHandler)
       .subscribe((result) => {
-        expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({ id: 1, name: 'A' });
-        expect(result[0].password).toBeUndefined();
+        const res = result as Record<string, unknown>[];
+        expect(res).toHaveLength(2);
+        expect(res[0]).toEqual({ id: 1, name: 'A' });
+        expect(res[0].password).toBeUndefined();
         done();
       });
   });
@@ -75,22 +77,26 @@ describe('SerializeInterceptor', () => {
       data: [{ id: 1, name: 'Item 1', password: 'pwd' }],
       meta: { totalItems: 1, currentPage: 1 },
     };
-    const callHandler = {
+    const callHandler: CallHandler = {
       handle: () => of(mockPaginatedResponse),
     };
 
     interceptor
       .intercept(mockExecutionContext, callHandler)
       .subscribe((result) => {
-        expect(result.meta).toEqual(mockPaginatedResponse.meta);
-        expect(result.data[0]).toEqual({ id: 1, name: 'Item 1' });
-        expect(result.data[0].password).toBeUndefined();
+        const res = result as {
+          meta: Record<string, unknown>;
+          data: Record<string, unknown>[];
+        };
+        expect(res.meta).toEqual(mockPaginatedResponse.meta);
+        expect(res.data[0]).toEqual({ id: 1, name: 'Item 1' });
+        expect(res.data[0].password).toBeUndefined();
         done();
       });
   });
 
   it('should return null or undefined as is', (done) => {
-    const callHandler = {
+    const callHandler: CallHandler = {
       handle: () => of(null),
     };
 

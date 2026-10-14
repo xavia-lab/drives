@@ -6,14 +6,15 @@ import { LogicalDisk } from './entities/logical-disk.entity';
 import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto';
-import { UpdateLogicalDiskDto } from './dto/update-logical-disk.dto';
+import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto'; // Fixed: Removed unused UpdateLogicalDiskDto import
 
 describe('LogicalDiskService', () => {
   let service: LogicalDiskService;
-  let mockLogicalDiskModel: any;
-  let mockLogicalVdevModel: any;
-  let mockPhysicalDriveModel: any;
+
+  // Fixed: Swapped loose 'any' definitions for typed mock records
+  let mockLogicalDiskModel: Record<string, jest.Mock>;
+  let mockLogicalVdevModel: Record<string, jest.Mock>;
+  let mockPhysicalDriveModel: Record<string, jest.Mock>;
   let mockPaginationService: jest.Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -25,7 +26,11 @@ describe('LogicalDiskService', () => {
     };
     mockLogicalVdevModel = { findByPk: jest.fn() };
     mockPhysicalDriveModel = { findByPk: jest.fn() };
-    mockPaginationService = { paginate: jest.fn() } as any;
+
+    // Fixed: Replaced 'as any' with an explicit double-cast constraint
+    mockPaginationService = {
+      paginate: jest.fn(),
+    } as unknown as jest.Mocked<PaginationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,14 +52,18 @@ describe('LogicalDiskService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as any;
+      // Fixed: Explicit structural type definition to satisfy return assignments safely
+      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
+        data: (LogicalDisk & { itemNumber: number })[];
+        meta: Record<string, unknown>;
+      };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
       const result = await service.findAll(mockQuery);
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockLogicalDiskModel,
+        mockLogicalDiskModel as unknown as typeof LogicalDisk,
         mockQuery,
         { include: [LogicalVdev, PhysicalDrive] },
       );

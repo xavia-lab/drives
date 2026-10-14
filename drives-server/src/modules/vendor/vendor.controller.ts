@@ -32,7 +32,6 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { VendorResponseDto } from './dto/response/vendor-response.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
-import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 
 @ApiTags('vendors')
 @Controller('vendors')

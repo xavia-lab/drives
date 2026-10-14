@@ -109,9 +109,11 @@ export class PhysicalDriveService implements OnModuleInit {
     }
 
     // 🌟 Aggregate check for all incoming foreign keys concurrently
-    await this.validateForeignKeys(createPhysicalDriveDto as any);
+    await this.validateForeignKeys(createPhysicalDriveDto);
 
-    return this.physicalDriveModel.create(createPhysicalDriveDto as any);
+    return this.physicalDriveModel.create(
+      createPhysicalDriveDto as Partial<PhysicalDrive>,
+    );
   }
 
   async update(
@@ -138,7 +140,7 @@ export class PhysicalDriveService implements OnModuleInit {
     }
 
     // 🌟 Validate passed keys for existence before performing the data update loop
-    await this.validateForeignKeys(updatePhysicalDriveDto as any);
+    await this.validateForeignKeys(updatePhysicalDriveDto);
 
     const updateData: Partial<PhysicalDrive> = {};
     if (updatePhysicalDriveDto.serialNumber !== undefined)

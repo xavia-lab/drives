@@ -1,6 +1,5 @@
 import {
   Injectable,
-  ConflictException,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -110,7 +109,10 @@ export class StoragePoolService {
     // 2. Validate targeted foreign key references exist concurrently
     await this.validateForeignKeys(createDto);
 
-    const pool = await this.storagePoolModel.create(createDto as any);
+    // Fixed: Cast creation parameters using a safe partial model layer instead of 'any'
+    const pool = await this.storagePoolModel.create(
+      createDto as Partial<StoragePool>,
+    );
     return pool.reload({ include: [Server, VirtualServer] });
   }
 

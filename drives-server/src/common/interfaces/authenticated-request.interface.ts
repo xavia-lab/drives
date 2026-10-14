@@ -27,4 +27,6 @@ export interface KeycloakTokenInfo {
 
 export interface AuthenticatedUser extends KeycloakTokenInfo {
   dbUser?: User;
+  lastLogin?: Date;
+  isActive?: boolean;
 }

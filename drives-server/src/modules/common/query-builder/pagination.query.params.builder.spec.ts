@@ -77,7 +77,10 @@ describe('PaginationQueryParamsBuilder', () => {
       expect(result.offset).toBe(10);
       expect(result.limit).toBe(10);
       expect(result.order).toStrictEqual([['name', 'asc']]);
-      expect(result.where.status).toStrictEqual({
+
+      // Fixed: Cast the where clause array structure safely to clear the unsafe nested member access error
+      const whereClause = result.where as Record<string, unknown>;
+      expect(whereClause.status).toStrictEqual({
         [Symbol.for('like')]: '%active%',
       }); // Symbolic for Op.like
     });
