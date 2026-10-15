@@ -6,26 +6,36 @@ import { FormFactor } from './entities/form-factor.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateFormFactorDto } from './dto/create-form-factor.dto';
 import { UpdateFormFactorDto } from './dto/update-form-factor.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('FormFactorService', () => {
   let service: FormFactorService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockFormFactorModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockFormFactorModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockFormFactorModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,14 +52,14 @@ describe('FormFactorService', () => {
     }).compile();
 
     service = module.get<FormFactorService>(FormFactorService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createFormFactor', () => {
     const createDto: CreateFormFactorDto = { name: 'M.2 2280', slotPitch: 0.5 };
 
     it('should successfully create a form factor if the name is unique', async () => {
-      mockFormFactorModel.findOne.mockResolvedValue(null); // No naming collision
+      mockFormFactorModel.findOne.mockResolvedValue(null);
       mockFormFactorModel.create.mockResolvedValue({
         id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
         ...createDto,
@@ -81,14 +91,14 @@ describe('FormFactorService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest.fn().mockResolvedValue({
+        update: vi.fn().mockResolvedValue({
           id: 'uuid-1',
           name: 'U.2 2.5"',
           slotPitch: 0.8,
         }),
       };
       mockFormFactorModel.findByPk.mockResolvedValue(mockInstance);
-      mockFormFactorModel.findOne.mockResolvedValue(null); // No renaming conflict
+      mockFormFactorModel.findOne.mockResolvedValue(null);
 
       await service.updateFormFactor('uuid-1', updateDto);
 
@@ -111,7 +121,7 @@ describe('FormFactorService', () => {
     it('should successfully delete a form factor if it is not managed', async () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockFormFactorModel.findByPk.mockResolvedValue(mockInstance);
-      mockFormFactorModel.destroy.mockResolvedValue(1); // 1 row removed
+      mockFormFactorModel.destroy.mockResolvedValue(1);
 
       const result = await service.deleteFormFactor('uuid-1');
 
@@ -133,7 +143,6 @@ describe('FormFactorService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (FormFactor & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -144,7 +153,7 @@ describe('FormFactorService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockFormFactorModel as unknown as typeof FormFactor,
+        mockFormFactorModel as unknown,
         mockQuery,
       );
     });

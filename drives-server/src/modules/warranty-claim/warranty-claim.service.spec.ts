@@ -12,31 +12,40 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateWarrantyClaimDto } from './dto/create-warranty-claim.dto';
 import { UpdateWarrantyClaimDto } from './dto/update-warranty-claim.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('WarrantyClaimService', () => {
   let service: WarrantyClaimService;
-  // Fixed: Replaced 'any' with explicit mock dictionary records
-  let mockWarrantyClaimModel: Record<string, jest.Mock>;
-  let mockPhysicalDriveModel: Record<string, jest.Mock>;
-  let mockEventModel: Record<string, jest.Mock>;
-  let mockVendorModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicitly typed mock records replace the legacy jest hooks
+  let mockWarrantyClaimModel: Record<string, Mock>;
+  let mockPhysicalDriveModel: Record<string, Mock>;
+  let mockEventModel: Record<string, Mock>;
+  let mockVendorModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockWarrantyClaimModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockPhysicalDriveModel = { findByPk: jest.fn() };
-    mockEventModel = { findByPk: jest.fn() };
-    mockVendorModel = { findByPk: jest.fn() };
+    mockPhysicalDriveModel = { findByPk: vi.fn() };
+    mockEventModel = { findByPk: vi.fn() };
+    mockVendorModel = { findByPk: vi.fn() };
 
-    // Fixed: Cast mock using unknown instead of any to safely satisfy strict boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,13 +68,12 @@ describe('WarrantyClaimService', () => {
     }).compile();
 
     service = module.get<WarrantyClaimService>(WarrantyClaimService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit type assertion mapping data structures safely
       const expectedOutput = { data: [], meta: {} } as unknown as {
         data: (WarrantyClaim & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -76,7 +84,7 @@ describe('WarrantyClaimService', () => {
 
       expect(result).toEqual(expectedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockWarrantyClaimModel as unknown as typeof WarrantyClaim,
+        mockWarrantyClaimModel as unknown,
         mockQuery,
       );
     });
@@ -93,9 +101,10 @@ describe('WarrantyClaimService', () => {
     };
 
     it('should create and reload a warranty claim if all foreign keys exist', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'claim-uuid', ...createDto });
+
       mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' });
       mockEventModel.findByPk.mockResolvedValue({ id: 'event-uuid' });
       mockVendorModel.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
@@ -114,9 +123,9 @@ describe('WarrantyClaimService', () => {
     });
 
     it('should aggregate multiple missing foreign keys into a single multiline NotFoundException', async () => {
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null); // Missing
+      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
       mockEventModel.findByPk.mockResolvedValue({ id: 'event-uuid' });
-      mockVendorModel.findByPk.mockResolvedValue(null); // Missing
+      mockVendorModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
         'PhysicalDrive with ID drive-uuid not found',
@@ -138,7 +147,7 @@ describe('WarrantyClaimService', () => {
     it('should throw NotFoundException if updated foreign key is not found', async () => {
       const mockInstance = { id: 'claim-uuid' };
       mockWarrantyClaimModel.findByPk.mockResolvedValue(mockInstance);
-      mockVendorModel.findByPk.mockResolvedValue(null); // Missing
+      mockVendorModel.findByPk.mockResolvedValue(null);
 
       await expect(service.update('claim-uuid', updateDto)).rejects.toThrow(
         new NotFoundException('Vendor with ID missing-vendor-uuid not found'),

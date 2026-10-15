@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { describe, it, beforeEach } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -17,9 +18,9 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+    // 🚀 Explicitly type cast the server instantiation boundary to avoid unsafe calling logs
+    const httpServer = app.getHttpServer();
+
+    return request(httpServer).get('/').expect(200).expect('Hello World!');
   });
 });

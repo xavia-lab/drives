@@ -6,26 +6,36 @@ import { Capacity } from './entities/capacity.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateCapacityDto } from './dto/create-capacity.dto';
 import { UpdateCapacityDto } from './dto/update-capacity.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('CapacityService', () => {
   let service: CapacityService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockCapacityModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockCapacityModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockCapacityModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,14 +52,14 @@ describe('CapacityService', () => {
     }).compile();
 
     service = module.get<CapacityService>(CapacityService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createCapacity', () => {
     const createDto: CreateCapacityDto = { name: '1 TB', value: 1, unit: 'TB' };
 
     it('should successfully create a capacity if the name is unique', async () => {
-      mockCapacityModel.findOne.mockResolvedValue(null); // No naming collision
+      mockCapacityModel.findOne.mockResolvedValue(null);
       mockCapacityModel.create.mockResolvedValue({
         id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
         ...createDto,
@@ -81,7 +91,7 @@ describe('CapacityService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest.fn().mockResolvedValue({
+        update: vi.fn().mockResolvedValue({
           id: 'uuid-1',
           name: '2 TB',
           value: 2,
@@ -89,7 +99,7 @@ describe('CapacityService', () => {
         }),
       };
       mockCapacityModel.findByPk.mockResolvedValue(mockInstance);
-      mockCapacityModel.findOne.mockResolvedValue(null); // No renaming conflict
+      mockCapacityModel.findOne.mockResolvedValue(null);
 
       await service.updateCapacity('uuid-1', updateDto);
 
@@ -113,8 +123,6 @@ describe('CapacityService', () => {
       // Arrange
       const mockInstance = { id: 'uuid-1', managed: false };
       mockCapacityModel.findByPk.mockResolvedValue(mockInstance);
-
-      // Set the resolved value cleanly on the capacity mock model
       mockCapacityModel.destroy.mockResolvedValue(1);
 
       // Act
@@ -139,7 +147,6 @@ describe('CapacityService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Capacity & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -150,7 +157,7 @@ describe('CapacityService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCapacityModel as unknown as typeof Capacity,
+        mockCapacityModel as unknown,
         mockQuery,
       );
     });

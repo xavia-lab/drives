@@ -2,9 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InternalServerErrorException } from '@nestjs/common';
 import * as QRCode from 'qrcode';
 import { QRCodeGeneratorService } from './qrcode-generator.service';
+import { describe, it, expect, beforeEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
-// Mock the entire qrcode library
-jest.mock('qrcode');
+// 🚀 Mock the entire qrcode library using Vitest module tracking factory architecture
+vi.mock('qrcode', () => {
+  return {
+    toString: vi.fn(),
+  };
+});
 
 describe('QRCodeGeneratorService', () => {
   let service: QRCodeGeneratorService;
@@ -16,7 +21,7 @@ describe('QRCodeGeneratorService', () => {
     }).compile();
 
     service = module.get<QRCodeGeneratorService>(QRCodeGeneratorService);
-    jest.clearAllMocks(); // Ensure a clean slate for each test
+    vi.clearAllMocks(); // 🚀 Clean slate tracking verification using Vitest loop context
   });
 
   it('should be defined', () => {
@@ -26,8 +31,8 @@ describe('QRCodeGeneratorService', () => {
   describe('generate', () => {
     it('should successfully generate an SVG with default options', async () => {
       const mockSvg = '<svg>...</svg>';
-      // Mock the toString implementation to return our mock SVG
-      (QRCode.toString as jest.Mock).mockResolvedValue(mockSvg);
+      // 🚀 Using vi.mocked utility for type-safe assertion casting
+      vi.mocked(QRCode.toString).mockResolvedValue(mockSvg);
 
       const result = await service.generate(mockUrl);
 
@@ -44,7 +49,7 @@ describe('QRCodeGeneratorService', () => {
     });
 
     it('should respect custom options when provided', async () => {
-      (QRCode.toString as jest.Mock).mockResolvedValue('<svg></svg>');
+      vi.mocked(QRCode.toString).mockResolvedValue('<svg></svg>');
 
       const customOptions = {
         errorCorrectionLevel: 'H' as const,
@@ -69,7 +74,7 @@ describe('QRCodeGeneratorService', () => {
 
     it('should throw InternalServerErrorException if qrcode library fails', async () => {
       const errorMessage = 'Library Error';
-      (QRCode.toString as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      vi.mocked(QRCode.toString).mockRejectedValue(new Error(errorMessage));
 
       await expect(service.generate(mockUrl)).rejects.toThrow(
         new InternalServerErrorException(

@@ -6,26 +6,36 @@ import { BusProtocol } from './entities/bus-protocol.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateBusProtocolDto } from './dto/create-bus-protocol.dto';
 import { UpdateBusProtocolDto } from './dto/update-bus-protocol.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('BusProtocolService', () => {
   let service: BusProtocolService;
-  // Fixed: Replaced 'any' with a structured Jest mock record
-  let mockBusProtocolModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockBusProtocolModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockBusProtocolModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using unknown type-casting instead of any
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,7 +52,7 @@ describe('BusProtocolService', () => {
     }).compile();
 
     service = module.get<BusProtocolService>(BusProtocolService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createBusProtocol', () => {
@@ -53,7 +63,7 @@ describe('BusProtocolService', () => {
     };
 
     it('should successfully create a bus protocol if the name is unique', async () => {
-      mockBusProtocolModel.findOne.mockResolvedValue(null); // No naming collision
+      mockBusProtocolModel.findOne.mockResolvedValue(null);
       mockBusProtocolModel.create.mockResolvedValue({
         id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
         ...createDto,
@@ -91,7 +101,7 @@ describe('BusProtocolService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest.fn().mockResolvedValue({
+        update: vi.fn().mockResolvedValue({
           id: 'uuid-1',
           name: 'NVMe-oF',
           commandSet: 'NVMe',
@@ -99,7 +109,7 @@ describe('BusProtocolService', () => {
         }),
       };
       mockBusProtocolModel.findByPk.mockResolvedValue(mockInstance);
-      mockBusProtocolModel.findOne.mockResolvedValue(null); // No renaming conflict
+      mockBusProtocolModel.findOne.mockResolvedValue(null);
 
       await service.updateBusProtocol('uuid-1', updateDto);
 
@@ -126,7 +136,7 @@ describe('BusProtocolService', () => {
     it('should successfully delete a bus protocol if it is not managed', async () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockBusProtocolModel.findByPk.mockResolvedValue(mockInstance);
-      mockBusProtocolModel.destroy.mockResolvedValue(1); // 1 row removed
+      mockBusProtocolModel.destroy.mockResolvedValue(1);
 
       const result = await service.deleteBusProtocol('uuid-1');
 
@@ -148,7 +158,6 @@ describe('BusProtocolService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Cast mock data payload to an unknown record structure
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: unknown[];
         meta: Record<string, unknown>;
@@ -159,7 +168,7 @@ describe('BusProtocolService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockBusProtocolModel as unknown as typeof BusProtocol,
+        mockBusProtocolModel as unknown,
         mockQuery,
       );
     });

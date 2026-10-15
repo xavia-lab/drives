@@ -6,26 +6,36 @@ import { Currency } from './entities/currency.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateCurrencyDto } from './dto/create-currency.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('CurrencyService', () => {
   let service: CurrencyService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockCurrencyModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockCurrencyModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockCurrencyModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,7 +52,7 @@ describe('CurrencyService', () => {
     }).compile();
 
     service = module.get<CurrencyService>(CurrencyService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createCurrency', () => {
@@ -53,7 +63,7 @@ describe('CurrencyService', () => {
     };
 
     it('should successfully create a currency if name and code are unique', async () => {
-      mockCurrencyModel.findOne.mockResolvedValue(null); // Neither name nor code exists
+      mockCurrencyModel.findOne.mockResolvedValue(null);
       mockCurrencyModel.create.mockResolvedValue({
         id: 'uuid-1',
         ...createDto,
@@ -89,12 +99,12 @@ describe('CurrencyService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest
+        update: vi
           .fn()
           .mockResolvedValue({ id: 'uuid-1', name: 'United States Dollar' }),
       };
       mockCurrencyModel.findByPk.mockResolvedValue(mockInstance);
-      mockCurrencyModel.findOne.mockResolvedValue(null); // No name naming conflict
+      mockCurrencyModel.findOne.mockResolvedValue(null);
 
       await service.updateCurrency('uuid-1', updateDto);
 
@@ -117,7 +127,7 @@ describe('CurrencyService', () => {
     it('should successfully delete a currency if it is not managed', async () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockCurrencyModel.findByPk.mockResolvedValue(mockInstance);
-      mockCurrencyModel.destroy.mockResolvedValue(1); // 1 row deleted
+      mockCurrencyModel.destroy.mockResolvedValue(1);
 
       const result = await service.deleteCurrency('uuid-1');
 
@@ -139,7 +149,6 @@ describe('CurrencyService', () => {
   describe('findAllCurrencies', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Currency & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -150,7 +159,7 @@ describe('CurrencyService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCurrencyModel as unknown as typeof Currency,
+        mockCurrencyModel as unknown,
         mockQuery,
       );
     });

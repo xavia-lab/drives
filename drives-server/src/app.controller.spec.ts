@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { describe, it, expect, beforeEach } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('AppController', () => {
   let appController: AppController;

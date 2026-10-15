@@ -6,26 +6,36 @@ import { StorageType } from './entities/storage-type.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStorageTypeDto } from './dto/create-storage-type.dto';
 import { UpdateStorageTypeDto } from './dto/update-storage-type.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('StorageTypeService', () => {
   let service: StorageTypeService;
-  // Fixed: Replaced 'any' with a structured Jest mock record definition
-  let mockStorageTypeModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockStorageTypeModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockStorageTypeModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using unknown type-casting instead of any
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,7 +52,7 @@ describe('StorageTypeService', () => {
     }).compile();
 
     service = module.get<StorageTypeService>(StorageTypeService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createStorageType', () => {
@@ -52,7 +62,7 @@ describe('StorageTypeService', () => {
     };
 
     it('should successfully create a storage type if the name is unique', async () => {
-      mockStorageTypeModel.findOne.mockResolvedValue(null); // No naming collision
+      mockStorageTypeModel.findOne.mockResolvedValue(null);
       mockStorageTypeModel.create.mockResolvedValue({
         id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
         ...createDto,
@@ -89,14 +99,14 @@ describe('StorageTypeService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest.fn().mockResolvedValue({
+        update: vi.fn().mockResolvedValue({
           id: 'uuid-1',
           name: 'NVMe SSD',
           wearTrackable: true,
         }),
       };
       mockStorageTypeModel.findByPk.mockResolvedValue(mockInstance);
-      mockStorageTypeModel.findOne.mockResolvedValue(null); // No renaming conflict
+      mockStorageTypeModel.findOne.mockResolvedValue(null);
 
       await service.updateStorageType('uuid-1', updateDto);
 
@@ -122,7 +132,7 @@ describe('StorageTypeService', () => {
     it('should successfully delete a storage type if it is not managed', async () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockStorageTypeModel.findByPk.mockResolvedValue(mockInstance);
-      mockStorageTypeModel.destroy.mockResolvedValue(1); // 1 row removed
+      mockStorageTypeModel.destroy.mockResolvedValue(1);
 
       const result = await service.deleteStorageType('uuid-1');
 
@@ -144,7 +154,6 @@ describe('StorageTypeService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Cast mock data payload to an unknown record structure safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (StorageType & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -155,7 +164,7 @@ describe('StorageTypeService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockStorageTypeModel as unknown as typeof StorageType,
+        mockStorageTypeModel as unknown,
         mockQuery,
       );
     });

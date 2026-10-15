@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { QRCodeStorageService } from './qrcode-storage.service';
 import { QRCodeGeneratorService } from './qrcode-generator.service';
 import { ContentAddressableStorageService } from '../../storage/services/content-addressable-storage.service';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('QRCodeStorageService', () => {
   let service: QRCodeStorageService;
@@ -18,15 +19,15 @@ describe('QRCodeStorageService', () => {
         QRCodeStorageService,
         {
           provide: ConfigService,
-          useValue: { get: jest.fn() },
+          useValue: { get: vi.fn() }, // 🚀 Using Vitest vi.fn() mock engine trackers
         },
         {
           provide: QRCodeGeneratorService,
-          useValue: { generate: jest.fn() },
+          useValue: { generate: vi.fn() },
         },
         {
           provide: ContentAddressableStorageService,
-          useValue: { upload: jest.fn() },
+          useValue: { upload: vi.fn() },
         },
       ],
     }).compile();
@@ -37,22 +38,22 @@ describe('QRCodeStorageService', () => {
       ContentAddressableStorageService,
     );
 
-    // Mocking Date to ensure metadata consistency in tests
-    jest.useFakeTimers().setSystemTime(new Date('2024-01-01'));
+    // 🚀 Mocking Date to ensure metadata consistency across Vitest execution contexts
+    vi.useFakeTimers().setSystemTime(new Date('2024-01-01'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers(); // 🚀 Safely restoring system clock timelines post-evaluation
   });
 
   it('should generate an SVG, convert to buffer, and upload to CAS', async () => {
-    // 1. Setup Mocks
-    (generator.generate as jest.Mock).mockResolvedValue({
+    // 1. Setup Mocks using vi.mocked for robust type safety
+    vi.mocked(generator.generate).mockResolvedValue({
       svg: mockSvg,
       originalContent: mockUrl,
     });
 
-    (cas.upload as jest.Mock).mockResolvedValue({
+    vi.mocked(cas.upload).mockResolvedValue({
       fileId: 'sha256-hash',
       isNew: true,
     });
@@ -88,7 +89,7 @@ describe('QRCodeStorageService', () => {
   });
 
   it('should propagate errors from the generator service', async () => {
-    (generator.generate as jest.Mock).mockRejectedValue(new Error('Gen Error'));
+    vi.mocked(generator.generate).mockRejectedValue(new Error('Gen Error'));
 
     await expect(service.getOrCreateQRCode(mockUrl)).rejects.toThrow(
       'Gen Error',

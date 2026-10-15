@@ -1,40 +1,48 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
-import { NotFoundException } from '@nestjs/common'; // Fixed: Removed unused ConflictException
+import { NotFoundException } from '@nestjs/common';
 import { ServerService } from './server.service';
 import { Server } from './entities/server.entity';
 import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { Rack } from '../rack/entities/rack.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateServerDto } from './dto/create-server.dto'; // Fixed: Removed unused UpdateServerDto
+import { CreateServerDto } from './dto/create-server.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('ServerService', () => {
   let service: ServerService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockServerModel: Record<string, jest.Mock>;
-  let mockCpuModelModel: Record<string, jest.Mock>;
-  let mockOsModel: Record<string, jest.Mock>;
-  let mockRackModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockServerModel: Record<string, Mock>;
+  let mockCpuModelModel: Record<string, Mock>;
+  let mockOsModel: Record<string, Mock>;
+  let mockRackModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Properly initialize all model instance mock objects
+    // 1. Properly initialize all model instance mock objects using vi.fn()
     mockServerModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockCpuModelModel = { findByPk: jest.fn() };
-    mockOsModel = { findByPk: jest.fn() };
-    mockRackModel = { findByPk: jest.fn() };
+    mockCpuModelModel = { findByPk: vi.fn() };
+    mockOsModel = { findByPk: vi.fn() };
+    mockRackModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -48,13 +56,12 @@ describe('ServerService', () => {
     }).compile();
 
     service = module.get<ServerService>(ServerService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Server & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -65,7 +72,7 @@ describe('ServerService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockServerModel as unknown as typeof Server,
+        mockServerModel as unknown,
         mockQuery,
         { include: [CpuModel, OperatingSystem, Rack] },
       );
@@ -84,7 +91,7 @@ describe('ServerService', () => {
     };
 
     it('should successfully create and reload a server if input foreign keys exist and are unique', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'srv-uuid', ...createDto });
       mockServerModel.findOne.mockResolvedValue(null);
@@ -107,9 +114,9 @@ describe('ServerService', () => {
 
     it('should aggregate multiple concurrently missing foreign keys into a single multiline NotFoundException', async () => {
       mockServerModel.findOne.mockResolvedValue(null);
-      mockCpuModelModel.findByPk.mockResolvedValue(null); // Missing
-      mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' }); // Exists
-      mockRackModel.findByPk.mockResolvedValue(null); // Missing
+      mockCpuModelModel.findByPk.mockResolvedValue(null);
+      mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
+      mockRackModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
         'CpuModel with ID cpu-uuid not found',

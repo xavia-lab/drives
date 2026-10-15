@@ -2,10 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContentAddressableStorageService } from './content-addressable-storage.service';
 import { InternalServerErrorException } from '@nestjs/common';
 import { type IStorageProvider } from '../interfaces/storage-provider.interface';
+import { describe, it, expect, beforeEach, vi, type Mocked } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('ContentAddressableStorageService', () => {
   let service: ContentAddressableStorageService;
-  let storageMock: jest.Mocked<IStorageProvider>;
+  let storageMock: Mocked<IStorageProvider>; // 🚀 Swapped out legacy jest.Mocked mapping for Vitest Mocked utility
 
   const testBuffer = Buffer.from('nest-storage-test');
   // SHA-256 for "nest-storage-test"
@@ -15,11 +16,11 @@ describe('ContentAddressableStorageService', () => {
 
   beforeEach(async () => {
     storageMock = {
-      put: jest.fn(),
-      get: jest.fn(),
-      exists: jest.fn(),
-      delete: jest.fn(),
-      list: jest.fn(),
+      put: vi.fn(), // 🚀 Using Vitest vi.fn() mock engine trackers
+      get: vi.fn(),
+      exists: vi.fn(),
+      delete: vi.fn(),
+      list: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

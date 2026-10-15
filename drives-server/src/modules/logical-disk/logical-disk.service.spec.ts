@@ -6,31 +6,39 @@ import { LogicalDisk } from './entities/logical-disk.entity';
 import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto'; // Fixed: Removed unused UpdateLogicalDiskDto import
+import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('LogicalDiskService', () => {
   let service: LogicalDiskService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockLogicalDiskModel: Record<string, jest.Mock>;
-  let mockLogicalVdevModel: Record<string, jest.Mock>;
-  let mockPhysicalDriveModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockLogicalDiskModel: Record<string, Mock>;
+  let mockLogicalVdevModel: Record<string, Mock>;
+  let mockPhysicalDriveModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockLogicalDiskModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockLogicalVdevModel = { findByPk: jest.fn() };
-    mockPhysicalDriveModel = { findByPk: jest.fn() };
+    mockLogicalVdevModel = { findByPk: vi.fn() };
+    mockPhysicalDriveModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -46,13 +54,12 @@ describe('LogicalDiskService', () => {
     }).compile();
 
     service = module.get<LogicalDiskService>(LogicalDiskService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (LogicalDisk & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -63,7 +70,7 @@ describe('LogicalDiskService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockLogicalDiskModel as unknown as typeof LogicalDisk,
+        mockLogicalDiskModel as unknown,
         mockQuery,
         { include: [LogicalVdev, PhysicalDrive] },
       );
@@ -79,10 +86,10 @@ describe('LogicalDiskService', () => {
     };
 
     it('should successfully create and reload a logical disk if assignment constraints pass and parents exist', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'disk-uuid', ...createDto });
-      mockLogicalDiskModel.findOne.mockResolvedValue(null); // No hardware allocation duplicate
+      mockLogicalDiskModel.findOne.mockResolvedValue(null);
       mockLogicalVdevModel.findByPk.mockResolvedValue({ id: 'vdev-uuid' });
       mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' });
       mockLogicalDiskModel.create.mockResolvedValue({
@@ -109,8 +116,8 @@ describe('LogicalDiskService', () => {
 
     it('should aggregate multiple missing parent foreign keys into a single multiline NotFoundException', async () => {
       mockLogicalDiskModel.findOne.mockResolvedValue(null);
-      mockLogicalVdevModel.findByPk.mockResolvedValue(null); // Missing
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null); // Missing
+      mockLogicalVdevModel.findByPk.mockResolvedValue(null);
+      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
         'LogicalVdev with ID vdev-uuid not found',

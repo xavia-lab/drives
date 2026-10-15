@@ -1,4 +1,7 @@
 // src/utils/human.readable.bytes.converter.spec.ts
+
+import { describe, it, expect } from 'vitest'; // 🚀 Exclusively use Vitest native environment hooks
+
 import collect from 'collect.js';
 import {
   binaryUnits,
@@ -11,14 +14,15 @@ import {
 
 describe('Human Readable Bytes Converter Tests', () => {
   describe('isMetricUnit', () => {
-    test('should return index for metric units', () => {
+    it('should return index for metric units', () => {
+      // 🚀 Swapped out legacy test keyword blocks for 'it'
       const units = metricUnits();
       units.forEach((value, i) => {
         expect(isMetricUnit(value)).toBe(i);
       });
     });
 
-    test('should return -1 for non-metric units', () => {
+    it('should return -1 for non-metric units', () => {
       const collection = collect(binaryUnits());
       collection.shift(); // Remove 'Bytes' as it's common
       const nonMetric = collection.all();
@@ -29,14 +33,14 @@ describe('Human Readable Bytes Converter Tests', () => {
   });
 
   describe('isBinaryUnit', () => {
-    test('should return index for binary units', () => {
+    it('should return index for binary units', () => {
       const units = binaryUnits();
       units.forEach((value, i) => {
         expect(isBinaryUnit(value)).toBe(i);
       });
     });
 
-    test('should return -1 for non-binary units', () => {
+    it('should return -1 for non-binary units', () => {
       const collection = collect(metricUnits());
       collection.shift(); // Remove 'Bytes' as it's common
       const nonBinary = collection.all();
@@ -48,7 +52,7 @@ describe('Human Readable Bytes Converter Tests', () => {
 
   describe('fromBytes', () => {
     describe('default (metric) conversion', () => {
-      test('should convert bytes to human-readable metric units', () => {
+      it('should convert bytes to human-readable metric units', () => {
         const base = 10;
         const expected = [
           '1.00 Bytes',
@@ -75,7 +79,7 @@ describe('Human Readable Bytes Converter Tests', () => {
         });
       });
 
-      test('should throw error for negative decimals', () => {
+      it('should throw error for negative decimals', () => {
         expect(() => fromBytes(1024, { decimals: -1 })).toThrow(
           'Invalid decimals -1',
         );
@@ -83,7 +87,7 @@ describe('Human Readable Bytes Converter Tests', () => {
     });
 
     describe('binary conversion', () => {
-      test('should convert bytes to human-readable binary units', () => {
+      it('should convert bytes to human-readable binary units', () => {
         const base = 2;
         const expected = [
           '1 Bytes',
@@ -109,7 +113,7 @@ describe('Human Readable Bytes Converter Tests', () => {
   });
 
   describe('toBytes', () => {
-    test('should convert metric units to bytes', () => {
+    it('should convert metric units to bytes', () => {
       expect(toBytes(100, 'Bytes')).toBe(100 * Math.pow(10, 0));
       expect(toBytes(100, 'KB')).toBe(100 * Math.pow(10, 3));
       expect(toBytes(100, 'MB')).toBe(100 * Math.pow(10, 6));
@@ -118,7 +122,7 @@ describe('Human Readable Bytes Converter Tests', () => {
       expect(toBytes(100, 'PB')).toBe(100 * Math.pow(10, 15));
     });
 
-    test('should convert binary units to bytes', () => {
+    it('should convert binary units to bytes', () => {
       expect(toBytes(100, 'Bytes')).toBe(100 * Math.pow(2, 0));
       expect(toBytes(100, 'KiB')).toBe(100 * Math.pow(2, 10));
       expect(toBytes(100, 'MiB')).toBe(100 * Math.pow(2, 20));
@@ -127,7 +131,7 @@ describe('Human Readable Bytes Converter Tests', () => {
       expect(toBytes(100, 'PiB')).toBe(100 * Math.pow(2, 50));
     });
 
-    test('should throw error for invalid unit', () => {
+    it('should throw error for invalid unit', () => {
       expect(() => toBytes(100, 'Invalid')).toThrow('Invalid unit Invalid');
     });
   });

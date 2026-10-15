@@ -3,71 +3,76 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { KeycloakValidationService } from './keycloak-validation.service';
 import * as jwt from 'jsonwebtoken';
-import { JwksClient } from 'jwks-rsa';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-jest.mock('jsonwebtoken');
+// 🚀 Explicitly mock jsonwebtoken using Vitest tracking factories
+vi.mock('jsonwebtoken', () => ({
+  decode: vi.fn(),
+  verify: vi.fn(),
+}));
 
-// CRITICAL FIX: Explicitly mock the factory to stop Jest from traversing the 'jose' ESM module
-jest.mock('jwks-rsa', () => {
+// 🚀 Mock jwks-rsa with a clean, trackable mock function on its prototype
+const mockGetSigningKey = vi.fn().mockResolvedValue({
+  getPublicKey: () => 'mock-public-key',
+});
+
+vi.mock('jwks-rsa', () => {
   return {
-    JwksClient: jest.fn().mockImplementation(() => ({
-      getSigningKey: jest.fn().mockResolvedValue({
-        getPublicKey: () => 'mock-public-key',
-      }),
-    })),
+    JwksClient: class {
+      getSigningKey = mockGetSigningKey;
+    },
   };
 });
 
 describe('KeycloakValidationService', () => {
   let service: KeycloakValidationService;
 
-  // Fixed: Strongly type the mock environment lookup object literal as a strict string dictionary
   const mockConfig: Record<string, string> = {
-    'keycloak.auth-server-url': 'https://keycloak.example.com',
+    'keycloak.auth-server-url': 'https://example.com',
     'keycloak.realm': 'my-realm',
     'keycloak.clientId': 'my-client',
   };
 
   beforeEach(async () => {
-    (JwksClient as jest.Mock).mockImplementation(() => ({
-      getSigningKey: jest.fn().mockResolvedValue({
-        getPublicKey: () => 'mock-public-key',
-      }),
-    }));
+    // 🚀 Reset the instance method's return value before each test run
+    mockGetSigningKey.mockResolvedValue({
+      getPublicKey: () => 'mock-public-key',
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         KeycloakValidationService,
         {
           provide: ConfigService,
-          // Fixed: String template lookup returns a safe, predictable primitive string boundary
           useValue: {
-            get: jest.fn((key: string): string => mockConfig[key] || ''),
+            get: vi.fn((key: string): string => mockConfig[key] || ''),
           },
         },
       ],
     }).compile();
 
-    // Silence the logger for tests
     module.useLogger(false);
 
     service = module.get<KeycloakValidationService>(KeycloakValidationService);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should validate token and return user info', async () => {
-    (jwt.decode as jest.Mock).mockReturnValue({ header: { kid: '123' } });
-    (jwt.verify as jest.Mock).mockReturnValue({
+    // 🚀 Fixed: Added explicit safe casting wrapper definitions to satisfy ESLint
+    vi.mocked(jwt.decode).mockReturnValue({
+      header: { kid: '123' },
+    });
+    vi.mocked(jwt.verify).mockReturnValue({
       sub: 'user-123',
       email: 'test@example.com',
       preferred_username: 'tester',
       given_name: 'John',
       family_name: 'Doe',
       realm_access: { roles: ['admin'] },
-    });
+    } as unknown as jwt.JwtPayload);
 
     const result = await service.getUserInfo('valid-token');
 
@@ -78,12 +83,14 @@ describe('KeycloakValidationService', () => {
   });
 
   it('should return null and log error if jwt.verify fails', async () => {
-    const loggerSpy = jest
+    const loggerSpy = vi
       .spyOn(Logger.prototype, 'error')
-      .mockImplementation();
+      .mockImplementation(() => undefined);
 
-    (jwt.decode as jest.Mock).mockReturnValue({ header: { kid: '123' } });
-    (jwt.verify as jest.Mock).mockImplementation(() => {
+    vi.mocked(jwt.decode).mockReturnValue({
+      header: { kid: '123' },
+    });
+    vi.mocked(jwt.verify).mockImplementation(() => {
       throw new Error('Invalid signature');
     });
 
@@ -98,11 +105,11 @@ describe('KeycloakValidationService', () => {
   });
 
   it('should return null if token header is missing kid', async () => {
-    const loggerSpy = jest
+    const loggerSpy = vi
       .spyOn(Logger.prototype, 'error')
-      .mockImplementation();
+      .mockImplementation(() => undefined);
 
-    (jwt.decode as jest.Mock).mockReturnValue({ header: {} });
+    vi.mocked(jwt.decode).mockReturnValue({ header: {} });
 
     const result = await service.getUserInfo('no-kid-token');
 

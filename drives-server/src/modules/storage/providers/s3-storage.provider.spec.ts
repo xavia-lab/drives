@@ -9,7 +9,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { InternalServerErrorException } from '@nestjs/common';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+import { describe, it, expect, beforeEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('S3StorageProvider', () => {
   let provider: S3StorageProvider;
@@ -23,7 +23,6 @@ describe('S3StorageProvider', () => {
     endpoint: 'http://localhost:4566',
   };
 
-  // Fixed: Removed 'async' since there are no active 'await' calls inside this configuration hook
   beforeEach(() => {
     s3Mock.reset();
     provider = new S3StorageProvider(config);
@@ -36,7 +35,8 @@ describe('S3StorageProvider', () => {
       const buffer = Buffer.from('test data');
       await provider.put('test-key', buffer, 'text/plain');
 
-      expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
+      // 🚀 Clean native Vitest command history assertion
+      expect(s3Mock.commandCalls(PutObjectCommand)[0].args[0].input).toEqual({
         Bucket: config.bucket,
         Key: 'test-key',
         Body: buffer,
@@ -48,12 +48,11 @@ describe('S3StorageProvider', () => {
   describe('get', () => {
     it('should return a buffer when file exists', async () => {
       const mockStream = {
-        transformToByteArray: jest
+        transformToByteArray: vi // 🚀 Swapped legacy jest.fn() with vitest vi.fn()
           .fn()
           .mockResolvedValue(new Uint8Array([1, 2, 3])),
       };
 
-      // Fixed: Replaced 'as any' with an explicit type cast that satisfies the AWS S3 SDK body signature interface bounds
       s3Mock.on(GetObjectCommand).resolves({
         Body: mockStream as unknown as NonNullable<
           import('@aws-sdk/client-s3').GetObjectCommandOutput['Body']
@@ -63,7 +62,7 @@ describe('S3StorageProvider', () => {
       const result = await provider.get('test-key');
 
       expect(result).toEqual(Buffer.from([1, 2, 3]));
-      expect(s3Mock).toHaveReceivedCommandWith(GetObjectCommand, {
+      expect(s3Mock.commandCalls(GetObjectCommand)[0].args[0].input).toEqual({
         Bucket: config.bucket,
         Key: 'test-key',
       });
@@ -102,27 +101,27 @@ describe('S3StorageProvider', () => {
 
       await provider.delete('test-key');
 
-      expect(s3Mock).toHaveReceivedCommandWith(DeleteObjectCommand, {
-        Bucket: config.bucket,
-        Key: 'test-key',
-      });
+      expect(s3Mock.commandCalls(DeleteObjectCommand)[0].args[0].input).toEqual(
+        {
+          Bucket: config.bucket,
+          Key: 'test-key',
+        },
+      );
     });
   });
 
   describe('list', () => {
     it('should return a list of keys', async () => {
       s3Mock.on(ListObjectsV2Command).resolves({
-        Contents: [
-          { Key: 'key1' },
-          { Key: 'key2' },
-          { Key: undefined }, // Should be filtered out
-        ],
+        Contents: [{ Key: 'key1' }, { Key: 'key2' }, { Key: undefined }],
       });
 
       const result = await provider.list('prefix/');
 
       expect(result).toEqual(['key1', 'key2']);
-      expect(s3Mock).toHaveReceivedCommandWith(ListObjectsV2Command, {
+      expect(
+        s3Mock.commandCalls(ListObjectsV2Command)[0].args[0].input,
+      ).toEqual({
         Bucket: config.bucket,
         Prefix: 'prefix/',
       });

@@ -7,31 +7,41 @@ import { Country } from '../country/entities/country.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateDatacenterDto } from './dto/create-datacenter.dto';
 import { UpdateDatacenterDto } from './dto/update-datacenter.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('DatacenterService', () => {
   let service: DatacenterService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockDatacenterModel: Record<string, jest.Mock>;
-  let mockCountryModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockDatacenterModel: Record<string, Mock>;
+  let mockCountryModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock both Sequelize models
+    // 1. Mock both Sequelize models using vi.fn()
     mockDatacenterModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
     mockCountryModel = {
-      findByPk: jest.fn(),
+      findByPk: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,13 +62,12 @@ describe('DatacenterService', () => {
     }).compile();
 
     service = module.get<DatacenterService>(DatacenterService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Datacenter & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -69,7 +78,7 @@ describe('DatacenterService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockDatacenterModel as unknown as typeof Datacenter,
+        mockDatacenterModel as unknown,
         mockQuery,
         { include: [Country] },
       );
@@ -99,11 +108,11 @@ describe('DatacenterService', () => {
     };
 
     it('should successfully create and reload an event if inputs are unique and country exists', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'dc-uuid', ...createDto });
-      mockDatacenterModel.findOne.mockResolvedValue(null); // No code collision
-      mockCountryModel.findByPk.mockResolvedValue({ id: 'country-uuid' }); // Country exists
+      mockDatacenterModel.findOne.mockResolvedValue(null);
+      mockCountryModel.findByPk.mockResolvedValue({ id: 'country-uuid' });
       mockDatacenterModel.create.mockResolvedValue({
         id: 'dc-uuid',
         reload: mockReload,
@@ -131,7 +140,7 @@ describe('DatacenterService', () => {
 
     it('should throw NotFoundException if the provided countryId does not exist', async () => {
       mockDatacenterModel.findOne.mockResolvedValue(null);
-      mockCountryModel.findByPk.mockResolvedValue(null); // Country missing
+      mockCountryModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException('Country with ID country-uuid not found'),
@@ -147,18 +156,18 @@ describe('DatacenterService', () => {
     };
 
     it('should successfully update a datacenter when target items are valid and exist', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'dc-uuid', name: 'Ashburn CC 1 Optimized' });
       const mockInstance = {
         id: 'dc-uuid',
         managed: false,
-        update: jest.fn().mockResolvedValue(true),
+        update: vi.fn().mockResolvedValue(true),
         reload: mockReload,
       };
       mockDatacenterModel.findByPk.mockResolvedValue(mockInstance);
-      mockDatacenterModel.findOne.mockResolvedValue(null); // No code naming conflict
-      mockCountryModel.findByPk.mockResolvedValue({ id: 'new-country-uuid' }); // New country exists
+      mockDatacenterModel.findOne.mockResolvedValue(null);
+      mockCountryModel.findByPk.mockResolvedValue({ id: 'new-country-uuid' });
 
       await service.update('dc-uuid', updateDto);
 
@@ -175,7 +184,7 @@ describe('DatacenterService', () => {
       const mockInstance = { id: 'dc-uuid', managed: false };
       mockDatacenterModel.findByPk.mockResolvedValue(mockInstance);
       mockDatacenterModel.findOne.mockResolvedValue(null);
-      mockCountryModel.findByPk.mockResolvedValue(null); // Country missing
+      mockCountryModel.findByPk.mockResolvedValue(null);
 
       await expect(service.update('dc-uuid', updateDto)).rejects.toThrow(
         new NotFoundException('Country with ID new-country-uuid not found'),

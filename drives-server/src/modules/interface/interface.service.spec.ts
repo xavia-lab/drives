@@ -7,31 +7,41 @@ import { BusProtocol } from '../bus-protocol/entities/bus-protocol.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateInterfaceDto } from './dto/create-interface.dto';
 import { UpdateInterfaceDto } from './dto/update-interface.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('InterfaceService', () => {
   let service: InterfaceService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockInterfaceModel: Record<string, jest.Mock>;
-  let mockBusProtocolModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockInterfaceModel: Record<string, Mock>;
+  let mockBusProtocolModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock both Sequelize models
+    // 1. Mock both Sequelize models using vi.fn()
     mockInterfaceModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
     mockBusProtocolModel = {
-      findByPk: jest.fn(),
+      findByPk: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,7 +62,7 @@ describe('InterfaceService', () => {
     }).compile();
 
     service = module.get<InterfaceService>(InterfaceService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createInterface', () => {
@@ -64,8 +74,8 @@ describe('InterfaceService', () => {
     };
 
     it('should successfully create an interface if the name is unique and foreign key exists', async () => {
-      mockInterfaceModel.findOne.mockResolvedValue(null); // No naming collision
-      mockBusProtocolModel.findByPk.mockResolvedValue({ id: 'bus-proto-uuid' }); // Foreign key exists
+      mockInterfaceModel.findOne.mockResolvedValue(null);
+      mockBusProtocolModel.findByPk.mockResolvedValue({ id: 'bus-proto-uuid' });
       mockInterfaceModel.create.mockResolvedValue({
         id: 'interface-uuid',
         ...createDto,
@@ -94,7 +104,7 @@ describe('InterfaceService', () => {
 
     it('should throw NotFoundException if the provided busProtocolId does not exist', async () => {
       mockInterfaceModel.findOne.mockResolvedValue(null);
-      mockBusProtocolModel.findByPk.mockResolvedValue(null); // Simulated missing key
+      mockBusProtocolModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException('BusProtocol with ID bus-proto-uuid not found'),
@@ -113,15 +123,15 @@ describe('InterfaceService', () => {
       const mockInstance = {
         id: 'interface-uuid',
         managed: false,
-        update: jest
+        update: vi
           .fn()
           .mockResolvedValue({ id: 'interface-uuid', name: 'PCIe Gen 5 x4' }),
       };
       mockInterfaceModel.findByPk.mockResolvedValue(mockInstance);
-      mockInterfaceModel.findOne.mockResolvedValue(null); // No name naming conflict
+      mockInterfaceModel.findOne.mockResolvedValue(null);
       mockBusProtocolModel.findByPk.mockResolvedValue({
         id: 'new-bus-proto-uuid',
-      }); // New key exists
+      });
 
       await service.update('interface-uuid', updateDto);
 
@@ -137,7 +147,7 @@ describe('InterfaceService', () => {
       const mockInstance = { id: 'interface-uuid', managed: false };
       mockInterfaceModel.findByPk.mockResolvedValue(mockInstance);
       mockInterfaceModel.findOne.mockResolvedValue(null);
-      mockBusProtocolModel.findByPk.mockResolvedValue(null); // New key is missing
+      mockBusProtocolModel.findByPk.mockResolvedValue(null);
 
       await expect(service.update('interface-uuid', updateDto)).rejects.toThrow(
         new NotFoundException(
@@ -174,7 +184,6 @@ describe('InterfaceService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Interface & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -185,7 +194,7 @@ describe('InterfaceService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockInterfaceModel as unknown as typeof Interface,
+        mockInterfaceModel as unknown,
         mockQuery,
       );
     });

@@ -1,4 +1,5 @@
 // src/utils/objects.util.spec.ts
+import { describe, it, expect } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 import {
   isEmpty,
   isNotEmpty,
@@ -8,7 +9,8 @@ import {
 
 describe('Object Handler Tests', () => {
   describe('isEmpty', () => {
-    test('should return false for non-empty values', () => {
+    it('should return false for non-empty values', () => {
+      // 🚀 Swapped out legacy test blocks for 'it'
       expect(isEmpty('cat')).toBeFalsy();
       expect(isEmpty(1)).toBeFalsy();
       expect(isEmpty([])).toBeFalsy();
@@ -19,7 +21,7 @@ describe('Object Handler Tests', () => {
       expect(isEmpty(NaN)).toBeFalsy();
     });
 
-    test('should return true for empty values', () => {
+    it('should return true for empty values', () => {
       expect(isEmpty('')).toBeTruthy();
       expect(isEmpty('    ')).toBeTruthy();
       expect(isEmpty(null)).toBeTruthy();
@@ -28,7 +30,7 @@ describe('Object Handler Tests', () => {
   });
 
   describe('isNotEmpty', () => {
-    test('should return true for non-empty values', () => {
+    it('should return true for non-empty values', () => {
       expect(isNotEmpty('cat')).toBeTruthy();
       expect(isNotEmpty(1)).toBeTruthy();
       expect(isNotEmpty([])).toBeTruthy();
@@ -39,7 +41,7 @@ describe('Object Handler Tests', () => {
       expect(isNotEmpty(NaN)).toBeTruthy();
     });
 
-    test('should return false for empty values', () => {
+    it('should return false for empty values', () => {
       expect(isNotEmpty('')).toBeFalsy();
       expect(isNotEmpty('    ')).toBeFalsy();
       expect(isNotEmpty(null)).toBeFalsy();
@@ -48,25 +50,25 @@ describe('Object Handler Tests', () => {
   });
 
   describe('isObjectEmpty', () => {
-    test('should return true for empty object', () => {
+    it('should return true for empty object', () => {
       expect(isObjectEmpty({})).toBeTruthy();
     });
 
-    test('should return false for non-empty object', () => {
+    it('should return false for non-empty object', () => {
       expect(isObjectEmpty({ a: 10 })).toBeFalsy();
     });
 
-    test('should return false for array', () => {
+    it('should return false for array', () => {
       expect(isObjectEmpty([])).toBeFalsy();
     });
   });
 
   describe('isObjectNotEmpty', () => {
-    test('should return false for empty object', () => {
+    it('should return false for empty object', () => {
       expect(isObjectNotEmpty({})).toBeFalsy();
     });
 
-    test('should return true for non-empty object', () => {
+    it('should return true for non-empty object', () => {
       expect(isObjectNotEmpty({ a: 10 })).toBeTruthy();
     });
   });
