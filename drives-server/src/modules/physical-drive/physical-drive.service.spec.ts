@@ -9,33 +9,42 @@ import { Currency } from '../currency/entities/currency.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('PhysicalDriveService', () => {
   let service: PhysicalDriveService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockPhysicalDriveRepo: Record<string, jest.Mock>;
-  let mockStorageModelRepo: Record<string, jest.Mock>;
-  let mockVendorRepo: Record<string, jest.Mock>;
-  let mockCurrencyRepo: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockPhysicalDriveRepo: Record<string, Mock>;
+  let mockStorageModelRepo: Record<string, Mock>;
+  let mockVendorRepo: Record<string, Mock>;
+  let mockCurrencyRepo: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock all 4 required Sequelize models
+    // 1. Mock all 4 required Sequelize models using vi.fn()
     mockPhysicalDriveRepo = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockStorageModelRepo = { findByPk: jest.fn() };
-    mockVendorRepo = { findByPk: jest.fn() };
-    mockCurrencyRepo = { findByPk: jest.fn() };
+    mockStorageModelRepo = { findByPk: vi.fn() };
+    mockVendorRepo = { findByPk: vi.fn() };
+    mockCurrencyRepo = { findByPk: vi.fn() };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,13 +64,12 @@ describe('PhysicalDriveService', () => {
     }).compile();
 
     service = module.get<PhysicalDriveService>(PhysicalDriveService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedOutput = { data: [], meta: {} } as unknown as {
         data: (PhysicalDrive & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -72,7 +80,7 @@ describe('PhysicalDriveService', () => {
 
       expect(result).toEqual(expectedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockPhysicalDriveRepo as unknown as typeof PhysicalDrive,
+        mockPhysicalDriveRepo as unknown,
         mockQuery,
       );
     });
@@ -103,7 +111,7 @@ describe('PhysicalDriveService', () => {
     };
 
     it('should successfully create a physical drive when serial number is unique and all keys exist', async () => {
-      mockPhysicalDriveRepo.findOne.mockResolvedValue(null); // No serial number duplicate
+      mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
       mockStorageModelRepo.findByPk.mockResolvedValue({ id: 'sm-uuid' });
       mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
       mockCurrencyRepo.findByPk.mockResolvedValue({ id: 'currency-uuid' });
@@ -131,7 +139,6 @@ describe('PhysicalDriveService', () => {
 
     it('should aggregate multiple non-existent foreign keys into a single multiline NotFoundException', async () => {
       mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
-      // Simulate that StorageModel and Currency do not exist, while the Retailer Vendor does
       mockStorageModelRepo.findByPk.mockResolvedValue(null);
       mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
       mockCurrencyRepo.findByPk.mockResolvedValue(null);
@@ -158,10 +165,10 @@ describe('PhysicalDriveService', () => {
       const mockInstance = {
         id: 'drive-1',
         serialNumber: 'S3X0NX0A123456',
-        update: jest.fn().mockResolvedValue(true),
+        update: vi.fn().mockResolvedValue(true),
       };
       mockPhysicalDriveRepo.findByPk.mockResolvedValue(mockInstance);
-      mockPhysicalDriveRepo.findOne.mockResolvedValue(null); // No serial match conflict
+      mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
       mockVendorRepo.findByPk.mockResolvedValue({ id: 'missing-vendor-uuid' });
 
       await service.update('drive-1', updateDto);
@@ -178,7 +185,7 @@ describe('PhysicalDriveService', () => {
       const mockInstance = { id: 'drive-1', serialNumber: 'S3X0NX0A123456' };
       mockPhysicalDriveRepo.findByPk.mockResolvedValue(mockInstance);
       mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
-      mockVendorRepo.findByPk.mockResolvedValue(null); // Simulated missing element
+      mockVendorRepo.findByPk.mockResolvedValue(null);
 
       await expect(service.update('drive-1', updateDto)).rejects.toThrow(
         new NotFoundException(

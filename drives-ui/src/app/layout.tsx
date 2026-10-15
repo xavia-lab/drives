@@ -9,8 +9,8 @@ import { ConfigProvider } from "@/components/config-provider";
 import { getPublicConfig } from "@utils/config";
 
 export const metadata: Metadata = {
-  title: "Emerald System",
-  description: "A Jewelry Store Management System.",
+  title: "Drives System",
+  description: "A Storage Drives Tracking System.",
   icons: {
     icon: "/favicon.svg",
   },

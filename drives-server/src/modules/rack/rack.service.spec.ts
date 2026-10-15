@@ -6,27 +6,36 @@ import { Rack } from './entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateRackDto } from './dto/create-rack.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('RackService', () => {
   let service: RackService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockRackRepo: Record<string, jest.Mock>;
-  let mockDcRepo: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockRackRepo: Record<string, Mock>;
+  let mockDcRepo: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockRackRepo = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockDcRepo = { findByPk: jest.fn() };
+    mockDcRepo = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,7 +47,7 @@ describe('RackService', () => {
     }).compile();
 
     service = module.get<RackService>(RackService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('create', () => {
@@ -49,11 +58,11 @@ describe('RackService', () => {
     };
 
     it('should create and reload a Rack if scope constraints are clear and datacenter exists', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'rack-uuid', ...createDto });
-      mockRackRepo.findOne.mockResolvedValue(null); // No local facility naming duplicate
-      mockDcRepo.findByPk.mockResolvedValue({ id: 'dc-uuid' }); // Parent exists
+      mockRackRepo.findOne.mockResolvedValue(null);
+      mockDcRepo.findByPk.mockResolvedValue({ id: 'dc-uuid' });
       mockRackRepo.create.mockResolvedValue({
         id: 'rack-uuid',
         reload: mockReload,
@@ -74,7 +83,7 @@ describe('RackService', () => {
 
     it('should aggregate missing parent foreign keys into a single multiline NotFoundException', async () => {
       mockRackRepo.findOne.mockResolvedValue(null);
-      mockDcRepo.findByPk.mockResolvedValue(null); // Missing target building reference
+      mockDcRepo.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException('Datacenter with ID dc-uuid not found'),

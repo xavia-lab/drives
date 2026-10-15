@@ -1,20 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QueryBuilderService } from './query-builder.service';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
+import { describe, it, expect, beforeEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
-// 1. Mock your external utility modules
-jest.mock('../../../lib/utils/objects.util', () => ({
-  isEmpty: jest.fn(),
-  isObjectEmpty: jest.fn(),
-  isNotEmpty: jest.fn(),
+// 1. Mock your external utility modules using clean Vitest factory architecture
+vi.mock('../../../lib/utils/objects.util', () => ({
+  isEmpty: vi.fn(),
+  isObjectEmpty: vi.fn(),
+  isNotEmpty: vi.fn(),
 }));
 
-jest.mock('./id.query.params.builder', () => ({
-  build: jest.fn(),
+vi.mock('./id.query.params.builder', () => ({
+  build: vi.fn(),
 }));
 
-jest.mock('./pagination.query.params.builder', () => ({
-  build: jest.fn(),
+vi.mock('./pagination.query.params.builder', () => ({
+  build: vi.fn(),
 }));
 
 // Import the mocked utilities so we can control their return values in tests
@@ -36,14 +37,14 @@ describe('QueryBuilderService', () => {
 
     service = module.get<QueryBuilderService>(QueryBuilderService);
 
-    // Clear mock histories between individual test runs
-    jest.clearAllMocks();
+    // 🚀 Clear mock histories between individual test runs natively
+    vi.clearAllMocks();
   });
 
   it('should return an empty object if query is empty or completely null', () => {
-    // Arrange: Simulate an empty query scenario
-    (isEmpty as jest.Mock).mockReturnValue(true);
-    (isObjectEmpty as jest.Mock).mockReturnValue(false);
+    // Arrange: Simulate an empty query scenario using vi.mocked for clean types
+    vi.mocked(isEmpty).mockReturnValue(true);
+    vi.mocked(isObjectEmpty).mockReturnValue(false);
 
     const query: PaginationQueryDto = {};
 
@@ -59,17 +60,16 @@ describe('QueryBuilderService', () => {
 
   it('should call buildById when the query payload contains an id parameter', () => {
     // Arrange: Bypass empty checks, but trigger the ID checker conditional branch
-    (isEmpty as jest.Mock).mockReturnValue(false);
-    (isObjectEmpty as jest.Mock).mockReturnValue(false);
-    (isNotEmpty as jest.Mock).mockReturnValue(true);
+    vi.mocked(isEmpty).mockReturnValue(false);
+    vi.mocked(isObjectEmpty).mockReturnValue(false);
+    vi.mocked(isNotEmpty).mockReturnValue(true);
 
     const expectedMockedOutput = {
       where: { id: '019f4fa1-57db-72d7-b037-2f35d54f2794' },
     };
-    // Fixed: Cast the mock function to a typed jest.Mock instance to secure the argument assignment boundary
-    (buildById as unknown as jest.Mock<unknown>).mockReturnValue(
-      expectedMockedOutput,
-    );
+
+    // 🚀 Clean, type-safe mocking wrapper without double-casting workarounds
+    vi.mocked(buildById).mockReturnValue(expectedMockedOutput);
 
     const query: PaginationQueryDto = {
       id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
@@ -87,19 +87,17 @@ describe('QueryBuilderService', () => {
 
   it('should fallback to buildPagination if query is not empty and lacks an ID parameter', () => {
     // Arrange: Bypass empty checks and bypass the ID validation branch
-    (isEmpty as jest.Mock).mockReturnValue(false);
-    (isObjectEmpty as jest.Mock).mockReturnValue(false);
-    (isNotEmpty as jest.Mock).mockReturnValue(false);
+    vi.mocked(isEmpty).mockReturnValue(false);
+    vi.mocked(isObjectEmpty).mockReturnValue(false);
+    vi.mocked(isNotEmpty).mockReturnValue(false);
 
     const expectedMockedOutput = {
       limit: 10,
       offset: 0,
       order: [['id', 'ASC']],
     };
-    // Fixed: Cast the mock function to a typed jest.Mock instance to secure the argument assignment boundary
-    (buildPagination as unknown as jest.Mock<unknown>).mockReturnValue(
-      expectedMockedOutput,
-    );
+
+    vi.mocked(buildPagination).mockReturnValue(expectedMockedOutput);
 
     const query: PaginationQueryDto = { pageNumber: 1, pageSize: 10 };
 

@@ -6,26 +6,36 @@ import { Country } from './entities/country.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('CountryService', () => {
   let service: CountryService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockCountryModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockCountryModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock the Sequelize Model Static Methods
+    // 1. Mock the Sequelize Model Static Methods using vi.fn()
     mockCountryModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,14 +52,14 @@ describe('CountryService', () => {
     }).compile();
 
     service = module.get<CountryService>(CountryService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('createCountry', () => {
     const createDto: CreateCountryDto = { name: 'United States', code: 'US' };
 
     it('should successfully create a country if name and code are unique', async () => {
-      mockCountryModel.findOne.mockResolvedValue(null); // Neither name nor code conflicts
+      mockCountryModel.findOne.mockResolvedValue(null);
       mockCountryModel.create.mockResolvedValue({
         id: '019f4fa1-57db-72d7-b037-2f35d54f2794',
         ...createDto,
@@ -88,13 +98,13 @@ describe('CountryService', () => {
       const mockInstance = {
         id: 'uuid-1',
         managed: false,
-        update: jest.fn().mockResolvedValue({
+        update: vi.fn().mockResolvedValue({
           id: 'uuid-1',
           name: 'United States of America',
         }),
       };
       mockCountryModel.findByPk.mockResolvedValue(mockInstance);
-      mockCountryModel.findOne.mockResolvedValue(null); // No name collision
+      mockCountryModel.findOne.mockResolvedValue(null);
 
       await service.updateCountry('uuid-1', updateDto);
 
@@ -117,7 +127,7 @@ describe('CountryService', () => {
     it('should successfully delete a country if it is not managed', async () => {
       const mockInstance = { id: 'uuid-1', managed: false };
       mockCountryModel.findByPk.mockResolvedValue(mockInstance);
-      mockCountryModel.destroy.mockResolvedValue(1); // 1 row removed
+      mockCountryModel.destroy.mockResolvedValue(1);
 
       const result = await service.deleteCountry('uuid-1');
 
@@ -139,7 +149,6 @@ describe('CountryService', () => {
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (Country & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -150,7 +159,7 @@ describe('CountryService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCountryModel as unknown as typeof Country,
+        mockCountryModel as unknown,
         mockQuery,
       );
     });

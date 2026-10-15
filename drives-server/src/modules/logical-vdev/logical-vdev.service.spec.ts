@@ -8,28 +8,37 @@ import {
 } from './entities/logical-vdev.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto'; // Fixed: Removed unused UpdateLogicalVdevDto import
+import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('LogicalVdevService', () => {
   let service: LogicalVdevService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockLogicalVdevModel: Record<string, jest.Mock>;
-  let mockStoragePoolModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockLogicalVdevModel: Record<string, Mock>;
+  let mockStoragePoolModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockLogicalVdevModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockStoragePoolModel = { findByPk: jest.fn() };
+    mockStoragePoolModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,13 +50,12 @@ describe('LogicalVdevService', () => {
     }).compile();
 
     service = module.get<LogicalVdevService>(LogicalVdevService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (LogicalVdev & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -58,7 +66,7 @@ describe('LogicalVdevService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockLogicalVdevModel as unknown as typeof LogicalVdev,
+        mockLogicalVdevModel as unknown,
         mockQuery,
         { include: [StoragePool] },
       );
@@ -73,11 +81,11 @@ describe('LogicalVdevService', () => {
     };
 
     it('should successfully create and reload a logical vdev if pool boundary conditions pass', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'vdev-uuid', ...createDto });
-      mockLogicalVdevModel.findOne.mockResolvedValue(null); // No local pool naming duplicate
-      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' }); // Parent exists
+      mockLogicalVdevModel.findOne.mockResolvedValue(null);
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
       mockLogicalVdevModel.create.mockResolvedValue({
         id: 'vdev-uuid',
         reload: mockReload,
@@ -100,7 +108,7 @@ describe('LogicalVdevService', () => {
 
     it('should throw NotFoundException if targeted parent storage pool is missing from the system repository', async () => {
       mockLogicalVdevModel.findOne.mockResolvedValue(null);
-      mockStoragePoolModel.findByPk.mockResolvedValue(null); // Simulated missing element
+      mockStoragePoolModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException('StoragePool with ID pool-uuid not found'),

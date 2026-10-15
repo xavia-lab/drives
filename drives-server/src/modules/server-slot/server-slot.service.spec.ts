@@ -7,30 +7,38 @@ import { Server } from '../server/entities/server.entity';
 import { Interface } from '../interface/entities/interface.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateServerSlotDto } from './dto/create-server-slot.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('ServerSlotService', () => {
   let service: ServerSlotService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockServerSlotModel: Record<string, jest.Mock>;
-  let mockServerModel: Record<string, jest.Mock>;
-  let mockInterfaceModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockServerSlotModel: Record<string, Mock>;
+  let mockServerModel: Record<string, Mock>;
+  let mockInterfaceModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockServerSlotModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockServerModel = { findByPk: jest.fn() };
-    mockInterfaceModel = { findByPk: jest.fn() };
+    mockServerModel = { findByPk: vi.fn() };
+    mockInterfaceModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,13 +51,12 @@ describe('ServerSlotService', () => {
     }).compile();
 
     service = module.get<ServerSlotService>(ServerSlotService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (ServerSlot & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -60,7 +67,7 @@ describe('ServerSlotService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockServerSlotModel as unknown as typeof ServerSlot,
+        mockServerSlotModel as unknown,
         mockQuery,
         { include: [Server, Interface] },
       );
@@ -76,10 +83,10 @@ describe('ServerSlotService', () => {
     };
 
     it('should successfully create and reload a server slot if scope constraints are valid', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'slot-uuid', ...createDto });
-      mockServerSlotModel.findOne.mockResolvedValue(null); // No structural label duplicate
+      mockServerSlotModel.findOne.mockResolvedValue(null);
       mockServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
       mockInterfaceModel.findByPk.mockResolvedValue({ id: 'interface-uuid' });
       mockServerSlotModel.create.mockResolvedValue({
@@ -104,8 +111,8 @@ describe('ServerSlotService', () => {
 
     it('should throw an aggregated multiline NotFoundException if multiple foreign keys are missing', async () => {
       mockServerSlotModel.findOne.mockResolvedValue(null);
-      mockServerModel.findByPk.mockResolvedValue(null); // Missing
-      mockInterfaceModel.findByPk.mockResolvedValue(null); // Missing
+      mockServerModel.findByPk.mockResolvedValue(null);
+      mockInterfaceModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
         'Server with ID server-uuid not found',

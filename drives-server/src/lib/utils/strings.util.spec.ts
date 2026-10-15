@@ -1,27 +1,29 @@
 // src/utils/strings.util.spec.ts
+import { describe, it, expect } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 import { titleCaseString } from './strings.util';
 
 describe('Strings Handler Tests', () => {
   describe('titleCaseString', () => {
-    test('should convert a single word to title case', () => {
+    it('should convert a single word to title case', () => {
+      // 🚀 Swapped out legacy test blocks for 'it'
       expect(titleCaseString('cat')).toBe('Cat');
     });
 
-    test('should replace underscores with spaces and capitalize each word', () => {
+    it('should replace underscores with spaces and capitalize each word', () => {
       expect(titleCaseString('sales_representative')).toBe(
         'Sales Representative',
       );
     });
 
-    test('should handle strings with mixed cases and underscores', () => {
+    it('should handle strings with mixed cases and underscores', () => {
       expect(titleCaseString('hello_world_123')).toBe('Hello World 123');
     });
 
-    test('should handle empty string', () => {
+    it('should handle empty string', () => {
       expect(titleCaseString('')).toBe('');
     });
 
-    test('should handle string with only underscores', () => {
+    it('should handle string with only underscores', () => {
       expect(titleCaseString('___')).toBe('   ');
     });
   });

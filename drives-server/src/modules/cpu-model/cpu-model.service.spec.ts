@@ -6,25 +6,34 @@ import { CpuModel, CpuVendor } from './entities/cpu-model.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateCpuModelDto } from './dto/create-cpu-model.dto';
 import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('CpuModelService', () => {
   let service: CpuModelService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockCpuModelRepo: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockCpuModelRepo: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockCpuModelRepo = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,13 +50,12 @@ describe('CpuModelService', () => {
     }).compile();
 
     service = module.get<CpuModelService>(CpuModelService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (CpuModel & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -58,7 +66,7 @@ describe('CpuModelService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockCpuModelRepo as unknown as typeof CpuModel,
+        mockCpuModelRepo as unknown,
         mockQuery,
       );
     });
@@ -128,10 +136,10 @@ describe('CpuModelService', () => {
     it('should successfully update a cpu model when name variation is valid', async () => {
       const mockInstance = {
         id: 'cpu-uuid',
-        update: jest.fn().mockResolvedValue(true),
+        update: vi.fn().mockResolvedValue(true),
       };
       mockCpuModelRepo.findByPk.mockResolvedValue(mockInstance);
-      mockCpuModelRepo.create.mockResolvedValue(null); // No name collision
+      mockCpuModelRepo.findOne.mockResolvedValue(null);
 
       await service.update('cpu-uuid', updateDto);
 

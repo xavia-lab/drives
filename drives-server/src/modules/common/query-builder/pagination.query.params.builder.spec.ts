@@ -1,15 +1,16 @@
 import { build } from './pagination.query.params.builder';
+import { describe, it, expect } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('PaginationQueryParamsBuilder', () => {
   describe('Paging', () => {
-    test('should calculate offset and limit for given pageNumber and pageSize', () => {
+    it('should calculate offset and limit for given pageNumber and pageSize', () => {
       const result = build({ pageNumber: 5, pageSize: 25 });
       expect(result.offset).toBe(100);
       expect(result.limit).toBe(25);
       expect(result.order).toStrictEqual([]);
     });
 
-    test('should return no offset or limit if no paging params', () => {
+    it('should return no offset or limit if no paging params', () => {
       const result = build({});
       expect(result.offset).not.toBeDefined();
       expect(result.limit).not.toBeDefined();
@@ -18,7 +19,7 @@ describe('PaginationQueryParamsBuilder', () => {
   });
 
   describe('Sorting', () => {
-    test('should build order for multiple sort fields with order', () => {
+    it('should build order for multiple sort fields with order', () => {
       const result = build({ sortOrder: 'asc', sortField: 'name,createdAt' });
       expect(result.order).toStrictEqual([
         ['name', 'asc'],
@@ -26,24 +27,24 @@ describe('PaginationQueryParamsBuilder', () => {
       ]);
     });
 
-    test('should build order for single sort field with order', () => {
+    it('should build order for single sort field with order', () => {
       const result = build({ sortOrder: 'desc', sortField: 'name' });
       expect(result.order).toStrictEqual([['name', 'desc']]);
     });
 
-    test('should build order for sort field without order (default asc)', () => {
+    it('should build order for sort field without order (default asc)', () => {
       const result = build({ sortField: 'name' });
       expect(result.order).toStrictEqual([['name']]);
     });
 
-    test('should return empty order if no sorting params', () => {
+    it('should return empty order if no sorting params', () => {
       const result = build({});
       expect(result.order).toStrictEqual([]);
     });
   });
 
   describe('Filtering', () => {
-    test('should build where clause for valid filter params', () => {
+    it('should build where clause for valid filter params', () => {
       const result = build({
         filterField: 'name',
         filterOperator: 'eq',
@@ -52,19 +53,19 @@ describe('PaginationQueryParamsBuilder', () => {
       expect(result.where).toBeDefined();
     });
 
-    test('should return no where clause if no filter params', () => {
+    it('should return no where clause if no filter params', () => {
       const result = build({});
       expect(result.where).not.toBeDefined();
     });
 
-    test('should return no where clause if missing required filter params', () => {
-      const result = build({ filterField: 'name', filterOperator: 'eq' }); // Missing filterValue, but validation is now in DTO
+    it('should return no where clause if missing required filter params', () => {
+      const result = build({ filterField: 'name', filterOperator: 'eq' });
       expect(result.where).not.toBeDefined();
     });
   });
 
   describe('Combined Params', () => {
-    test('should handle paging, sorting, and filtering together', () => {
+    it('should handle paging, sorting, and filtering together', () => {
       const result = build({
         pageNumber: 2,
         pageSize: 10,
@@ -78,7 +79,6 @@ describe('PaginationQueryParamsBuilder', () => {
       expect(result.limit).toBe(10);
       expect(result.order).toStrictEqual([['name', 'asc']]);
 
-      // Fixed: Cast the where clause array structure safely to clear the unsafe nested member access error
       const whereClause = result.where as Record<string, unknown>;
       expect(whereClause.status).toStrictEqual({
         [Symbol.for('like')]: '%active%',

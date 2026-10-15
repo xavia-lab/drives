@@ -10,31 +10,41 @@ import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity'
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateDriveLifecycleEventDto } from './dto/create-drive-lifecycle-event.dto';
 import { UpdateDriveLifecycleEventDto } from './dto/update-drive-lifecycle-event.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('DriveLifecycleEventService', () => {
   let service: DriveLifecycleEventService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockEventModel: Record<string, jest.Mock>;
-  let mockPhysicalDriveModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockEventModel: Record<string, Mock>;
+  let mockPhysicalDriveModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
-    // 1. Mock both Sequelize models
+    // 1. Mock both Sequelize models using vi.fn()
     mockEventModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
 
     mockPhysicalDriveModel = {
-      findByPk: jest.fn(),
+      findByPk: vi.fn(),
     };
 
-    // 2. Mock the PaginationService using an unknown double-cast wrapper
+    // 2. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,13 +67,12 @@ describe('DriveLifecycleEventService', () => {
     service = module.get<DriveLifecycleEventService>(
       DriveLifecycleEventService,
     );
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments safely
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (DriveLifecycleEvent & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -74,7 +83,7 @@ describe('DriveLifecycleEventService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockEventModel as unknown as typeof DriveLifecycleEvent,
+        mockEventModel as unknown,
         mockQuery,
       );
     });
@@ -115,10 +124,10 @@ describe('DriveLifecycleEventService', () => {
     };
 
     it('should successfully create and reload an event if foreign key exists', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'event-uuid', ...createDto });
-      mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' }); // Physical drive exists
+      mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' });
       mockEventModel.create.mockResolvedValue({
         id: 'event-uuid',
         reload: mockReload,
@@ -135,7 +144,7 @@ describe('DriveLifecycleEventService', () => {
     });
 
     it('should throw NotFoundException if the provided physicalDriveId does not exist', async () => {
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null); // Physical drive missing
+      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException('PhysicalDrive with ID drive-uuid not found'),
@@ -151,19 +160,19 @@ describe('DriveLifecycleEventService', () => {
     };
 
     it('should successfully update an event when target items exist', async () => {
-      const mockReload = jest.fn().mockResolvedValue({
+      const mockReload = vi.fn().mockResolvedValue({
         id: 'event-uuid',
         eventType: DriveLifecycleEventType.FAIL,
       });
       const mockInstance = {
         id: 'event-uuid',
-        update: jest.fn().mockResolvedValue(true),
+        update: vi.fn().mockResolvedValue(true),
         reload: mockReload,
       };
       mockEventModel.findByPk.mockResolvedValue(mockInstance);
       mockPhysicalDriveModel.findByPk.mockResolvedValue({
         id: 'new-drive-uuid',
-      }); // New drive exists
+      });
 
       await service.update('event-uuid', updateDto);
 
@@ -179,7 +188,7 @@ describe('DriveLifecycleEventService', () => {
     it('should throw NotFoundException if the updated physicalDriveId does not exist', async () => {
       const mockInstance = { id: 'event-uuid' };
       mockEventModel.findByPk.mockResolvedValue(mockInstance);
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null); // New drive is missing
+      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
 
       await expect(service.update('event-uuid', updateDto)).rejects.toThrow(
         new NotFoundException('PhysicalDrive with ID new-drive-uuid not found'),

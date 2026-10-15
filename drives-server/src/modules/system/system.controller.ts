@@ -38,7 +38,7 @@ export class SystemController {
       // Fixed: Pass explicit generic string argument to clean up any cascade
       environment: this.configService.get<string>('app.nodeEnv', 'development'),
       database: dbHealth ? 'connected' : 'disconnected',
-      service: 'Emerald API Server',
+      service: 'Drives API Server',
     };
   }
 }

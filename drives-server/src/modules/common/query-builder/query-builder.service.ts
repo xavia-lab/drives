@@ -5,7 +5,7 @@ import {
   isObjectEmpty,
   isNotEmpty,
 } from '../../../lib/utils/objects.util';
-import { build as buildById, IdQueryParams } from './id.query.params.builder';
+import { build as buildById } from './id.query.params.builder';
 import { build as buildPagination } from './pagination.query.params.builder';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 
@@ -25,7 +25,7 @@ export class QueryBuilderService {
         `Querying based on id parameters: ${JSON.stringify(query)}`,
       );
       // Fixed: Swapped direct single-cast wrapper for an unknown bridge cast to cleanly fit the IdQueryParams footprint
-      return buildById(query as unknown as IdQueryParams);
+      return buildById(query);
     }
 
     this.logger.log(

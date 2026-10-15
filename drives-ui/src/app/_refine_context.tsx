@@ -323,7 +323,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                 warnWhenUnsavedChanges: true,
                 title: {
                   icon: <EmeraldLogo />,
-                  text: "Emerald System",
+                  text: "Drives System",
                 },
                 disableTelemetry: true,
               }}

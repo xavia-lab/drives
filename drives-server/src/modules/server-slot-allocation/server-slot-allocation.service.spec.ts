@@ -10,33 +10,41 @@ import { ServerSlot } from '../server-slot/entities/server-slot.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
-import { CreateServerSlotAllocationDto } from './dto/create-server-slot-allocation.dto'; // Fixed: Removed unused UpdateServerSlotAllocationDto import
+import { CreateServerSlotAllocationDto } from './dto/create-server-slot-allocation.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('ServerSlotAllocationService', () => {
   let service: ServerSlotAllocationService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockAllocationModel: Record<string, jest.Mock>;
-  let mockServerSlotModel: Record<string, jest.Mock>;
-  let mockPhysicalDriveModel: Record<string, jest.Mock>;
-  let mockUserModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockAllocationModel: Record<string, Mock>;
+  let mockServerSlotModel: Record<string, Mock>;
+  let mockPhysicalDriveModel: Record<string, Mock>;
+  let mockUserModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockAllocationModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockServerSlotModel = { findByPk: jest.fn() };
-    mockPhysicalDriveModel = { findByPk: jest.fn() };
-    mockUserModel = { findByPk: jest.fn() };
+    mockServerSlotModel = { findByPk: vi.fn() };
+    mockPhysicalDriveModel = { findByPk: vi.fn() };
+    mockUserModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,13 +66,12 @@ describe('ServerSlotAllocationService', () => {
     service = module.get<ServerSlotAllocationService>(
       ServerSlotAllocationService,
     );
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (ServerSlotAllocation & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -75,7 +82,7 @@ describe('ServerSlotAllocationService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockAllocationModel as unknown as typeof ServerSlotAllocation,
+        mockAllocationModel as unknown,
         mockQuery,
         { include: [ServerSlot, PhysicalDrive, User] },
       );
@@ -92,7 +99,7 @@ describe('ServerSlotAllocationService', () => {
     };
 
     it('should successfully create and reload an allocation record if all parents exist', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'alloc-uuid', ...createDto });
       mockServerSlotModel.findByPk.mockResolvedValue({ id: 'slot-uuid' });
@@ -113,9 +120,9 @@ describe('ServerSlotAllocationService', () => {
     });
 
     it('should throw an aggregated multiline NotFoundException if multiple foreign keys are missing', async () => {
-      mockServerSlotModel.findByPk.mockResolvedValue(null); // Missing
-      mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' }); // Exists
-      mockUserModel.findByPk.mockResolvedValue(null); // Missing
+      mockServerSlotModel.findByPk.mockResolvedValue(null);
+      mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' });
+      mockUserModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
         'ServerSlot with ID slot-uuid not found',

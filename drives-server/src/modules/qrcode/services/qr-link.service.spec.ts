@@ -4,42 +4,37 @@ import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import { QRLinkService } from './qr-link.service';
 import { QRLink } from '../entities/qr-link.entity';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
-// CRITICAL FIX: Explicitly mock nanoid at the top of the file scope
-// This forces Jest to use a simple fallback function and stops it from reading the pure ESM library code
-jest.mock('nanoid', () => ({
+// 🚀 Critical Vitest hoisting factory mock for pure ESM libraries like nanoid
+vi.mock('nanoid', () => ({
   nanoid: () => 'mocked-nanoid-id',
 }));
 
 describe('QRLinkService', () => {
   let service: QRLinkService;
 
-  // Strongly type the mock handlers to match strict parameter passing bounds from the start
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let modelMock: {
-    create: jest.Mock<Promise<Partial<QRLink>>, [any?, any?]>;
-    findOne: jest.Mock<Promise<Partial<QRLink> | null>, [any?]>;
+    create: Mock;
+    findOne: Mock;
   };
   let configServiceMock: {
-    get: jest.Mock<string | undefined, [string]>;
+    get: Mock;
   };
 
   const mockPublicUrl = 'https://myapp.com';
 
   beforeEach(async () => {
     modelMock = {
-      create: jest.fn<Promise<Partial<QRLink>>, [any?, any?]>(),
-      findOne: jest
-        .fn<Promise<Partial<QRLink> | null>, [any?]>()
-        .mockResolvedValue(null),
+      create: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findOne: vi.fn().mockResolvedValue(null),
     };
 
     configServiceMock = {
-      get: jest
-        .fn<string | undefined, [string]>()
-        .mockReturnValue(mockPublicUrl),
+      get: vi.fn().mockReturnValue(mockPublicUrl),
     };
 
-    // 2. Build Testing Module
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QRLinkService,
@@ -55,12 +50,13 @@ describe('QRLinkService', () => {
     }).compile();
 
     service = module.get<QRLinkService>(QRLinkService);
+    vi.clearAllMocks(); // 🚀 Clean slate context verification
   });
 
   describe('generateShortId', () => {
     it('should create a QR link and return formatted data', async () => {
       const dto = { resourceType: 'product', resourceId: '123' };
-      (modelMock.create as jest.Mock).mockResolvedValue({}); // Simulate successful creation
+      modelMock.create.mockResolvedValue({});
 
       const result = await service.generateShortId(
         dto.resourceType,
@@ -71,7 +67,6 @@ describe('QRLinkService', () => {
         expect.objectContaining({
           resourceType: dto.resourceType,
           resourceId: dto.resourceId,
-          // shortId: expect.any(String),
         }),
         expect.any(Object),
       );
@@ -87,8 +82,7 @@ describe('QRLinkService', () => {
         resourceId: '456',
       } as unknown as Partial<QRLink>;
 
-      // Fixed: Cast findOne as a raw jest.Mock to prevent internal tuple mappings from degrading to any on line 75
-      (modelMock.findOne as jest.Mock).mockResolvedValue(mockMapping);
+      modelMock.findOne.mockResolvedValue(mockMapping);
 
       const result = await service.resolve('some-id');
 
@@ -97,7 +91,7 @@ describe('QRLinkService', () => {
     });
 
     it('should throw NotFoundException if record is missing', async () => {
-      (modelMock.findOne as jest.Mock).mockResolvedValue(null);
+      modelMock.findOne.mockResolvedValue(null);
 
       await expect(service.resolve('invalid-id')).rejects.toThrow(
         NotFoundException,
@@ -107,10 +101,9 @@ describe('QRLinkService', () => {
 
   describe('remove', () => {
     it('should destroy the mapping if found', async () => {
-      const mockDestroySpy = jest.fn<Promise<void>, []>();
+      const mockDestroySpy = vi.fn();
 
-      // Fixed: Cast findOne as a raw jest.Mock here as well to isolate object resolution parameters safely
-      (modelMock.findOne as jest.Mock).mockResolvedValue({
+      modelMock.findOne.mockResolvedValue({
         destroy: mockDestroySpy,
       });
 
@@ -120,7 +113,7 @@ describe('QRLinkService', () => {
     });
 
     it('should throw NotFoundException if trying to remove non-existent link', async () => {
-      (modelMock.findOne as jest.Mock).mockResolvedValue(null);
+      modelMock.findOne.mockResolvedValue(null);
 
       await expect(service.remove('type', 'id')).rejects.toThrow(
         NotFoundException,

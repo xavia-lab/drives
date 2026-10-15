@@ -10,36 +10,44 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { StorageType } from '../storage-type/entities/storage-type.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStorageModelDto } from './dto/create-storage-model.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('StorageModelService', () => {
   let service: StorageModelService;
 
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockStorageModelModel: Record<string, jest.Mock>;
-  let mockCapacityModel: Record<string, jest.Mock>;
-  let mockFormFactorModel: Record<string, jest.Mock>;
-  let mockInterfaceModel: Record<string, jest.Mock>;
-  let mockVendorModel: Record<string, jest.Mock>;
-  let mockStorageTypeModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+  // 🚀 Swapped loose jest.Mock definitions for Vitest Mock records
+  let mockStorageModelModel: Record<string, Mock>;
+  let mockCapacityModel: Record<string, Mock>;
+  let mockFormFactorModel: Record<string, Mock>;
+  let mockInterfaceModel: Record<string, Mock>;
+  let mockVendorModel: Record<string, Mock>;
+  let mockStorageTypeModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockStorageModelModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Using Vitest vi.fn() mock engine trackers
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockCapacityModel = { findByPk: jest.fn() };
-    mockFormFactorModel = { findByPk: jest.fn() };
-    mockInterfaceModel = { findByPk: jest.fn() };
-    mockVendorModel = { findByPk: jest.fn() };
-    mockStorageTypeModel = { findByPk: jest.fn() };
+    mockCapacityModel = { findByPk: vi.fn() };
+    mockFormFactorModel = { findByPk: vi.fn() };
+    mockInterfaceModel = { findByPk: vi.fn() };
+    mockVendorModel = { findByPk: vi.fn() };
+    mockStorageTypeModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,7 +66,7 @@ describe('StorageModelService', () => {
     }).compile();
 
     service = module.get<StorageModelService>(StorageModelService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Clean call history tracking using Vitest clear hook
   });
 
   describe('create', () => {
@@ -105,9 +113,9 @@ describe('StorageModelService', () => {
 
     it('should aggregate missing relation references into a single NotFoundException', async () => {
       mockStorageModelModel.findOne.mockResolvedValue(null);
-      mockCapacityModel.findByPk.mockResolvedValue(null); // Missing
+      mockCapacityModel.findByPk.mockResolvedValue(null);
       mockFormFactorModel.findByPk.mockResolvedValue({ id: 'formfactor-uuid' });
-      mockInterfaceModel.findByPk.mockResolvedValue(null); // Missing
+      mockInterfaceModel.findByPk.mockResolvedValue(null);
       mockVendorModel.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
       mockStorageTypeModel.findByPk.mockResolvedValue({
         id: 'storagetype-uuid',

@@ -3,6 +3,7 @@ packages:
   - 'drives-server'
   - 'drives-ui'
 allowBuilds:
+  '@parcel/watcher': true
   '@scarf/scarf': true
   '@swc/core': true
   bcrypt: true

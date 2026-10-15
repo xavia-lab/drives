@@ -8,29 +8,38 @@ import { VirtualServer } from '../virtual-server/entities/virtual-server.entity'
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type Mock,
+  type Mocked,
+} from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('StoragePoolService', () => {
   let service: StoragePoolService;
-  // Fixed: Swapped loose 'any' definitions for typed mock records
-  let mockStoragePoolModel: Record<string, jest.Mock>;
-  let mockServerModel: Record<string, jest.Mock>;
-  let mockVirtualServerModel: Record<string, jest.Mock>;
-  let mockPaginationService: jest.Mocked<PaginationService>;
+
+  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
+  let mockStoragePoolModel: Record<string, Mock>;
+  let mockServerModel: Record<string, Mock>;
+  let mockVirtualServerModel: Record<string, Mock>;
+  let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockStoragePoolModel = {
-      findOne: jest.fn(),
-      findByPk: jest.fn(),
-      create: jest.fn(),
-      destroy: jest.fn(),
+      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findByPk: vi.fn(),
+      create: vi.fn(),
+      destroy: vi.fn(),
     };
-    mockServerModel = { findByPk: jest.fn() };
-    mockVirtualServerModel = { findByPk: jest.fn() };
+    mockServerModel = { findByPk: vi.fn() };
+    mockVirtualServerModel = { findByPk: vi.fn() };
 
-    // Fixed: Replaced 'as any' with an explicit double-cast constraint
     mockPaginationService = {
-      paginate: jest.fn(),
-    } as unknown as jest.Mocked<PaginationService>;
+      paginate: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,13 +58,12 @@ describe('StoragePoolService', () => {
     }).compile();
 
     service = module.get<StoragePoolService>(StoragePoolService);
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
   describe('findAll', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
-      // Fixed: Explicit structural type definition to satisfy return assignments
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: (StoragePool & { itemNumber: number })[];
         meta: Record<string, unknown>;
@@ -66,7 +74,7 @@ describe('StoragePoolService', () => {
 
       expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockStoragePoolModel as unknown as typeof StoragePool,
+        mockStoragePoolModel as unknown,
         mockQuery,
         { include: [Server, VirtualServer] },
       );
@@ -82,7 +90,7 @@ describe('StoragePoolService', () => {
     };
 
     it('should successfully create and reload a storage pool if XOR target check passes and parent exists', async () => {
-      const mockReload = jest
+      const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'pool-uuid', ...createDto });
       mockServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
@@ -112,7 +120,7 @@ describe('StoragePoolService', () => {
     });
 
     it('should throw NotFoundException if targeted physical server does not exist', async () => {
-      mockServerModel.findByPk.mockResolvedValue(null); // Missing
+      mockServerModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         NotFoundException,
@@ -130,8 +138,8 @@ describe('StoragePoolService', () => {
         id: 'pool-uuid',
         serverId: 'server-uuid',
         virtualServerId: null,
-        update: jest.fn().mockResolvedValue(true),
-        reload: jest
+        update: vi.fn().mockResolvedValue(true),
+        reload: vi
           .fn()
           .mockResolvedValue({ id: 'pool-uuid', poolName: 'tank-updated' }),
       };
