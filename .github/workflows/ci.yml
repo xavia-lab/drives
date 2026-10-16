@@ -43,5 +43,8 @@ jobs:
       - name: Run linting across workspace
         run: pnpm turbo run lint --filter='!@drives/drives-ui'
 
+      - name: Run build across workspace
+        run: pnpm turbo run build
+
       - name: Run tests across workspace
         run: pnpm turbo run test
