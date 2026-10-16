@@ -10,32 +10,46 @@ import {
   FilterDropdown,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Space, Table, Input } from "antd";
+import { Space, Table, Input, InputNumber } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
 export default function CurrencyList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters } = useTable({
     sorters: {
-      initial: [{ field: "id", order: "asc" }],
+      initial: [{ field: "displayKey", order: "asc" }], // 🌟 Optimization: Default sort by displayKey for fast index use
     },
-    syncWithLocation: true, // Persists state in the URL
+    syncWithLocation: true,
   });
 
   return (
     <List>
       <Table {...tableProps} rowKey="id">
         <Table.Column
-          dataIndex="itemNumber"
+          dataIndex="displayKey"
           title={"#"}
-          width={70}
+          width={70} // Slightly wider to support numbers comfortably
           align={"right"}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
+          // 🌟 FIX: Force numeric mapping and clear out text operators
+          filterDropdown={(props) => (
+            <FilterDropdown
+              {...props}
+              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+            >
+              <InputNumber
+                placeholder="DisplayKey #"
+                style={{ width: "100%" }}
+                controls={false} // Hides the tiny up/down spinner arrows
+              />
+            </FilterDropdown>
+          )}
         />
         <Table.Column
           dataIndex="name"
           title={"Name"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("name", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Name" />
@@ -48,7 +62,6 @@ export default function CurrencyList() {
           width={150}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("code", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Code" />
