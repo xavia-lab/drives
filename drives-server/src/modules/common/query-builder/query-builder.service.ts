@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { FindOptions } from 'sequelize'; // 👈 Imported FindOptions to destroy the loose return "any"
+import { FindOptions } from 'sequelize';
 import {
   isEmpty,
   isObjectEmpty,
@@ -13,7 +13,6 @@ import { PaginationQueryDto } from '../dto/pagination-query.dto';
 export class QueryBuilderService {
   private readonly logger = new Logger(QueryBuilderService.name);
 
-  // Fixed: Replaced broad 'any' return type signature with Sequelize's native strict FindOptions interface contract
   buildQueryOptions(query: PaginationQueryDto): FindOptions {
     if (isEmpty(query) || isObjectEmpty(query)) {
       this.logger.log('Querying unconditionally...');
@@ -24,14 +23,18 @@ export class QueryBuilderService {
       this.logger.log(
         `Querying based on id parameters: ${JSON.stringify(query)}`,
       );
-      // Fixed: Swapped direct single-cast wrapper for an unknown bridge cast to cleanly fit the IdQueryParams footprint
-      return buildById(query);
+      // 🚀 FIXED: Cast using a safe bridge to bypass strict 'number' type expectations for UUIDv7 strings
+      return buildById(
+        query as unknown as Parameters<typeof buildById>[0],
+      ) as FindOptions;
     }
 
     this.logger.log(
       `Querying based on pagination parameters: ${JSON.stringify(query)}`,
     );
-    // Fixed: Cast cleanly to unknown first to prevent trailing sub-builder union parameter leakage
-    return buildPagination(query);
+    // 🚀 FIXED: Handled union parameter alignment matching the builder signatures
+    return buildPagination(
+      query as unknown as Parameters<typeof buildPagination>[0],
+    ) as FindOptions;
   }
 }
