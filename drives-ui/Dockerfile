@@ -6,7 +6,7 @@ WORKDIR /app
 RUN corepack enable
 COPY . .
 # Run turbo via npx to match your workspace engines
-RUN npx turbo prune drives-ui --docker
+RUN npx turbo prune --scope=@drives/drives-ui --docker
 
 # Stage 2: Install dependencies
 FROM node:24-alpine AS installer
@@ -32,7 +32,7 @@ COPY --from=pruner /app/out/full/ .
 COPY --from=installer /app/ .
 
 # Build the specific app using turbo via pnpm
-RUN pnpm turbo run build --filter=drives-ui
+RUN pnpm turbo run build --filter=@drives/drives-ui
 
 # Stage 4: Production Runner
 FROM node:24-alpine AS runner
@@ -56,9 +56,9 @@ RUN addgroup -g ${GID} -S nodejs && \
 # Copy files with explicit ownership
 # Note: Next.js standalone outputs a fully compiled Node server that includes its own minimal node_modules,
 # completely bypassing any complex monorepo symlink lookup issues at runtime!
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/drives-ui/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/drives-ui/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/drives-ui/.next/static ./frontend/drives-ui/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/drives-ui/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/drives-ui/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/drives-ui/.next/static ./drives-ui/.next/static
 
 # --- Healthcheck ---
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
@@ -69,4 +69,4 @@ USER nextjs
 EXPOSE ${PORT}
 
 # Next.js standalone output creates a server.js in the root of the output
-CMD ["node", "frontend/drives-ui/server.js"]
+CMD ["node", "drives-ui/server.js"]

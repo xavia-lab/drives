@@ -5,8 +5,7 @@ WORKDIR /app
 # Enable Corepack; it automatically matches your package.json version downstream
 RUN corepack enable
 COPY . .
-# Run global commands via npx to match your workspace engines
-RUN npx turbo prune --scope=drives-server --docker
+RUN npx turbo prune --scope=@drives/drives-server --docker
 
 # Stage 2: Installer
 FROM node:24-alpine AS installer
@@ -28,7 +27,8 @@ WORKDIR /app
 RUN corepack enable
 COPY --from=pruner /app/out/full/ .
 COPY --from=installer /app/ .
-RUN pnpm turbo run build --filter=drives-server
+# 🚀 FIXED: Added the explicit package namespace scope filter
+RUN pnpm turbo run build --filter=@drives/drives-server
 
 # Stage 4: Production Runner
 FROM node:24-alpine AS runner
