@@ -37,7 +37,7 @@ services:
         condition: service_healthy
     restart: "unless-stopped"
 
-  cerbos:
+  policy:
     image: ghcr.io/cerbos/cerbos:latest
     container_name: "drives-policy"
     networks:
@@ -50,9 +50,9 @@ services:
       - CERBOS_ADMIN_USERNAME=${CERBOS_ADMIN_USERNAME}
       - CERBOS_ADMIN_PASSWORD_HASH=${CERBOS_ADMIN_PASSWORD_HASH}
     volumes:
-      - ./cerbos/policies:/policies
+      - ./drives-policy/policies:/policies
       # Optional: uncomment if you have a custom config file
-      - ./cerbos/cerbos.yaml:/etc/cerbos/cerbos.yaml
+      - ./drives-policy/cerbos.yaml:/etc/cerbos/cerbos.yaml
     command: ["server", "--config=/etc/cerbos/cerbos.yaml"]
     restart: "unless-stopped"
 
