@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master # 🚀 Fires context checks exclusively on deployment merges
+    tags:
+      - 'v*' # 🚀 Triggers build when semantic version tags are pushed (e.g., v1.1.1)
 
 # 🔐 Grant permissions to write container artifacts directly into your repository package panel
 permissions:
@@ -12,8 +14,16 @@ permissions:
 
 jobs:
   validate-and-build:
-    name: Run Quality Sweeps and Push Images
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+          - os: ubuntu-24.04-arm64
+            platform: linux/arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -57,6 +67,43 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🏷️ GENERATE DYNAMIC SEMANTIC LABELS (v1, v1.1, v1.1.1)
+      - name: Extract Metadata for Policy Registry
+        id: meta-policy
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/drives-policy
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,enable=true
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Extract Metadata for Backend Server
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/drives-server
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,enable=true
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Extract Metadata for Frontend UI
+        id: meta-ui
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/drives-ui
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,enable=true
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
       # 🐋 COMPILING AND PUSHING THE CERBOS AUTHORIZATION POLICY REGISTRY
       - name: Compile and Push Security Authorization Engine
         uses: docker/build-push-action@v7
@@ -64,11 +111,11 @@ jobs:
           context: .
           file: ./drives-policy/Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/drives-policy:latest
-            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta-policy.outputs.tags }}
+          labels: ${{ steps.meta-policy.outputs.labels }}
+          cache-from: type=gha,scope=policy-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=policy-${{ matrix.platform }}
 
       # 🐋 COMPILING AND PUSHING THE BACKEND API SERVER
       - name: Compile and Push Backend Drive Server Image
@@ -77,11 +124,11 @@ jobs:
           context: .
           file: ./drives-server/Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/drives-server:latest
-            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+          cache-from: type=gha,scope=server-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=server-${{ matrix.platform }}
 
       # 🐋 COMPILING AND PUSHING THE FRONTEND USER INTERFACE
       - name: Compile and Push Frontend UI Application Image
@@ -90,8 +137,8 @@ jobs:
           context: .
           file: ./drives-ui/Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/drives-ui:latest
-            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta-ui.outputs.tags }}
+          labels: ${{ steps.meta-ui.outputs.labels }}
+          cache-from: type=gha,scope=ui-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=ui-${{ matrix.platform }}
