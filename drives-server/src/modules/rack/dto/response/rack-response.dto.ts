@@ -11,7 +11,7 @@ class DatacenterShallowDto {
 export class RackResponseDto {
   @Expose()
   @ApiProperty({ example: 1 })
-  itemNumber: number;
+  displayKey: number;
 
   @Expose()
   @ApiProperty({ example: '019f5431-1bf4-72fd-a9c0-5a396eb14ea1' })

@@ -26,7 +26,7 @@ export class BusProtocolResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<BusProtocolResponseDto>) {
     Object.assign(this, partial);

@@ -6,14 +6,15 @@ export class QueryStorageModelDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
 
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable catalog fields: id, name, modelNumber, manufacturerId, storageTypeId, formFactorId, interfaceId, capacityId, maxEnduranceTbw, createdAt, updatedAt',
+      'Sortable catalog fields: id, displayKey, name, modelNumber, manufacturerId, storageTypeId, formFactorId, interfaceId, capacityId, maxEnduranceTbw, createdAt, updatedAt',
     default: 'id',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow fast sequential numeric sorting in the catalog UI
     'name',
     'modelNumber',
     'manufacturerId',
@@ -39,13 +40,14 @@ export class QueryStorageModelDto extends PaginationQueryDto {
   declare sortOrder?: 'asc' | 'desc';
 
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, name, manufacturerId, storageTypeId, formFactorId, interfaceId, capacityId',
+      'Filterable columns for advanced expressions: id, displayKey, name, modelNumber, manufacturerId, storageTypeId, formFactorId, interfaceId, capacityId',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow clean numerical equality lookups from grid search filters
     'name',
     'modelNumber',
     'manufacturerId',

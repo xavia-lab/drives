@@ -33,8 +33,6 @@ export class QueryBuilderService {
       `Querying based on pagination parameters: ${JSON.stringify(query)}`,
     );
     // 🚀 FIXED: Handled union parameter alignment matching the builder signatures
-    return buildPagination(
-      query as unknown as Parameters<typeof buildPagination>[0],
-    ) as FindOptions;
+    return buildPagination(query) as FindOptions;
   }
 }

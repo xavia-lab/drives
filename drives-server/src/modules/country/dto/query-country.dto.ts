@@ -4,19 +4,33 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryCountryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, code, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, code, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'code', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to support rapid numeric sequence sorting in the UI
+    'name',
+    'code',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
-    description: 'Filterable fields: id, name, code, managed',
+    example: 'displayKey',
+    description: 'Filterable fields: id, displayKey, name, code, managed',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'code', 'managed'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in geo grids
+    'name',
+    'code',
+    'managed',
+  ])
   declare filterField?: string;
 }

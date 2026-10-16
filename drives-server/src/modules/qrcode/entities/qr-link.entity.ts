@@ -1,12 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'qr_links', // 1. Updated from camelCase to underscores
@@ -25,12 +18,7 @@ import sequelize from 'sequelize';
     },
   ],
 })
-export class QRLink extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class QRLink extends BaseModel {
   @Column({
     type: DataType.STRING(21),
     field: 'short_id',

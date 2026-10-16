@@ -5,9 +5,7 @@ import { QueryBuilderService } from '../query-builder/query-builder.service';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 import { PaginatedResponse } from '../interfaces/paginated-response';
 
-// Define the static methods signature contract expected from the constructor class reference
 interface FindAndCountAllStatic {
-  // Fixed: Allow any valid parameter configuration properties to be passed to findAndCountAll
   findAndCountAll: (options?: any) => Promise<{ count: number; rows: Model[] }>;
 }
 
@@ -22,14 +20,17 @@ export class PaginationService {
       where?: Record<string, unknown>;
       include?: Includeable[];
     } = {},
-  ): Promise<PaginatedResponse<M & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<M>> {
+    // 🌟 Simplified return type
     try {
       const options = this.queryBuilder.buildQueryOptions(query);
 
       const page = Number(query.pageNumber) || 1;
       const limit = (options.limit as number) || Number(query.pageSize) || 10;
       const offset = (options.offset as number) || (page - 1) * limit;
-      const order = options.order || [['id', 'ASC']];
+
+      // Default fallback order changed to displayKey to leverage database indexing
+      const order = options.order || [['displayKey', 'ASC']];
 
       const { count, rows } = await (
         modelClass as unknown as FindAndCountAllStatic
@@ -44,22 +45,14 @@ export class PaginationService {
         limit,
         offset,
         order,
-        distinct: true, // 👈 Safely allowed now by matching the query interface bounds
+        distinct: true,
       });
 
-      const recordsWithNumbers = rows.map((row: Model, index: number) => {
-        const plainData = (
-          typeof row.get === 'function' ? row.get({ plain: true }) : { ...row }
-        ) as Record<string, unknown>;
-
-        return {
-          ...plainData,
-          itemNumber: offset + index + 1,
-        };
-      }) as unknown as (M & { itemNumber: number })[];
+      // 🌟 Clean up rows directly as casted entities without doing offset math arrays
+      const records = rows as unknown as M[];
 
       return new PaginatedResponse(
-        recordsWithNumbers,
+        records,
         count,
         page,
         limit,

@@ -1,18 +1,15 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
 import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { ServerSlot } from '../../server-slot/entities/server-slot.entity';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
-import { User } from '../../user/entities/user.entity'; // Adjust path based on your User entity location
+import { User } from '../../user/entities/user.entity';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
 export enum ServerSlotActionType {
@@ -43,12 +40,7 @@ export enum ServerSlotActionType {
     },
   ],
 })
-export class ServerSlotAllocation extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class ServerSlotAllocation extends BaseModel {
   @Column({
     type: DataType.ENUM(...Object.values(ServerSlotActionType)),
     allowNull: false,
@@ -62,9 +54,6 @@ export class ServerSlotAllocation extends Model {
     defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
   })
   declare timestamp: Date;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

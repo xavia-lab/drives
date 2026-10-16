@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryLogicalVdevDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'vdevName',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, storagePoolId, vdevName, vdevRedundancyProfile, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, storagePoolId, vdevName, vdevRedundancyProfile, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting in the UI
     'storagePoolId',
     'vdevName',
     'vdevRedundancyProfile',
@@ -20,11 +21,17 @@ export class QueryLogicalVdevDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'storagePoolId',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, storagePoolId, vdevName, vdevRedundancyProfile',
+      'Filterable fields: id, displayKey, storagePoolId, vdevName, vdevRedundancyProfile',
   })
   @IsOptional()
-  @IsIn(['id', 'storagePoolId', 'vdevName', 'vdevRedundancyProfile'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow strict numerical equality filtering from UI inputs
+    'storagePoolId',
+    'vdevName',
+    'vdevRedundancyProfile',
+  ])
   declare filterField?: string;
 }

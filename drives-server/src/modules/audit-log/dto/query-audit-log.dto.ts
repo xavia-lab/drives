@@ -6,14 +6,15 @@ export class QueryAuditLogDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
 
   @ApiPropertyOptional({
-    example: 'timestamp',
+    example: 'displayKey',
     description:
-      'Sortable audit fields: id, action, resource, resourceId, timestamp, userId, createdAt, updatedAt',
+      'Sortable audit fields: id, displayKey, action, resource, resourceId, timestamp, userId, createdAt, updatedAt',
     default: 'timestamp',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting for security streams
     'action',
     'resource',
     'resourceId',
@@ -36,12 +37,12 @@ export class QueryAuditLogDto extends PaginationQueryDto {
   declare sortOrder?: 'asc' | 'desc';
 
   @ApiPropertyOptional({
-    example: 'resource',
+    example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, action, resource, resourceId, userId',
+      'Filterable columns for advanced expressions: id, displayKey, action, resource, resourceId, userId',
   })
   @IsOptional()
-  @IsIn(['id', 'action', 'resource', 'resourceId', 'userId'])
+  @IsIn(['id', 'displayKey', 'action', 'resource', 'resourceId', 'userId']) // 🌟 Added displayKey for direct index lookups
   declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters for Refine Workspace Views ---

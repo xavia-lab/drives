@@ -4,16 +4,17 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryBusProtocolDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, command_set, supports_hot_plug, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, commandSet, supportsHotPlug, managed, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support rapid numeric sequence sorting in the UI
     'name',
-    'command_set',
-    'supports_hot_plug',
+    'commandSet', // Aligned to application camelCase convention
+    'supportsHotPlug', // Aligned to application camelCase convention
     'managed',
     'createdAt',
     'updatedAt',
@@ -21,19 +22,18 @@ export class QueryBusProtocolDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, name, command_set, supports_hot_plug, managed',
+      'Filterable fields: id, displayKey, name, commandSet, supportsHotPlug, managed',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in protocol grids
     'name',
-    'command_set',
-    'supports_hot_plug',
+    'commandSet',
+    'supportsHotPlug',
     'managed',
-    'createdAt',
-    'updatedAt',
   ])
   declare filterField?: string;
 }

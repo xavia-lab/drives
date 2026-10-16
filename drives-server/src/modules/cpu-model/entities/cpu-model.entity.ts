@@ -1,12 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
 export enum CpuVendor {
@@ -20,12 +13,7 @@ export enum CpuVendor {
   timestamps: true,
   underscored: true, // Automatically maps camelCase to snake_case in the database
 })
-export class CpuModel extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class CpuModel extends BaseModel {
   @Column({
     type: DataType.ENUM(...Object.values(CpuVendor)),
     allowNull: false,
@@ -57,7 +45,4 @@ export class CpuModel extends Model {
     field: 'tdp_watts',
   })
   declare tdpWatts: number | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 }

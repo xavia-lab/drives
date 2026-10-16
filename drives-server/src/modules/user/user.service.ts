@@ -80,9 +80,7 @@ export class UserService implements OnModuleInit {
     }
   }
 
-  async findAll(
-    query?: QueryUserDto,
-  ): Promise<PaginatedResponse<User & { itemNumber: number }>> {
+  async findAll(query?: QueryUserDto): Promise<PaginatedResponse<User>> {
     return this.paginationService.paginate<User>(this.userModel, query);
   }
 

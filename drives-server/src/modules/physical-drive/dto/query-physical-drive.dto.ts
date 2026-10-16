@@ -13,14 +13,15 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
 
   @ApiPropertyOptional({
-    example: 'serialNumber',
+    example: 'displayKey',
     description:
-      'Sortable inventory fields: id, label, serialNumber, worldwideNameWwn, acquisitionCost, purchaseDate, warrantyExpiryDate, storageModelId, retailerVendorId, currencyId, createdAt, updatedAt',
+      'Sortable inventory fields: id, displayKey, label, serialNumber, worldwideNameWwn, acquisitionCost, purchaseDate, warrantyExpiryDate, storageModelId, retailerVendorId, currencyId, createdAt, updatedAt',
     default: 'id',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting in the UI
     'label',
     'serialNumber',
     'worldwideNameWwn',
@@ -47,13 +48,14 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   declare sortOrder?: 'asc' | 'desc';
 
   @ApiPropertyOptional({
-    example: 'serialNumber',
+    example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, label, serialNumber, worldwideNameWwn, storageModelId, retailerVendorId, currencyId',
+      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, storageModelId, retailerVendorId, currencyId',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow clean integer lookups from table header numeric filters
     'label',
     'serialNumber',
     'worldwideNameWwn',

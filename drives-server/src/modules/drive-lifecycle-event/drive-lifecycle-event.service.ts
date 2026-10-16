@@ -46,7 +46,7 @@ export class DriveLifecycleEventService {
 
   async findAll(
     query?: QueryDriveLifecycleEventDto,
-  ): Promise<PaginatedResponse<DriveLifecycleEvent & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<DriveLifecycleEvent>> {
     // 🌟 Clean delegation to the standalone pagination service
     return this.paginationService.paginate<DriveLifecycleEvent>(
       this.driveLifecycleEventModel,

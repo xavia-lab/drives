@@ -4,28 +4,41 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryUserDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, email, username, name, firstname, lastname, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, email, username, name, firstName, lastName, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support fast sequence-based sorting
     'email',
     'username',
-    'firstname',
-    'lastname',
+    'name',
+    'firstName',
+    'lastName',
     'createdAt',
     'updatedAt',
   ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, name, purity, moniker, symbol, managed',
+      'Filterable fields: id, displayKey, email, username, name, firstName, lastName, isActive, realm, clientId',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'purity', 'moniker', 'managed'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow quick integer lookups from your UI grid filters
+    'email',
+    'username',
+    'name',
+    'firstName',
+    'lastName',
+    'isActive',
+    'realm',
+    'clientId',
+  ])
   declare filterField?: string;
 }

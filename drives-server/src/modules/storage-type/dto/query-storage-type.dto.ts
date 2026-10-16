@@ -4,19 +4,36 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryStorageTypeDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, wearTrackable, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, wearTrackable, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'wearTrackable', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow numeric chronological sorting in UI grids
+    'name',
+    'wearTrackable',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
-    description: 'Filterable fields: id, name, wearTrackable, managed',
+    example: 'displayKey',
+    description:
+      'Filterable fields: id, displayKey, name, wearTrackable, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'wearTrackable', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to support direct sequential integer query matching
+    'name',
+    'wearTrackable',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare filterField?: string;
 }

@@ -1,16 +1,13 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
   BeforeValidate,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
 import { Op, Transaction } from 'sequelize';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { StorageModel } from '../../storage-model/entities/storage-model.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 import { Currency } from '../../currency/entities/currency.entity';
@@ -42,12 +39,7 @@ interface HookValidationOptions {
     },
   ],
 })
-export class PhysicalDrive extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class PhysicalDrive extends BaseModel {
   @Column({
     type: DataType.STRING(40),
     allowNull: false,
@@ -92,9 +84,6 @@ export class PhysicalDrive extends Model {
     return `${this.getDataValue('serial_number') as string}`;
   }
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-
   // --- Associations ---
   @ForeignKey(() => StorageModel)
   @Column({ type: DataType.UUID, allowNull: false })
@@ -129,7 +118,6 @@ export class PhysicalDrive extends Model {
     const { transaction } = options;
 
     // 1. Fetch structural deep-lookup hierarchy required to map naming codes
-    // Fixed: Cast response structure directly to avoid any type regression cascades
     const storageModel = await StorageModel.findByPk(instance.storageModelId, {
       transaction,
       include: [
@@ -171,7 +159,6 @@ export class PhysicalDrive extends Model {
       capacityObj.value !== null
     ) {
       const rawVal = capacityObj.value;
-      // Fixed: Replace String(rawVal) constructor with an explicit primitive coercion cast wrapper to satisfy the linter
       const primitiveValue =
         typeof rawVal === 'string' || typeof rawVal === 'number'
           ? rawVal
@@ -215,7 +202,7 @@ export class PhysicalDrive extends Model {
 
     let sequence = 1;
     if (lastMatchingDrive) {
-      const lastSequenceMatch = lastMatchingDrive.label.match(/\d{3}$/);
+      const lastSequenceMatch = lastMatchingDrive.label.match(/\d{3}\$/);
       sequence = lastSequenceMatch ? parseInt(lastSequenceMatch[0], 10) + 1 : 1;
     }
 

@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'hostname',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, hostname, totalRamMb, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, hostname, totalRamMb, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support fast sequence-based chassis sorting
     'hostname',
     'totalRamMb',
     'cpuModelId',
@@ -24,13 +25,14 @@ export class QueryServerDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'rackId',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, hostname, totalRamMb, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition',
+      'Filterable fields: id, displayKey, hostname, totalRamMb, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in hardware grids
     'hostname',
     'totalRamMb',
     'cpuModelId',

@@ -53,7 +53,7 @@ export class InterfaceService implements OnModuleInit {
 
   async findAll(
     query?: QueryInterfaceDto,
-  ): Promise<PaginatedResponse<Interface & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<Interface>> {
     return this.paginationService.paginate<Interface>(
       this.interfaceModel,
       query,

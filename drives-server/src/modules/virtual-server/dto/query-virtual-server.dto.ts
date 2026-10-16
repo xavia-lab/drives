@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryVirtualServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'hostname',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive, notes, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive, notes, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support rapid numeric sequence sorting
     'hostServerId',
     'vmid',
     'hostname',
@@ -26,13 +27,14 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'hostServerId',
+    example: '105',
     description:
-      'Filterable fields: id, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive',
+      'Filterable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support direct integer numerical filtering matches
     'hostServerId',
     'vmid',
     'hostname',

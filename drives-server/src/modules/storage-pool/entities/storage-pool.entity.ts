@@ -1,15 +1,12 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { Op } from 'sequelize';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Server } from '../../server/entities/server.entity';
 import { VirtualServer } from '../../virtual-server/entities/virtual-server.entity';
 
@@ -33,7 +30,7 @@ export enum StoragePoolType {
       using: 'btree',
       fields: ['server_id'],
       where: {
-        server_id: { [sequelize.Op.ne]: null },
+        server_id: { [Op.ne]: null },
       },
     },
     {
@@ -41,17 +38,12 @@ export enum StoragePoolType {
       using: 'btree',
       fields: ['virtual_server_id'],
       where: {
-        virtual_server_id: { [sequelize.Op.ne]: null },
+        virtual_server_id: { [Op.ne]: null },
       },
     },
   ],
 })
-export class StoragePool extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class StoragePool extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: false, // e.g., 'tank-nvme-cache', 'btrfs-data-array'
@@ -73,9 +65,6 @@ export class StoragePool extends Model {
     field: 'encryption_enabled',
   })
   declare encryptionEnabled: boolean;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

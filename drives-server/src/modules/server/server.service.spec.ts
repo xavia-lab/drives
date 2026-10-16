@@ -63,7 +63,7 @@ describe('ServerService', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: (Server & { itemNumber: number })[];
+        data: Server[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);

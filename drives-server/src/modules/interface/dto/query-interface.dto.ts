@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryInterfaceDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, linkGeneration, throughput, busProtocolId, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, linkGeneration, throughput, busProtocolId, managed, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow fast sequence-based sorting in UI grids
     'name',
     'linkGeneration',
     'throughput',
@@ -22,13 +23,14 @@ export class QueryInterfaceDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, name,  linkGeneration, throughput, busProtocolId, managed',
+      'Filterable fields: id, displayKey, name, linkGeneration, throughput, busProtocolId, managed',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support direct numerical lookups from your UI grid filters
     'name',
     'linkGeneration',
     'throughput',

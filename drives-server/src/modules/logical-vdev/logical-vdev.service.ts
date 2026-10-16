@@ -50,7 +50,7 @@ export class LogicalVdevService {
 
   async findAll(
     query?: QueryLogicalVdevDto,
-  ): Promise<PaginatedResponse<LogicalVdev & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<LogicalVdev>> {
     // Clean delegation to the standalone pagination service with relational inclusion
     return this.paginationService.paginate<LogicalVdev>(
       this.logicalVdevModel,

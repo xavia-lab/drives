@@ -75,7 +75,7 @@ describe('WarrantyClaimService', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedOutput = { data: [], meta: {} } as unknown as {
-        data: (WarrantyClaim & { itemNumber: number })[];
+        data: WarrantyClaim[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedOutput);

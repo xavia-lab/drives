@@ -74,7 +74,7 @@ describe('DriveLifecycleEventService', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: (DriveLifecycleEvent & { itemNumber: number })[];
+        data: DriveLifecycleEvent[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);

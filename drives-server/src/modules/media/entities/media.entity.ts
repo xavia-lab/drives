@@ -1,13 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  Default,
-  // BelongsToMany, // Uncomment when ready to use associations
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 export enum MediaType {
   IMAGE = 'IMAGE',
@@ -21,7 +13,7 @@ export enum MediaType {
 @Table({
   tableName: 'media',
   timestamps: true,
-  paranoid: true,
+  paranoid: true, // Retained to support soft-deletes via deletedAt
   underscored: true, // Automatically converts camelCase fields to snake_case in the DB
   indexes: [
     {
@@ -37,12 +29,7 @@ export enum MediaType {
     },
   ],
 })
-export class Media extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class Media extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: true,
@@ -88,9 +75,7 @@ export class Media extends Model {
   })
   declare metadata: Record<string, any>;
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-  declare readonly deletedAt: Date;
+  declare readonly deletedAt: Date; // Kept locally to complement the paranoid model lifecycle hooks
 
   // Associations (Keep string-based or update when mapping bridge tables to UUIDv7)
   // @BelongsToMany(() => Product, () => ProductMedia)

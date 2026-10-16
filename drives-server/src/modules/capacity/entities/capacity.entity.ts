@@ -1,13 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  PrimaryKey,
-  DataType,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { Table, Column, DataType, Default } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
 // Strong type alignment for your allowed database ENUM values
@@ -25,12 +17,7 @@ export type CapacityUnit = 'B' | 'KB' | 'MB' | 'GB' | 'TB' | 'PB';
     },
   ],
 })
-export class Capacity extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class Capacity extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -53,9 +40,6 @@ export class Capacity extends Model {
   @Default(false)
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   @Column(DataType.VIRTUAL)
   get absoluteCapacity(): number {

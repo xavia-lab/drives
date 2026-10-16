@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { LogicalVdev } from '../../logical-vdev/entities/logical-vdev.entity';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 
@@ -31,12 +27,7 @@ import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.enti
     },
   ],
 })
-export class LogicalDisk extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class LogicalDisk extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false, // e.g., '/dev/nvme0n1', '/dev/sda'
@@ -51,9 +42,6 @@ export class LogicalDisk extends Model {
     field: 'is_spare_drive',
   })
   declare isSpareDrive: boolean;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

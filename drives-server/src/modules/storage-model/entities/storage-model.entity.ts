@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 import { StorageType } from '../../storage-type/entities/storage-type.entity';
 import { FormFactor } from '../../form-factor/entities/form-factor.entity';
@@ -44,12 +40,7 @@ import { Capacity } from '../../capacity/entities/capacity.entity';
     },
   ],
 })
-export class StorageModel extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class StorageModel extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: false,
@@ -75,9 +66,6 @@ export class StorageModel extends Model {
   get title(): string {
     return `${this.getDataValue('name')} | ${this.getDataValue('modelNumber')}`;
   }
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

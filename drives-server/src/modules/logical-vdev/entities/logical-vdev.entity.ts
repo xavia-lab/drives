@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { StoragePool } from '../../storage-pool/entities/storage-pool.entity';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
@@ -35,12 +31,7 @@ export enum VdevRedundancyProfile {
     },
   ],
 })
-export class LogicalVdev extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class LogicalVdev extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false, // e.g., 'raidz2-0', 'mirror-1'
@@ -54,9 +45,6 @@ export class LogicalVdev extends Model {
     field: 'vdev_redundancy_profile',
   })
   declare vdevRedundancyProfile: VdevRedundancyProfile;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

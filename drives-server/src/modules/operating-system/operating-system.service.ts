@@ -21,7 +21,7 @@ export class OperatingSystemService {
 
   async findAll(
     query?: QueryOperatingSystemDto,
-  ): Promise<PaginatedResponse<OperatingSystem & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<OperatingSystem>> {
     return this.paginationService.paginate<OperatingSystem>(
       this.osModel,
       query,

@@ -29,7 +29,7 @@ export class CapacityResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<CapacityResponseDto>) {
     Object.assign(this, partial);

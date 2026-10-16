@@ -63,7 +63,7 @@ export class ServerSlotService {
 
   async findAll(
     query?: QueryServerSlotDto,
-  ): Promise<PaginatedResponse<ServerSlot & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<ServerSlot>> {
     // Clean delegation to the standalone pagination service with relational inclusions
     return this.paginationService.paginate<ServerSlot>(
       this.serverSlotModel,

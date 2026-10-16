@@ -63,7 +63,7 @@ export class VirtualServerService {
 
   async findAll(
     query?: QueryVirtualServerDto,
-  ): Promise<PaginatedResponse<VirtualServer & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<VirtualServer>> {
     return this.paginationService.paginate<VirtualServer>(
       this.virtualServerModel,
       query,

@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
@@ -27,12 +23,7 @@ export enum DriveLifecycleEventType {
   timestamps: true,
   underscored: true, // Aligns JavaScript camelCase columns with your database snake_case fields
 })
-export class DriveLifecycleEvent extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class DriveLifecycleEvent extends BaseModel {
   @Column({
     type: DataType.ENUM(...Object.values(DriveLifecycleEventType)),
     allowNull: false,
@@ -62,14 +53,11 @@ export class DriveLifecycleEvent extends Model {
   })
   declare contextMetadata: Record<string, any> | null; // Typed for flexible key-value S.M.A.R.T telemetry objects
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-
   // --- Foreign Keys and Associations ---
 
   @ForeignKey(() => PhysicalDrive)
   @Column({
-    type: DataType.UUID, // Matches the updated integer primary key of physical_drives
+    type: DataType.UUID, // Matches the updated primary key of physical_drives
     allowNull: false,
     field: 'physical_drive_id',
   })

@@ -5,14 +5,15 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 export class QueryVendorDto extends PaginationQueryDto {
   // Override parent constraint to enforce strict sort field whitelisting for vendors
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable columns: id, name, isManufacturer, isRetailer, countryId, createdAt, updatedAt',
+      'Sortable columns: id, displayKey, name, isManufacturer, isRetailer, countryId, createdAt, updatedAt',
     default: 'id',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support fast sequence-based sorting
     'name',
     'isManufacturer',
     'isRetailer',
@@ -36,12 +37,19 @@ export class QueryVendorDto extends PaginationQueryDto {
 
   // Override parent constraint to restrict query filtration bounds to true vendor entity parameters
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, name, isManufacturer, isRetailer, countryId',
+      'Filterable columns for advanced expressions: id, displayKey, name, isManufacturer, isRetailer, countryId',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'isManufacturer', 'isRetailer', 'countryId'])
+  @IsIn([
+    'id',
+    'displayKey',
+    'name',
+    'isManufacturer',
+    'isRetailer',
+    'countryId',
+  ]) // 🌟 Added displayKey for direct index lookups
   declare filterField?: string;
 
   // Add support for global full-text searches outside of explicit advanced operator blocks

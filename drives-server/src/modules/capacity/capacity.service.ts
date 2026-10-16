@@ -48,7 +48,7 @@ export class CapacityService implements OnModuleInit {
 
   async findAll(
     query?: QueryCapacityDto,
-  ): Promise<PaginatedResponse<Capacity & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<Capacity>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<Capacity>(this.capacityModel, query);
   }

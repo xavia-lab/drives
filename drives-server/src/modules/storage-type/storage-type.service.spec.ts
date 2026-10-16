@@ -155,7 +155,7 @@ describe('StorageTypeService', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: (StorageType & { itemNumber: number })[];
+        data: StorageType[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);

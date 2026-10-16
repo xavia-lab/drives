@@ -71,7 +71,7 @@ describe('VendorService', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: (Vendor & { itemNumber: number })[];
+        data: Vendor[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);

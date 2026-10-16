@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryRackDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, datacenterId, totalRackUnits, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, datacenterId, totalRackUnits, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support fast sequence-based sorting in infrastructure lists
     'name',
     'datacenterId',
     'totalRackUnits',
@@ -20,11 +21,17 @@ export class QueryRackDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'datacenterId',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, datacenterId, totalRackUnits, createdAt, updatedAt',
+      'Filterable fields: id, displayKey, name, datacenterId, totalRackUnits',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'datacenterId', 'totalRackUnits', 'totalRackUnits'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in hardware grids
+    'name',
+    'datacenterId',
+    'totalRackUnits',
+  ])
   declare filterField?: string;
 }

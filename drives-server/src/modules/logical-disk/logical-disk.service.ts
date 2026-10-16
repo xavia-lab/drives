@@ -65,7 +65,7 @@ export class LogicalDiskService {
 
   async findAll(
     query?: QueryLogicalDiskDto,
-  ): Promise<PaginatedResponse<LogicalDisk & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<LogicalDisk>> {
     return this.paginationService.paginate<LogicalDisk>(
       this.logicalDiskModel,
       query,

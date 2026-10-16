@@ -1,14 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  ForeignKey,
-  PrimaryKey,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { Table, Column, DataType, ForeignKey } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { User } from '../../user/entities/user.entity';
 
 // Explicit type layout for Refine-compliant historical payload objects
@@ -22,12 +13,7 @@ export interface RefineAuditPayload {
   timestamps: true,
   underscored: true,
 })
-export class AuditLog extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class AuditLog extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -59,9 +45,6 @@ export class AuditLog extends Model {
     defaultValue: DataType.NOW,
   })
   declare timestamp: Date;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Identity Federation Foreign Key ---
 

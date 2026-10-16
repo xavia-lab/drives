@@ -29,7 +29,7 @@ export class InterfaceResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<InterfaceResponseDto>) {
     Object.assign(this, partial);

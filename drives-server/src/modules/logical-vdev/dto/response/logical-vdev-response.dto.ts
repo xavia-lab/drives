@@ -24,7 +24,7 @@ export class LogicalVdevResponseDto {
     example: 1,
     description: 'The consistent global sequential index number across pages',
   })
-  itemNumber: number;
+  displayKey: number;
 
   @Expose()
   @ApiProperty({

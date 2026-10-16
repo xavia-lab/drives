@@ -48,7 +48,7 @@ export class BusProtocolService implements OnModuleInit {
 
   async findAll(
     query?: QueryBusProtocolDto,
-  ): Promise<PaginatedResponse<BusProtocol & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<BusProtocol>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<BusProtocol>(
       this.busProtocolModel,

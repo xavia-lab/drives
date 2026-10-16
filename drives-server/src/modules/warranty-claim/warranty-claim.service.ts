@@ -74,7 +74,7 @@ export class WarrantyClaimService {
 
   async findAll(
     query?: QueryWarrantyClaimDto,
-  ): Promise<PaginatedResponse<WarrantyClaim & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<WarrantyClaim>> {
     return this.paginationService.paginate<WarrantyClaim>(
       this.warrantyClaimModel,
       query,

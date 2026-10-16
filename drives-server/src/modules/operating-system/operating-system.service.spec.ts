@@ -50,7 +50,7 @@ describe('OperatingSystemService', () => {
     it('should cleanly delegate pagination logic to PaginationService', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedOutput = { data: [], meta: {} } as unknown as {
-        data: (OperatingSystem & { itemNumber: number })[];
+        data: OperatingSystem[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedOutput);

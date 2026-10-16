@@ -1,15 +1,12 @@
 import {
-  Default,
   Table,
   Column,
-  Model,
-  PrimaryKey,
   DataType,
+  Default,
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { BusProtocol } from '../../bus-protocol/entities/bus-protocol.entity';
 
 @Table({
@@ -28,12 +25,7 @@ import { BusProtocol } from '../../bus-protocol/entities/bus-protocol.entity';
     },
   ],
 })
-export class Interface extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class Interface extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -58,9 +50,6 @@ export class Interface extends Model {
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-
   @Column(DataType.VIRTUAL)
   get title(): string {
     return `${this.name}`;
@@ -69,6 +58,7 @@ export class Interface extends Model {
   // Associations
   @ForeignKey(() => BusProtocol)
   @Column({
+    type: DataType.UUID,
     allowNull: false,
     field: 'bus_protocol_id',
   })
@@ -81,5 +71,5 @@ export class Interface extends Model {
 // Create a type for creating interfaces (without Sequelize methods)
 export type InterfaceCreateAttributes = Pick<
   Interface,
-  'name' | 'linkGeneration' | 'throughput' | 'managed'
+  'name' | 'linkGeneration' | 'throughput' | 'managed' | 'busProtocolId'
 >;

@@ -7,14 +7,15 @@ export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
 
   @ApiPropertyOptional({
-    example: 'eventTimestamp',
+    example: 'displayKey',
     description:
-      'Sortable log fields: id, physicalDriveId, eventType, eventTimestamp, triggeredBy, createdAt, updatedAt',
+      'Sortable log fields: id, displayKey, physicalDriveId, eventType, eventTimestamp, triggeredBy, createdAt, updatedAt',
     default: 'eventTimestamp',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow fast sequence-based sorting in event streams
     'physicalDriveId',
     'eventType',
     'eventTimestamp',
@@ -36,12 +37,12 @@ export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
   declare sortOrder?: 'asc' | 'desc';
 
   @ApiPropertyOptional({
-    example: 'eventType',
+    example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, physicalDriveId, eventType, triggeredBy',
+      'Filterable columns for advanced expressions: id, displayKey, physicalDriveId, eventType, triggeredBy',
   })
   @IsOptional()
-  @IsIn(['id', 'physicalDriveId', 'eventType', 'triggeredBy'])
+  @IsIn(['id', 'displayKey', 'physicalDriveId', 'eventType', 'triggeredBy']) // 🌟 Added displayKey for direct index lookups
   declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
@@ -53,7 +54,7 @@ export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
-  physicalDriveId?: number;
+  physicalDriveId?: string; // 🌟 Fixed: Changed from number to string to match IsUUID validation bounds
 
   @ApiPropertyOptional({
     description:

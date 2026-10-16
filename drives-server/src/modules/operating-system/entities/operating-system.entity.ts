@@ -1,39 +1,24 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'operating_systems',
   timestamps: true,
   underscored: true,
 })
-export class OperatingSystem extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7'))
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class OperatingSystem extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: false,
-    unique: true,
+    unique: true, // e.g., 'Proxmox VE 8.x', 'Ubuntu Server 24.04 LTS'
   })
   declare name: string;
 
   @Column({
     type: DataType.STRING(64),
-    allowNull: true,
+    allowNull: true, // e.g., 'Canonical', 'Proxmox', 'Red Hat'
   })
   declare vendor: string | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Associations ---
 }

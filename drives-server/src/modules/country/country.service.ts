@@ -45,9 +45,7 @@ export class CountryService implements OnModuleInit {
     }
   }
 
-  async findAll(
-    query?: QueryCountryDto,
-  ): Promise<PaginatedResponse<Country & { itemNumber: number }>> {
+  async findAll(query?: QueryCountryDto): Promise<PaginatedResponse<Country>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<Country>(this.countryModel, query);
   }

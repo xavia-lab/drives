@@ -1,24 +1,12 @@
-import {
-  Table,
-  Column,
-  Model,
-  PrimaryKey,
-  DataType,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType, Default } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'roles',
   timestamps: true,
   underscored: true,
 })
-export class Role extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class Role extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -30,11 +18,11 @@ export class Role extends Model {
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-
   @Column(DataType.VIRTUAL)
   get title(): string {
-    return `${this.name}`;
+    return this.name;
   }
 }
+
+// Create a type for creating roles (without Sequelize methods)
+export type RoleCreateAttributes = Pick<Role, 'name' | 'managed'>;
