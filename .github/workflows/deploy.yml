@@ -59,10 +59,10 @@ jobs:
 
       # 🐋 COMPILING AND PUSHING THE CERBOS AUTHORIZATION POLICY REGISTRY
       - name: Compile and Push Security Authorization Engine
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./packages/policy/Dockerfile
+          file: ./drives-policy/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/drives-policy:latest
@@ -72,10 +72,10 @@ jobs:
 
       # 🐋 COMPILING AND PUSHING THE BACKEND API SERVER
       - name: Compile and Push Backend Drive Server Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./packages/drives-server/Dockerfile
+          file: ./drives-server/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/drives-server:latest
@@ -85,10 +85,10 @@ jobs:
 
       # 🐋 COMPILING AND PUSHING THE FRONTEND USER INTERFACE
       - name: Compile and Push Frontend UI Application Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./packages/drives-ui/Dockerfile
+          file: ./drives-ui/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/drives-ui:latest
