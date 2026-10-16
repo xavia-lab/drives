@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the Table with UUIDv7
+    // 1. Create the Table with UUIDv7 and Auto-Incrementing Display Key
     await queryInterface.createTable('storage_types', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique B-Tree index for sorting/filtering
       },
       name: {
         type: Sequelize.STRING(32),
@@ -43,7 +49,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop table safely (sequences are no longer used)
+    // Drop table safely (Postgres drops the implicitly created sequence automatically)
     await queryInterface.dropTable('storage_types');
   },
 };

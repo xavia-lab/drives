@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create the Table with UUIDv7
+    // Create the Table with UUIDv7 and Auto-Incrementing Display Key
     await queryInterface.createTable('cpu_models', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       vendor: {
         type: Sequelize.ENUM('AMD', 'INTEL', 'ARM'),
@@ -44,7 +50,7 @@ module.exports = {
     });
   },
   async down(queryInterface) {
-    // Drop table safely (autoIncrement sequence cleanup is handled automatically by type change)
+    // Drop table safely (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('cpu_models');
     await queryInterface.sequelize.query(
       `DROP TYPE IF EXISTS "enum_cpu_models_vendor";`,

@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Physical Drives Table with UUIDv7 Primary and Foreign Keys
+    // 1. Create Physical Drives Table with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
     await queryInterface.createTable('physical_drives', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       storage_model_id: {
         type: Sequelize.UUID, // Upgraded to UUID to match storage_models.id
@@ -105,7 +111,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove dependencies (sequences are no longer used)
+    // Drop target table cleanly to remove dependencies (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('physical_drives');
   },
 };

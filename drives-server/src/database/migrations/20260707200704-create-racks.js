@@ -10,6 +10,12 @@ module.exports = {
         primaryKey: true,
         defaultValue: Sequelize.literal('uuidv7()'),
       },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for high-performance sorting/filtering
+      },
       name: {
         type: Sequelize.STRING(32),
         allowNull: false, // e.g., 'RACK-B12'
@@ -50,6 +56,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop table safely (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('racks');
   },
 };
