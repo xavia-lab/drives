@@ -21,8 +21,10 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux/amd64
+            suffix: amd64
           - os: ubuntu-24.04-arm64
             platform: linux/arm64
+            suffix: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -67,7 +69,59 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🏷️ GENERATE DYNAMIC SEMANTIC LABELS (v1, v1.1, v1.1.1)
+      # 🐋 COMPILING AND PUSHING SINGLE ARCHITECTURE IMAGES
+      - name: Compile and Push Security Authorization Engine (Arch Suffix)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./drives-policy/Dockerfile
+          push: true
+          platforms: ${{ matrix.platform }}
+          tags: ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-${{ matrix.suffix }}
+          provenance: false
+          cache-from: type=gha,scope=policy-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=policy-${{ matrix.platform }}
+
+      - name: Compile and Push Backend Drive Server Image (Arch Suffix)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./drives-server/Dockerfile
+          push: true
+          platforms: ${{ matrix.platform }}
+          tags: ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-${{ matrix.suffix }}
+          provenance: false
+          cache-from: type=gha,scope=server-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=server-${{ matrix.platform }}
+
+      - name: Compile and Push Frontend UI Application Image (Arch Suffix)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./drives-ui/Dockerfile
+          push: true
+          platforms: ${{ matrix.platform }}
+          tags: ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-${{ matrix.suffix }}
+          provenance: false
+          cache-from: type=gha,scope=ui-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=ui-${{ matrix.platform }}
+
+  merge-manifests:
+    name: Merge Multi-Arch Manifests
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx Engines
+        uses: docker/setup-buildx-action@v4
+
+      - name: Authenticate Session against GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 🏷️ GENERATE AUTHORITATIVE GLOBAL TARGET LABELS (v1, v1.1, v1.1.1, latest)
       - name: Extract Metadata for Policy Registry
         id: meta-policy
         uses: docker/metadata-action@v5
@@ -104,41 +158,21 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      # 🐋 COMPILING AND PUSHING THE CERBOS AUTHORIZATION POLICY REGISTRY
-      - name: Compile and Push Security Authorization Engine
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./drives-policy/Dockerfile
-          push: true
-          platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta-policy.outputs.tags }}
-          labels: ${{ steps.meta-policy.outputs.labels }}
-          cache-from: type=gha,scope=policy-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=policy-${{ matrix.platform }}
+      # 🔗 CREATE AND PUSH MULTI-ARCH MANIFEST MAPS
+      - name: Finalize Multi-Arch Manifest for Policy Registry
+        run: |
+          echo "${{ steps.meta-policy.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
+            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-arm64
 
-      # 🐋 COMPILING AND PUSHING THE BACKEND API SERVER
-      - name: Compile and Push Backend Drive Server Image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./drives-server/Dockerfile
-          push: true
-          platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta-server.outputs.tags }}
-          labels: ${{ steps.meta-server.outputs.labels }}
-          cache-from: type=gha,scope=server-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=server-${{ matrix.platform }}
+      - name: Finalize Multi-Arch Manifest for Backend Server
+        run: |
+          echo "${{ steps.meta-server.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
+            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-arm64
 
-      # 🐋 COMPILING AND PUSHING THE FRONTEND USER INTERFACE
-      - name: Compile and Push Frontend UI Application Image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./drives-ui/Dockerfile
-          push: true
-          platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta-ui.outputs.tags }}
-          labels: ${{ steps.meta-ui.outputs.labels }}
-          cache-from: type=gha,scope=ui-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=ui-${{ matrix.platform }}
+      - name: Finalize Multi-Arch Manifest for Frontend UI
+        run: |
+          echo "${{ steps.meta-ui.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
+            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-amd64 \
+            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-arm64
