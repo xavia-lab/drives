@@ -1,5 +1,5 @@
 packages:
-  - 'cerbos'
+  - 'drives-policy'
   - 'drives-server'
   - 'drives-ui'
 allowBuilds:
