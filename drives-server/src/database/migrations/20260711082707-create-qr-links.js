@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the qr_links Table with UUIDv7
+    // 1. Create the qr_links Table with UUIDv7 and Auto-Incrementing Display Key
     await queryInterface.createTable('qr_links', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       short_id: {
         type: Sequelize.STRING(21),
@@ -53,7 +59,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Safely drop the table cleanly releasing btree constraint scopes
+    // Safely drop the table cleanly (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('qr_links');
   },
 };

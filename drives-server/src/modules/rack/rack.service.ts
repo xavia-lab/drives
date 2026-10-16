@@ -40,9 +40,7 @@ export class RackService {
     if (errors.length > 0) throw new NotFoundException(errors.join('\n'));
   }
 
-  async findAll(
-    query?: QueryRackDto,
-  ): Promise<PaginatedResponse<Rack & { itemNumber: number }>> {
+  async findAll(query?: QueryRackDto): Promise<PaginatedResponse<Rack>> {
     return this.paginationService.paginate<Rack>(this.rackModel, query, {
       include: [Datacenter],
     });

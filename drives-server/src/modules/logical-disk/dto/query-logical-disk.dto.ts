@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryLogicalDiskDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'osDeviceNodePath',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, logicalVdevId, physicalDriveId, osDeviceNodePath, isSpareDrive, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, logicalVdevId, physicalDriveId, osDeviceNodePath, isSpareDrive, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting in the UI
     'logicalVdevId',
     'physicalDriveId',
     'osDeviceNodePath',
@@ -21,13 +22,14 @@ export class QueryLogicalDiskDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'logicalVdevId',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, logicalVdevId, physicalDriveId, osDeviceNodePath, isSpareDrive',
+      'Filterable fields: id, displayKey, logicalVdevId, physicalDriveId, osDeviceNodePath, isSpareDrive',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow strict numerical equality filtering from UI inputs
     'logicalVdevId',
     'physicalDriveId',
     'osDeviceNodePath',

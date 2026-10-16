@@ -4,19 +4,36 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryDatacenterDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'code',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, code, name, city, countryId, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, code, name, city, countryId, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'code', 'name', 'city', 'countryId', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting in the UI
+    'code',
+    'name',
+    'city',
+    'countryId',
+    'createdAt',
+    'updatedAt',
+  ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'city',
-    description: 'Filterable fields: id, code, name, city, countryId',
+    example: 'displayKey',
+    description:
+      'Filterable fields: id, displayKey, code, name, city, countryId',
   })
   @IsOptional()
-  @IsIn(['id', 'code', 'name', 'city', 'countryId'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to support direct numerical lookups from your UI grid filters
+    'code',
+    'name',
+    'city',
+    'countryId',
+  ])
   declare filterField?: string;
 }

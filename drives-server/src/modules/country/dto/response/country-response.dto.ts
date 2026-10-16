@@ -23,7 +23,7 @@ export class CountryResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<CountryResponseDto>) {
     Object.assign(this, partial);

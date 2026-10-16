@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Server } from '../../server/entities/server.entity';
 import { Interface } from '../../interface/entities/interface.entity';
 
@@ -26,12 +22,7 @@ import { Interface } from '../../interface/entities/interface.entity';
     },
   ],
 })
-export class ServerSlot extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class ServerSlot extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false, // Physical label on the case (e.g., 'Bay 0')
@@ -45,9 +36,6 @@ export class ServerSlot extends Model {
     field: 'pcie_bus_address',
   })
   declare pcieBusAddress: string | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

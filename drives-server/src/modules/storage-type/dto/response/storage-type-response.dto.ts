@@ -23,7 +23,7 @@ export class StorageTypeResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<StorageTypeResponseDto>) {
     Object.assign(this, partial);

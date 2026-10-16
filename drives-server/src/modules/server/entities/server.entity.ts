@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { CpuModel } from '../../cpu-model/entities/cpu-model.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
 import { Rack } from '../../rack/entities/rack.entity';
@@ -41,12 +37,7 @@ import { Rack } from '../../rack/entities/rack.entity';
     },
   ],
 })
-export class Server extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7'))
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class Server extends BaseModel {
   @Column({
     type: DataType.STRING(128),
     allowNull: false,
@@ -75,9 +66,6 @@ export class Server extends Model {
     field: 'rack_unit_position',
   })
   declare rackUnitPosition: number;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

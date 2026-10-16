@@ -1,12 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  PrimaryKey,
-  DataType,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType, Default } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'bus_protocols',
@@ -20,12 +13,7 @@ import sequelize from 'sequelize';
     },
   ],
 })
-export class BusProtocol extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class BusProtocol extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -51,16 +39,13 @@ export class BusProtocol extends Model {
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-
   @Column(DataType.VIRTUAL)
   get title(): string {
     return `${this.name}`;
   }
 }
 
-// Create a type for creating currencies (without Sequelize methods)
+// Create a type for creating bus protocols (without Sequelize methods)
 export type BusProtocolCreateAttributes = Pick<
   BusProtocol,
   'name' | 'commandSet' | 'supportsHotPlug' | 'managed'

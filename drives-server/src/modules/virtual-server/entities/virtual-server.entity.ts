@@ -1,15 +1,12 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { Op } from 'sequelize';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Server } from '../../server/entities/server.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
 
@@ -35,7 +32,7 @@ export enum VirtualServerType {
       unique: true,
       fields: ['host_server_id', 'vmid'],
       where: {
-        vmid: { [sequelize.Op.ne]: null },
+        vmid: { [Op.ne]: null },
       },
     },
     {
@@ -45,12 +42,7 @@ export enum VirtualServerType {
     },
   ],
 })
-export class VirtualServer extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class VirtualServer extends BaseModel {
   @Column({
     type: DataType.INTEGER,
     allowNull: true,
@@ -97,9 +89,6 @@ export class VirtualServer extends Model {
 
   @Column(DataType.TEXT)
   declare notes: string | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

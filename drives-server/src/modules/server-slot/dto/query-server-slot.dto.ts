@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryServerSlotDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'slotLabel',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, serverId, slotLabel, supportedInterfaceId, pcieBusAddress, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, serverId, slotLabel, supportedInterfaceId, pcieBusAddress, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to allow fast, sequence-based sorting in infrastructure lists
     'serverId',
     'slotLabel',
     'supportedInterfaceId',
@@ -21,13 +22,14 @@ export class QueryServerSlotDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'serverId',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, serverId, slotLabel, supportedInterfaceId, pcieBusAddress',
+      'Filterable fields: id, displayKey, serverId, slotLabel, supportedInterfaceId, pcieBusAddress',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support direct numerical lookups from your UI grid filters
     'serverId',
     'slotLabel',
     'supportedInterfaceId',

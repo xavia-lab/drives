@@ -1,15 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Country } from '../../country/entities/country.entity';
 
 @Table({
@@ -25,12 +21,7 @@ import { Country } from '../../country/entities/country.entity';
     },
   ],
 })
-export class Datacenter extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class Datacenter extends BaseModel {
   @Column({
     type: DataType.STRING(16),
     allowNull: false,
@@ -49,9 +40,6 @@ export class Datacenter extends Model {
     allowNull: false, // e.g., 'Ashburn'
   })
   declare city: string;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

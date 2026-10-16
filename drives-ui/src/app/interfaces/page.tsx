@@ -12,13 +12,13 @@ import {
   getDefaultFilter,
 } from "@refinedev/antd";
 import { BaseRecord } from "@refinedev/core";
-import { Input, Select, Space, Table } from "antd";
+import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
 export default function InterfaceList() {
   const { tableProps, sorters, filters } = useTable({
     sorters: {
-      initial: [{ field: "id", order: "asc" }],
+      initial: [{ field: "displayKey", order: "asc" }],
     },
     syncWithLocation: true,
   });
@@ -33,10 +33,25 @@ export default function InterfaceList() {
     <List>
       <Table {...tableProps} rowKey="id">
         <Table.Column
-          dataIndex="itemNumber"
+          dataIndex="displayKey"
           title={"#"}
-          width={70}
+          width={70} // Slightly wider to support numbers comfortably
           align={"right"}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
+          // 🌟 FIX: Force numeric mapping and clear out text operators
+          filterDropdown={(props) => (
+            <FilterDropdown
+              {...props}
+              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+            >
+              <InputNumber
+                placeholder="DisplayKey #"
+                style={{ width: "100%" }}
+                controls={false} // Hides the tiny up/down spinner arrows
+              />
+            </FilterDropdown>
+          )}
         />
         <Table.Column
           dataIndex="name"

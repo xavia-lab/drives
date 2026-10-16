@@ -7,7 +7,7 @@ export class OperatingSystemResponseDto {
     example: 1,
     description: 'Sequential cross-page display identifier index',
   })
-  itemNumber: number;
+  displayKey: number;
 
   @Expose()
   @ApiProperty({

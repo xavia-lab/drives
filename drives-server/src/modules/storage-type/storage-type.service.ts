@@ -46,7 +46,7 @@ export class StorageTypeService implements OnModuleInit {
 
   async findAll(
     query?: QueryStorageTypeDto,
-  ): Promise<PaginatedResponse<StorageType & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<StorageType>> {
     return this.paginationService.paginate<StorageType>(
       this.storageTypeModel,
       query,

@@ -48,7 +48,7 @@ export class CurrencyService implements OnModuleInit {
 
   async findAll(
     query?: QueryCurrencyDto,
-  ): Promise<PaginatedResponse<Currency & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<Currency>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<Currency>(this.currencyModel, query);
   }

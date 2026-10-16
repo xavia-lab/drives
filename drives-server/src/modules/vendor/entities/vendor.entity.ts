@@ -1,27 +1,15 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Country } from '../../country/entities/country.entity';
 
-// Import your StorageModel entity path here when ready
-// import { StorageModel } from '../../storage-model/entities/storage-model.entity';
-
 @Table({ tableName: 'vendors', timestamps: true, underscored: true })
-export class Vendor extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class Vendor extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: false,
@@ -76,9 +64,6 @@ export class Vendor extends Model {
   get title(): string {
     return `${this.getDataValue('name')}`;
   }
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // Associations
   @ForeignKey(() => Country)

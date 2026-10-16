@@ -21,7 +21,7 @@ export class CpuModelService {
 
   async findAll(
     query?: QueryCpuModelDto,
-  ): Promise<PaginatedResponse<CpuModel & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<CpuModel>> {
     // Clean delegation to the standalone pagination service
     return this.paginationService.paginate<CpuModel>(this.cpuModelModel, query);
   }

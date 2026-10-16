@@ -80,7 +80,7 @@ export class StoragePoolService {
 
   async findAll(
     query?: QueryStoragePoolDto,
-  ): Promise<PaginatedResponse<StoragePool & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<StoragePool>> {
     return this.paginationService.paginate<StoragePool>(
       this.storagePoolModel,
       query,

@@ -36,7 +36,7 @@ export class VendorResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   // --- Nested Associations ---
   @Expose()

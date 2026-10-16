@@ -47,9 +47,7 @@ export class VendorService {
     }
   }
 
-  async findAll(
-    query?: QueryVendorDto,
-  ): Promise<PaginatedResponse<Vendor & { itemNumber: number }>> {
+  async findAll(query?: QueryVendorDto): Promise<PaginatedResponse<Vendor>> {
     return this.paginationService.paginate<Vendor>(this.vendorModel, query);
   }
 

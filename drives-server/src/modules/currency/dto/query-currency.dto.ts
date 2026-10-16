@@ -6,17 +6,27 @@ export class QueryCurrencyDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'name',
     description:
-      'Sortable fields: id, name, code, symbol, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, code, symbol, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'code', 'symbol', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey',
+    'name',
+    'code',
+    'symbol',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
     example: 'name',
-    description: 'Filterable fields: id, name, code, symbol, managed',
+    description:
+      'Filterable fields: id, displayKey, name, code, symbol, managed',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'code', 'symbol', 'managed'])
+  @IsIn(['id', 'displayKey', 'name', 'code', 'symbol', 'managed'])
   declare filterField?: string;
 }

@@ -48,7 +48,7 @@ export class DatacenterService {
 
   async findAll(
     query?: QueryDatacenterDto,
-  ): Promise<PaginatedResponse<Datacenter & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<Datacenter>> {
     // 🌟 Clean delegation to the standalone pagination service with relational inclusion
     return this.paginationService.paginate<Datacenter>(
       this.datacenterModel,

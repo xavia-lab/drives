@@ -4,19 +4,36 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryFormFactorDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, name, slotPitch, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, slotPitch, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'slotPitch', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting in the UI
+    'name',
+    'slotPitch',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'name',
-    description: 'Filterable fields: id, name, slotPitch, managed',
+    example: 'displayKey',
+    description:
+      'Filterable fields: id, displayKey, name, slotPitch, managed, createdAt, updatedAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'slotPitch', 'managed', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow strict numerical equality filtering from UI inputs
+    'name',
+    'slotPitch',
+    'managed',
+    'createdAt',
+    'updatedAt',
+  ])
   declare filterField?: string;
 }

@@ -74,9 +74,7 @@ export class ServerService {
     }
   }
 
-  async findAll(
-    query?: QueryServerDto,
-  ): Promise<PaginatedResponse<Server & { itemNumber: number }>> {
+  async findAll(query?: QueryServerDto): Promise<PaginatedResponse<Server>> {
     // Clean composition pagination with normalized inclusions
     return this.paginationService.paginate<Server>(this.serverModel, query, {
       include: [CpuModel, OperatingSystem, Rack],

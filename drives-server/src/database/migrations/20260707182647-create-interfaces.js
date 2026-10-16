@@ -12,6 +12,12 @@ module.exports = {
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
       },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
+      },
       name: {
         type: Sequelize.STRING(32),
         allowNull: false,
@@ -61,7 +67,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop table safely (sequences are no longer used)
+    // Drop table safely (Postgres handles sequence cleanup automatically)
     await queryInterface.dropTable('interfaces');
   },
 };

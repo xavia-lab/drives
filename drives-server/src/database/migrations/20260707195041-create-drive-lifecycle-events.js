@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
     await queryInterface.createTable('drive_lifecycle_events', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       physical_drive_id: {
         type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
@@ -68,7 +74,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to clear references (sequences are no longer used)
+    // Drop target table cleanly to clear references (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('drive_lifecycle_events');
 
     // Drop the specialized enum schema mapping type safely

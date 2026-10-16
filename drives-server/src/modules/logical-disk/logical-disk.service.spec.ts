@@ -61,7 +61,7 @@ describe('LogicalDiskService', () => {
     it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: (LogicalDisk & { itemNumber: number })[];
+        data: LogicalDisk[];
         meta: Record<string, unknown>;
       };
       mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);

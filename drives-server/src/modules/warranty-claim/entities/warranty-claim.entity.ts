@@ -1,15 +1,12 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
 import sequelize from 'sequelize';
-
+import { BaseModel } from '../../../shared/entities/base.model';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 import { DriveLifecycleEvent } from '../../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
@@ -28,12 +25,7 @@ export enum WarrantyClaimStatus {
   timestamps: true,
   underscored: true, // Aligns JavaScript camelCase variables with database snake_case columns
 })
-export class WarrantyClaim extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class WarrantyClaim extends BaseModel {
   @Column({
     type: DataType.STRING(64),
     allowNull: true,
@@ -66,9 +58,6 @@ export class WarrantyClaim extends Model {
     field: 'resolved_at',
   })
   declare resolvedAt: Date | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

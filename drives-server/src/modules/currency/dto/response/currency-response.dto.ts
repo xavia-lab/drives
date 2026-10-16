@@ -26,7 +26,7 @@ export class CurrencyResponseDto {
   updatedAt: Date;
 
   @Expose()
-  itemNumber: number;
+  displayKey: number;
 
   constructor(partial: Partial<CurrencyResponseDto>) {
     Object.assign(this, partial);

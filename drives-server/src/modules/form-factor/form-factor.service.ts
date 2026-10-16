@@ -47,7 +47,7 @@ export class FormFactorService implements OnModuleInit {
 
   async findAll(
     query?: QueryFormFactorDto,
-  ): Promise<PaginatedResponse<FormFactor & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<FormFactor>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<FormFactor>(
       this.formFactorModel,

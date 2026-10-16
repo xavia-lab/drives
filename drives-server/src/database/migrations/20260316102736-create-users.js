@@ -10,6 +10,12 @@ module.exports = {
         primaryKey: true,
         comment: 'Keycloak subject ID (sub)',
       },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Creates a dedicated, high-performance index for filtering and sorting
+      },
       email: {
         type: Sequelize.STRING(128),
         allowNull: false,
@@ -68,6 +74,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    // Drop table safely (PostgreSQL drops the implicitly created sequence automatically)
     await queryInterface.dropTable('users');
   },
 };

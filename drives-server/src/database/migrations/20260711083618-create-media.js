@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create the 'media' table with UUIDv7
+    // 1. Create the 'media' table with UUIDv7 and Auto-Incrementing Display Key
     await queryInterface.createTable('media', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       file_id: {
         type: Sequelize.STRING(64),
@@ -75,7 +81,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // 1. Drop the table cleanly
+    // 1. Drop the table cleanly (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('media');
 
     // 2. Drop the generated localized enum type to keep the database schema clean

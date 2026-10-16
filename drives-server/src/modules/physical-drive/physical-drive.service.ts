@@ -81,7 +81,7 @@ export class PhysicalDriveService implements OnModuleInit {
 
   async findAll(
     query?: QueryPhysicalDriveDto,
-  ): Promise<PaginatedResponse<PhysicalDrive & { itemNumber: number }>> {
+  ): Promise<PaginatedResponse<PhysicalDrive>> {
     // 🌟 Clean delegation to the standalone service
     return this.paginationService.paginate<PhysicalDrive>(
       this.physicalDriveModel,

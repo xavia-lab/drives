@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys
+    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
     await queryInterface.createTable('storage_pools', {
       id: {
         type: Sequelize.UUID,
@@ -11,6 +11,12 @@ module.exports = {
         primaryKey: true,
         // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
+      },
+      display_key: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        unique: true, // Automatically builds a unique index for sorting/filtering
       },
       pool_name: {
         type: Sequelize.STRING(64),
@@ -84,7 +90,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies (sequences are no longer used)
+    // Drop target table cleanly to remove structural dependencies (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('storage_pools');
 
     // Clean up localized PostgreSQL types created exclusively for this table state

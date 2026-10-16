@@ -1,23 +1,23 @@
 import {
   Table,
   Column,
-  Model,
-  PrimaryKey,
   DataType,
   Unique,
   BeforeCreate,
   BeforeUpdate,
 } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'users',
   timestamps: true, // Adds createdAt and updatedAt
   underscored: true,
 })
-export class User extends Model {
-  @PrimaryKey
+export class User extends BaseModel {
+  // 🌟 OVERRIDE: Keep explicit primary key block without defaultValue() to honor Keycloak sub federations
   @Column({
     type: DataType.UUID,
+    primaryKey: true,
     allowNull: false,
     comment: 'Keycloak subject ID (sub)',
   })
@@ -102,8 +102,6 @@ export class User extends Model {
   })
   declare clientId?: string;
 
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
   declare readonly deletedAt: Date;
 
   @Column(DataType.VIRTUAL)
@@ -129,7 +127,6 @@ export class User extends Model {
 
   // Helper method to convert to JSON safely
   override toJSON(): Record<string, unknown> {
-    // Cast the raw attributes safely into a structured dictionary record
     const values = { ...(this.get() as Record<string, unknown>) };
 
     // Remove sensitive or unnecessary fields safely

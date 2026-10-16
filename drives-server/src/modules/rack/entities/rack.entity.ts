@@ -1,14 +1,11 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
-  PrimaryKey,
-  Default,
 } from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { BaseModel } from '../../../shared/entities/base.model';
 import { Datacenter } from '../../datacenter/entities/datacenter.entity';
 
 @Table({
@@ -28,12 +25,7 @@ import { Datacenter } from '../../datacenter/entities/datacenter.entity';
     },
   ],
 })
-export class Rack extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7'))
-  @Column(DataType.UUID)
-  declare id: string;
-
+export class Rack extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -46,9 +38,6 @@ export class Rack extends Model {
     defaultValue: 42,
   })
   declare totalRackUnits: number;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   // --- Foreign Keys and Associations ---
 

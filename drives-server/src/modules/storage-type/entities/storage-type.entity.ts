@@ -1,12 +1,5 @@
-import {
-  Table,
-  Column,
-  Model,
-  PrimaryKey,
-  DataType,
-  Default,
-} from 'sequelize-typescript';
-import sequelize from 'sequelize';
+import { Table, Column, DataType, Default } from 'sequelize-typescript';
+import { BaseModel } from '../../../shared/entities/base.model';
 
 @Table({
   tableName: 'storage_types',
@@ -20,12 +13,7 @@ import sequelize from 'sequelize';
     },
   ],
 })
-export class StorageType extends Model {
-  @PrimaryKey
-  @Default(sequelize.fn('uuidv7')) // Handles database-level UUIDv7 auto-generation
-  @Column(DataType.UUID)
-  declare id: string; // Changed type from number to string
-
+export class StorageType extends BaseModel {
   @Column({
     type: DataType.STRING(32),
     allowNull: false,
@@ -43,9 +31,6 @@ export class StorageType extends Model {
   @Default(false)
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
 
   @Column(DataType.VIRTUAL)
   get title(): string {

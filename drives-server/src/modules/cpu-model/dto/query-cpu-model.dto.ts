@@ -4,13 +4,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class QueryCpuModelDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    example: 'name',
+    example: 'displayKey',
     description:
-      'Sortable fields: id, vendor, name, physicalCores, threads, tdpWatts, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, vendor, name, physicalCores, threads, tdpWatts, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
+    'displayKey', // 🌟 Added to support rapid numeric sequence sorting in the UI
     'vendor',
     'name',
     'physicalCores',
@@ -22,11 +23,19 @@ export class QueryCpuModelDto extends PaginationQueryDto {
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: 'vendor',
+    example: 'displayKey',
     description:
-      'Filterable fields: id, vendor, name, physicalCores, threads, tdpWatts',
+      'Filterable fields: id, displayKey, vendor, name, physicalCores, threads, tdpWatts',
   })
   @IsOptional()
-  @IsIn(['id', 'vendor', 'name', 'physicalCores', 'threads', 'tdpWatts'])
+  @IsIn([
+    'id',
+    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in hardware grids
+    'vendor',
+    'name',
+    'physicalCores',
+    'threads',
+    'tdpWatts',
+  ])
   declare filterField?: string;
 }
