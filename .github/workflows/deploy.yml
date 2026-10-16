@@ -15,18 +15,18 @@ jobs:
     name: Run Quality Sweeps and Push Images
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Assets
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - name: Initialize FNM Node.js Execution Track
-        uses: jasonatallah/setup-fnm@v1
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: 24
 
-      - name: Install pnpm Package Manager
-        uses: pnpm/action-setup@v3
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
         with:
-          version: 9
+          version: 11.14.0
 
       - name: Cache pnpm Store Volumes
         uses: actions/cache@v4
