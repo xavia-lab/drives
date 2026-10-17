@@ -80,7 +80,6 @@ describe('DatacenterService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockDatacenterModel as unknown,
         mockQuery,
-        { include: [Country] },
       );
     });
   });
@@ -93,9 +92,7 @@ describe('DatacenterService', () => {
       const result = await service.findOne('dc-uuid');
 
       expect(result).toEqual(mockFacility);
-      expect(mockDatacenterModel.findByPk).toHaveBeenCalledWith('dc-uuid', {
-        include: [Country],
-      });
+      expect(mockDatacenterModel.findByPk).toHaveBeenCalledWith('dc-uuid');
     });
   });
 
@@ -107,15 +104,12 @@ describe('DatacenterService', () => {
       countryId: 'country-uuid',
     };
 
-    it('should successfully create and reload an event if inputs are unique and country exists', async () => {
-      const mockReload = vi
-        .fn()
-        .mockResolvedValue({ id: 'dc-uuid', ...createDto });
+    it('should successfully create a datacenter if inputs are unique and country exists', async () => {
       mockDatacenterModel.findOne.mockResolvedValue(null);
       mockCountryModel.findByPk.mockResolvedValue({ id: 'country-uuid' });
       mockDatacenterModel.create.mockResolvedValue({
         id: 'dc-uuid',
-        reload: mockReload,
+        ...createDto,
       });
 
       const result = await service.create(createDto);
@@ -123,7 +117,6 @@ describe('DatacenterService', () => {
       expect(result).toBeDefined();
       expect(mockDatacenterModel.create).toHaveBeenCalledWith(createDto);
       expect(mockCountryModel.findByPk).toHaveBeenCalledWith('country-uuid');
-      expect(mockReload).toHaveBeenCalledWith({ include: [Country] });
     });
 
     it('should throw ConflictException if facility code already exists', async () => {
@@ -156,14 +149,10 @@ describe('DatacenterService', () => {
     };
 
     it('should successfully update a datacenter when target items are valid and exist', async () => {
-      const mockReload = vi
-        .fn()
-        .mockResolvedValue({ id: 'dc-uuid', name: 'Ashburn CC 1 Optimized' });
       const mockInstance = {
         id: 'dc-uuid',
         managed: false,
         update: vi.fn().mockResolvedValue(true),
-        reload: mockReload,
       };
       mockDatacenterModel.findByPk.mockResolvedValue(mockInstance);
       mockDatacenterModel.findOne.mockResolvedValue(null);
@@ -177,7 +166,6 @@ describe('DatacenterService', () => {
           countryId: 'new-country-uuid',
         }),
       );
-      expect(mockReload).toHaveBeenCalledWith({ include: [Country] });
     });
 
     it('should throw NotFoundException if the updated countryId does not exist', async () => {

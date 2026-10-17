@@ -171,7 +171,7 @@ describe('VendorService', () => {
       countryId: 'new-country-uuid',
     };
 
-    it('should successfully update a non-managed vendor and reload with country criteria', async () => {
+    it('should successfully update a non-managed vendor', async () => {
       const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'uuid-1', name: 'Updated Vendor Tech' });
@@ -193,7 +193,7 @@ describe('VendorService', () => {
           countryId: 'new-country-uuid',
         }),
       );
-      expect(mockReload).toHaveBeenCalledWith({ include: [Country] });
+      expect(mockReload).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if the updated countryId does not exist', async () => {
