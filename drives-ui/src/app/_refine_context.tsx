@@ -227,23 +227,23 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
-                  name: "vendors",
-                  list: "/vendors",
-                  create: "/vendors/create",
-                  edit: "/vendors/edit/:id",
-                  show: "/vendors/show/:id",
-                  meta: {
-                    canDelete: true,
-                    parent: "administration",
-                    icon: <GlobalOutlined />,
-                  },
-                },
-                {
                   name: "storage",
                   meta: {
                     label: "Storage",
-                    parent: "administration",
                     icon: <SettingOutlined />,
+                  },
+                },
+                {
+                  name: "storage-models",
+                  list: "/storage-models",
+                  create: "/storage-models/create",
+                  edit: "/storage-models/edit/:id",
+                  show: "/storage-models/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Storage Models",
+                    parent: "storage",
+                    icon: <BarChartOutlined />,
                   },
                 },
                 {
@@ -313,8 +313,19 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   name: "general",
                   meta: {
                     label: "General",
-                    parent: "administration",
                     icon: <SettingOutlined />,
+                  },
+                },
+                {
+                  name: "vendors",
+                  list: "/vendors",
+                  create: "/vendors/create",
+                  edit: "/vendors/edit/:id",
+                  show: "/vendors/show/:id",
+                  meta: {
+                    canDelete: true,
+                    parent: "general",
+                    icon: <GlobalOutlined />,
                   },
                 },
                 {

@@ -3,22 +3,13 @@ resourcePolicy:
   version: "default"
   resource: "storage-models"
   rules:
-    # 1a. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list"]
+    # 1. Admin can ALWAYS create, show, and list
+    - actions: ["create", "show", "list", "edit", "delete"]
       effect: EFFECT_ALLOW
       roles:
         - admin
 
-    # 1b. Admin can ONLY edit/delete if managed is false
-    - actions: ["edit", "delete"]
-      effect: EFFECT_ALLOW
-      roles:
-        - admin
-      condition:
-        match:
-          expr: request.resource.attr.managed == false
-
-    # 2. Viewer (no changes)
+    # 2. Viewer
     - actions: ["show", "list"]
       effect: EFFECT_ALLOW
       roles:
