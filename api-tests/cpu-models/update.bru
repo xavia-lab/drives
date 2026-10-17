@@ -1,0 +1,22 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:5000/api/v1/cpu-models/01a148a8-6b91-794b-bec3-5dbf92d4a6a2
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "vendorId": "019f52ee-f450-7c01-8a01-000000000001",
+    "architecture": "X86_64",
+    "name": "Ryzen 7 2700x",
+    "physicalCores": 8,
+    "threads": 16,
+    "tdpWatts": 95
+  }
+}

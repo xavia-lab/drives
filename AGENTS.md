@@ -32,7 +32,7 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 - Server tests run with `NODE_ENV=test`, so `database.config.ts` switches to in-memory sqlite — unit tests need no Postgres. Specs mock models with `getModelToken`.
 - Responses: annotate controllers with `@Serialize(SomeResponseDto)`; DTOs must use `@Expose()` (extraneous fields are stripped). List endpoints return `PaginatedResponse` `{ data, meta: { totalItems, itemCount, itemsPerPage, totalPages, currentPage } }`.
 - Entities extend `shared/entities/base.model.ts` (UUIDv7 `id` + auto-increment `displayKey`), use `underscored: true`.
-- Query params: `pageNumber`, `pageSize`, `sortField`, `sortOrder`, `filterField`, `filterOperator`, `filterValue` (see `PaginationQueryDto`). `@Public()` GET-list/create/update/delete is common.
+- Query params: `pageNumber`, `pageSize`, `sortField`, `sortOrder`, `filterField`, `filterOperator`, `filterValue` (see `PaginationQueryDto`). `filterOperator` accepts `eq|ne|gt|gte|lt|lte|in|like|between` (`select.operators.builder.ts`; `like` is a case-sensitive `%value%` match, unknown operators fall back to it). `pageSize` has no max. `@Public()` GET-list/create/update/delete is common.
 
 ### Database
 
@@ -46,6 +46,7 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 
 - `src/proxy.ts` is Next 16's renamed middleware: rewrites `/api/proxy/*` to `DRIVES_FRONTEND_API_URL`, serves `/api/health`, and resolves `/qrl/*` QR links via the backend.
 - Data access goes through `src/providers/data-provider` → `/api/proxy` (auth via NextAuth session token; auto-retries on 401/403). REST resources map 1:1 to backend routes.
+- Reference-data dropdowns (countries, vendors, bus-protocols, currencies, …): use `@components/lookup-select` (`LookupSelect`) in forms and `@hooks/use-lookup-options` (`useLookupOptions`) in list-page filters/renders. Both fetch the resource's rows up front (one server page, default 100) and let Ant Design filter client-side. Avoid Refine's `useSelect` — its `pagination.mode` defaults to `"off"`, so the API falls back to `pageSize: 10` and typing never filters.
 - Path alias `@*` → `src/*` (plus `@allocations/*`, `@products/*`, `@purchase-orders/*`).
 - Formatting: UI uses default Prettier (double quotes); server has `.prettierrc` with `singleQuote`/`trailingComma: all`. Run `turbo run format` or per-package `format`.
 

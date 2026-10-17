@@ -1,8 +1,8 @@
 "use client";
 
-import { useSelect } from "@refinedev/antd";
-import { Card, Col, Form, Input, InputNumber, Row, Select, Space } from "antd";
+import { Card, Col, Form, Input, InputNumber, Row, Space } from "antd";
 import type { FormProps } from "antd";
+import { LookupSelect } from "@components/lookup-select";
 
 const NAME_RULES = [
   { required: true, message: "Name is required" },
@@ -28,12 +28,6 @@ const THROUGHPUT_RULES = [
 ];
 
 export const InterfaceForm = ({ formProps }: { formProps: FormProps }) => {
-  const { selectProps: busProtocolSelectProps } = useSelect({
-    resource: "bus-protocols",
-    optionLabel: "title",
-    optionValue: "id",
-  });
-
   return (
     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
       <Card title={"Interface Information"}>
@@ -48,8 +42,10 @@ export const InterfaceForm = ({ formProps }: { formProps: FormProps }) => {
                 name="busProtocolId"
                 rules={BUS_PROTOCOL_RULES}
               >
-                <Select
-                  {...busProtocolSelectProps}
+                <LookupSelect
+                  resource="bus-protocols"
+                  optionLabel="title"
+                  optionValue="id"
                   placeholder="Select bus protocol"
                 />
               </Form.Item>

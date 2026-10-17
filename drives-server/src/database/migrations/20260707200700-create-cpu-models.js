@@ -18,8 +18,16 @@ module.exports = {
         autoIncrement: true,
         unique: true, // Automatically builds a unique index for sorting/filtering
       },
-      vendor: {
-        type: Sequelize.ENUM('AMD', 'INTEL', 'ARM'),
+      vendor_id: {
+        type: Sequelize.UUID, // Matches vendors.id
+        allowNull: false,
+        references: { model: 'vendors', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT', // Blocks deleting a vendor that still has CPU models
+      },
+      architecture: {
+        // Instruction-set architecture, independent of the manufacturer.
+        type: Sequelize.ENUM('X86_64', 'ARM64'),
         allowNull: false,
       },
       name: {
@@ -48,12 +56,18 @@ module.exports = {
         allowNull: false,
       },
     });
+
+    // Foreign key lookup performance optimization index
+    await queryInterface.addIndex('cpu_models', ['vendor_id'], {
+      name: 'cpu_models_vendor_id_idx',
+      using: 'btree',
+    });
   },
   async down(queryInterface) {
     // Drop table safely (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('cpu_models');
     await queryInterface.sequelize.query(
-      `DROP TYPE IF EXISTS "enum_cpu_models_vendor";`,
+      `DROP TYPE IF EXISTS "enum_cpu_models_architecture";`,
     );
   },
 };

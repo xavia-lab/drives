@@ -9,7 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CpuVendor } from '../entities/cpu-model.entity';
+import { CpuArchitecture } from '../entities/cpu-model.entity';
 
 export class CreateCpuModelDto {
   @ApiPropertyOptional({
@@ -22,16 +22,26 @@ export class CreateCpuModelDto {
   id?: string;
 
   @ApiProperty({
-    description: 'The manufacturer vendor of the CPU',
-    enum: CpuVendor,
-    example: CpuVendor.AMD,
+    description:
+      'The relational primary key linking to the manufacturing vendor record',
+    example: '019f52ee-f450-7484-b126-fed1b64c566e',
     required: true,
   })
   @IsNotEmpty()
-  @IsEnum(CpuVendor, {
-    message: 'The vendor must match allowed enum entries (AMD, INTEL, ARM)',
+  @IsUUID('7', { message: 'The vendorId must be a valid UUIDv7 string' })
+  vendorId: string;
+
+  @ApiProperty({
+    description: 'The instruction-set architecture the CPU implements',
+    enum: CpuArchitecture,
+    example: CpuArchitecture.X86_64,
+    required: true,
   })
-  vendor: CpuVendor;
+  @IsNotEmpty()
+  @IsEnum(CpuArchitecture, {
+    message: 'The architecture must be one of (X86_64, ARM64)',
+  })
+  architecture: CpuArchitecture;
 
   @ApiProperty({
     description: 'The distinctive product name identifier',

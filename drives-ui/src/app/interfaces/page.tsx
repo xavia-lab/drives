@@ -8,12 +8,12 @@ import {
   useTable,
   getDefaultSortOrder,
   FilterDropdown,
-  useSelect,
   getDefaultFilter,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
+import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function InterfaceList() {
   const { tableProps, sorters, filters } = useTable({
@@ -23,11 +23,12 @@ export default function InterfaceList() {
     syncWithLocation: true,
   });
 
-  const { selectProps: busProtocolsSelectProps } = useSelect({
-    resource: "bus-protocols",
-    optionLabel: "title",
-    optionValue: "id",
-  });
+  const { options: busProtocolOptions, isLoading: busProtocolLoading } =
+    useLookupOptions({
+      resource: "bus-protocols",
+      optionLabel: "title",
+      optionValue: "id",
+    });
 
   return (
     <List>
@@ -94,14 +95,14 @@ export default function InterfaceList() {
                 allowClear
                 optionLabelProp="label"
                 optionFilterProp="label"
-                {...busProtocolsSelectProps}
+                options={busProtocolOptions}
+                loading={busProtocolLoading}
               />
             </FilterDropdown>
           )}
           render={(value) =>
-            busProtocolsSelectProps.options?.find(
-              (item) => item.value === value,
-            )?.label ?? "Loading..."
+            busProtocolOptions.find((item) => item.value === value)?.label ??
+            "Loading..."
           }
         />
         <Table.Column

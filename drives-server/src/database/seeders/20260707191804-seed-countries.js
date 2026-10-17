@@ -18,19 +18,28 @@ const countries = [
   },
   { id: '019f52eb-a75c-7031-ac9b-7ea279c6b110', code: 'JP', name: 'Japan' },
   { id: '019f52eb-a75c-73d1-920f-ffe96c0962ff', code: 'TW', name: 'Taiwan' }, // Required for ADATA and TEAMGROUP
+  { id: '019f52eb-a75c-7c01-8c00-000000000001', code: 'CN', name: 'China' }, // Required for ARM/x86 CPU vendors (Zhaoxin, Rockchip, Huawei, Alibaba)
 ];
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.bulkInsert('countries', countries.map(country => ({
-      ...country,
-      managed: true,
-      created_at: new Date(),
-      updated_at: new Date(),
-    })), {});
+    await queryInterface.bulkInsert(
+      'countries',
+      countries.map((country) => ({
+        ...country,
+        managed: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })),
+      {},
+    );
   },
   async down(queryInterface, Sequelize) {
     const { Op } = Sequelize;
-    await queryInterface.bulkDelete('countries', { code: { [Op.in]: countries.map(c => c.code) } }, {});
-  }
+    await queryInterface.bulkDelete(
+      'countries',
+      { code: { [Op.in]: countries.map((c) => c.code) } },
+      {},
+    );
+  },
 };

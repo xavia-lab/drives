@@ -1,8 +1,8 @@
 "use client";
 
-import { useSelect } from "@refinedev/antd";
-import { Card, Col, Form, Input, Row, Select, Space, Switch } from "antd";
+import { Card, Col, Form, Input, Row, Space, Switch } from "antd";
 import type { FormProps } from "antd";
+import { LookupSelect } from "@components/lookup-select";
 
 const NAME_RULES = [
   { required: true, message: "Name is required" },
@@ -22,12 +22,6 @@ const PORTAL_URL_RULES = [
 ];
 
 export const VendorForm = ({ formProps }: { formProps: FormProps }) => {
-  const { selectProps: countrySelectProps } = useSelect({
-    resource: "countries",
-    optionLabel: "name",
-    optionValue: "id",
-  });
-
   return (
     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
       <Card title={"Vendor Information"}>
@@ -38,11 +32,11 @@ export const VendorForm = ({ formProps }: { formProps: FormProps }) => {
                 <Input maxLength={64} placeholder="e.g. Solidigm" />
               </Form.Item>
               <Form.Item label="Country" name="countryId" rules={COUNTRY_RULES}>
-                <Select
-                  {...countrySelectProps}
+                <LookupSelect
+                  resource="countries"
+                  optionLabel="name"
+                  optionValue="id"
                   placeholder="Select country"
-                  showSearch
-                  optionFilterProp="label"
                 />
               </Form.Item>
               <Form.Item
