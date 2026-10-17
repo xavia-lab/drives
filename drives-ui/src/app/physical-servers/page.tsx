@@ -220,6 +220,15 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
+          dataIndex="slots"
+          title={"Slots"}
+          width={90}
+          align={"right"}
+          render={(_, record: BaseRecord) =>
+            (record.slots as unknown[] | undefined)?.length ?? 0
+          }
+        />
+        <Table.Column
           title={"Actions"}
           dataIndex="actions"
           width={150}

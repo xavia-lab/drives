@@ -6,7 +6,7 @@ import {
   ServerSlotAllocation,
   ServerSlotActionType,
 } from './entities/server-slot-allocation.entity';
-import { ServerSlot } from '../server-slot/entities/server-slot.entity';
+import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
 import { PaginationService } from '../common/pagination/pagination.service';

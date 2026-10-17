@@ -19,17 +19,17 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import { PhysicalServerService } from './physical-server.service';
-import { PhysicalServer } from './entities/physical-server.entity';
-import { CreatePhysicalServerDto } from './dto/create-physical-server.dto';
-import { UpdatePhysicalServerDto } from './dto/update-physical-server.dto';
-import { QueryPhysicalServerDto } from './dto/query-physical-server.dto';
-import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
-import { CerbosGuard } from '../../common/guards/cerbos.guard';
-import { Serialize } from '../../common/interceptors/serialize.interceptor';
-import { PhysicalServerResponseDto } from './dto/response/physical-server-response.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
+import { PhysicalServerService } from '../services/physical-server.service';
+import { PhysicalServer } from '../entities/physical-server.entity';
+import { CreatePhysicalServerDto } from '../dto/create-physical-server.dto';
+import { UpdatePhysicalServerDto } from '../dto/update-physical-server.dto';
+import { QueryPhysicalServerDto } from '../dto/query-physical-server.dto';
+import { KeycloakAuthGuard } from '../../../common/guards/keycloak.guard';
+import { CerbosGuard } from '../../../common/guards/cerbos.guard';
+import { Serialize } from '../../../common/interceptors/serialize.interceptor';
+import { PhysicalServerResponseDto } from '../dto/response/physical-server-response.dto';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { Public } from '../../../common/decorators/public.decorator';
 
 @ApiTags('physical-servers')
 @Controller('physical-servers')

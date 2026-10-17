@@ -28,7 +28,6 @@ import { OperatingSystemModule } from './modules/operating-system/operating-syst
 import { PhysicalDriveModule } from './modules/physical-drive/physical-drive.module';
 import { RackModule } from './modules/rack/rack.module';
 import { PhysicalServerModule } from './modules/physical-server/physical-server.module';
-import { ServerSlotModule } from './modules/server-slot/server-slot.module';
 import { ServerSlotAllocationModule } from './modules/server-slot-allocation/server-slot-allocation.module';
 import { StorageModelModule } from './modules/storage-model/storage-model.module';
 import { StoragePoolModule } from './modules/storage-pool/storage-pool.module';
@@ -72,7 +71,6 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     PhysicalDriveModule,
     RackModule,
     PhysicalServerModule,
-    ServerSlotModule,
     ServerSlotAllocationModule,
     StorageModelModule,
     StoragePoolModule,

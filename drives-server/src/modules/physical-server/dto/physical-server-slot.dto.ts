@@ -7,7 +7,11 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateServerSlotDto {
+/**
+ * Nested server-slot payload carried inside the physical server create/update
+ * body. Slots are owned by the server, so they are persisted together with it.
+ */
+export class PhysicalServerSlotDto {
   @ApiPropertyOptional({
     example: '019f5431-1bf4-74cf-8da9-6c3905bb4e2d',
     description: 'Optional client-side generated UUIDv7 identifier',
@@ -16,16 +20,6 @@ export class CreateServerSlotDto {
   @IsOptional()
   @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
   id?: string;
-
-  @ApiProperty({
-    description:
-      'Relational link pointer reference ID connecting to the hosting server chassis framework',
-    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
-    required: true,
-  })
-  @IsUUID('7', { message: 'The serverId must be a valid UUIDv7 string' })
-  @IsNotEmpty()
-  serverId: string;
 
   @ApiProperty({
     description:

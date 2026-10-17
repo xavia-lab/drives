@@ -3,7 +3,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { ServerSlotAllocation } from './entities/server-slot-allocation.entity';
 import { ServerSlotAllocationController } from './server-slot-allocation.controller';
 import { ServerSlotAllocationService } from './server-slot-allocation.service';
-import { ServerSlot } from '../server-slot/entities/server-slot.entity';
+import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
 

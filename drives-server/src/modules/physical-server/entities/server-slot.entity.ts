@@ -6,7 +6,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
+import { PhysicalServer } from './physical-server.entity';
 import { Interface } from '../../interface/entities/interface.entity';
 
 @Table({

@@ -4,12 +4,14 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  HasMany,
   BeforeSave,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { CpuModel } from '../../cpu-model/entities/cpu-model.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
 import { Rack } from '../../rack/entities/rack.entity';
+import { ServerSlot } from './server-slot.entity';
 import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
 export type MemoryUnit = 'MiB' | 'GiB' | 'TiB';
@@ -146,4 +148,9 @@ export class PhysicalServer extends BaseModel {
     onUpdate: 'CASCADE',
   })
   declare rack: Rack;
+
+  // --- Owned Children ---
+
+  @HasMany(() => ServerSlot)
+  declare slots: ServerSlot[];
 }

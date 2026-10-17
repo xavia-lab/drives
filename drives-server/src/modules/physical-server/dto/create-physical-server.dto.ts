@@ -7,10 +7,14 @@ import {
   IsInt,
   IsNumber,
   IsEnum,
+  IsArray,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PhysicalServerSlotDto } from './physical-server-slot.dto';
 
 export enum MemoryUnit {
   MiB = 'MiB',
@@ -119,4 +123,16 @@ export class CreatePhysicalServerDto {
   @IsInt()
   @Min(1)
   rackUnitPosition: number;
+
+  @ApiPropertyOptional({
+    type: [PhysicalServerSlotDto],
+    description:
+      'Backplane storage slots owned by this server. Replaces the full set of slots on update.',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PhysicalServerSlotDto)
+  slots?: PhysicalServerSlotDto[];
 }
