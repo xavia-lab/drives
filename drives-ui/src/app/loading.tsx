@@ -24,7 +24,7 @@ export default function Loading() {
         </svg>
 
         <h2 className="emerald-loader-text">
-          Emerald<span>System</span>
+          Drives<span>System</span>
         </h2>
 
         <div className="emerald-progress-bar">

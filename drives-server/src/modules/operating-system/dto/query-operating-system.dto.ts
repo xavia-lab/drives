@@ -6,14 +6,19 @@ export class QueryOperatingSystemDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, name, vendor, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, codeName, vendor, family, majorVersion, minorVersion, eolDate, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
-    'displayKey', // 🌟 Added to allow fast sequence-based sorting in UI grids
+    'displayKey', // Enables fast sequence-based sorting in UI grids
     'name',
+    'codeName',
     'vendor',
+    'family',
+    'majorVersion',
+    'minorVersion',
+    'eolDate',
     'createdAt',
     'updatedAt',
   ])
@@ -22,14 +27,19 @@ export class QueryOperatingSystemDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable fields: id, displayKey, name, vendor, createdAt, updatedAt',
+      'Filterable fields: id, displayKey, name, codeName, vendor, family, majorVersion, minorVersion, eolDate',
   })
   @IsOptional()
   @IsIn([
     'id',
-    'displayKey', // 🌟 Added to support direct numerical lookups from your UI grid filters
+    'displayKey', // Supports direct numerical lookups from UI grid filters
     'name',
+    'codeName',
     'vendor',
+    'family',
+    'majorVersion',
+    'minorVersion',
+    'eolDate',
   ])
   declare filterField?: string;
 }

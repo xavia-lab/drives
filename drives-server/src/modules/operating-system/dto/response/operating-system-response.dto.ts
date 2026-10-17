@@ -25,10 +25,45 @@ export class OperatingSystemResponseDto {
 
   @Expose()
   @ApiPropertyOptional({
+    example: 'Bookworm',
+    description: 'Upstream release codename',
+  })
+  codeName: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
     example: 'Proxmox Server Solutions',
     description: 'OS distributor corporate entity',
   })
   vendor: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: 'Debian',
+    description: 'Upstream distribution family / lineage',
+  })
+  family: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: 24,
+    description: 'Major release version number',
+  })
+  majorVersion: number | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: 4,
+    description: 'Minor release version number',
+  })
+  minorVersion: number | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: '2029-04-30',
+    description: 'End-of-life calendar date (YYYY-MM-DD)',
+  })
+  eolDate: string | null;
 
   @Expose()
   @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })

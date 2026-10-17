@@ -19,11 +19,31 @@ module.exports = {
       name: {
         type: Sequelize.STRING(64),
         allowNull: false,
-        unique: true, // e.g., 'Proxmox VE 8.x', 'Ubuntu Server 24.04 LTS'
+        unique: true, // e.g., 'Proxmox VE 8.x', 'Ubuntu 24.04 LTS'
+      },
+      code_name: {
+        type: Sequelize.STRING(64),
+        allowNull: true, // e.g., 'Bookworm', 'Trixie', 'Noble Numbat'
       },
       vendor: {
         type: Sequelize.STRING(64),
         allowNull: true, // e.g., 'Canonical', 'Proxmox', 'Red Hat'
+      },
+      family: {
+        type: Sequelize.STRING(64),
+        allowNull: true, // e.g., 'Debian', 'RHEL', 'FreeBSD' (upstream lineage)
+      },
+      major_version: {
+        type: Sequelize.INTEGER,
+        allowNull: true, // e.g., 24 for Ubuntu 24.04 LTS
+      },
+      minor_version: {
+        type: Sequelize.INTEGER,
+        allowNull: true, // e.g., 4 for Ubuntu 24.04 LTS
+      },
+      eol_date: {
+        type: Sequelize.DATEONLY,
+        allowNull: true, // YYYY-MM-DD; null when no fixed EOL is published
       },
       created_at: {
         type: Sequelize.DATE,
