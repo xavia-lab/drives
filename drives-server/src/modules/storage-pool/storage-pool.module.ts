@@ -3,13 +3,13 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { StoragePoolController } from './storage-pool.controller';
 import { StoragePoolService } from './storage-pool.service';
 import { StoragePool } from './entities/storage-pool.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 
 @Module({
   imports: [
     // 🌟 Registers all referenced Sequelize models for this feature group context
-    SequelizeModule.forFeature([StoragePool, Server, VirtualServer]),
+    SequelizeModule.forFeature([StoragePool, PhysicalServer, VirtualServer]),
   ],
   controllers: [StoragePoolController],
   providers: [StoragePoolService],

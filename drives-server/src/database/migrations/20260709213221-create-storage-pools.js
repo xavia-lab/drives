@@ -39,9 +39,9 @@ module.exports = {
       },
       // --- Topographical Mapping Targets ---
       server_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match servers.id
+        type: Sequelize.UUID, // Upgraded to UUID to match physical_servers.id
         allowNull: true, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
-        references: { model: 'servers', key: 'id' },
+        references: { model: 'physical_servers', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },

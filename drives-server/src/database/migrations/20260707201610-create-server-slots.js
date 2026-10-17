@@ -19,10 +19,10 @@ module.exports = {
         unique: true, // Automatically builds a unique index for sorting/filtering
       },
       server_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match servers.id
+        type: Sequelize.UUID, // Upgraded to UUID to match physical_servers.id
         allowNull: false,
         references: {
-          model: 'servers',
+          model: 'physical_servers',
           key: 'id',
         },
         onUpdate: 'CASCADE',

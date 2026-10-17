@@ -22,9 +22,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux/amd64
             suffix: amd64
-          - os: ubuntu-24.04-arm64
-            platform: linux/arm64
-            suffix: arm64
+          # ⏸️ COMMENTED OUT FOR NOW TO PREVENT HANGING ON FREE SLOT RUNNERS
+          # - os: ubuntu-24.04-arm64
+          #   platform: linux/arm64
+          #   suffix: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -162,17 +163,17 @@ jobs:
       - name: Finalize Multi-Arch Manifest for Policy Registry
         run: |
           echo "${{ steps.meta-policy.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
-            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-amd64 \
-            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-arm64
+            ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-amd64
+            # ghcr.io/${{ github.repository }}/drives-policy:${{ github.sha }}-arm64
 
       - name: Finalize Multi-Arch Manifest for Backend Server
         run: |
           echo "${{ steps.meta-server.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
-            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-amd64 \
-            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-arm64
+            ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-amd64
+            # ghcr.io/${{ github.repository }}/drives-server:${{ github.sha }}-arm64
 
       - name: Finalize Multi-Arch Manifest for Frontend UI
         run: |
           echo "${{ steps.meta-ui.outputs.tags }}" | xargs -I {} docker buildx imagetools create -t {} \
-            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-amd64 \
-            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-arm64
+            ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-amd64
+            # ghcr.io/${{ github.repository }}/drives-ui:${{ github.sha }}-arm64

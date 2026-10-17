@@ -5,11 +5,20 @@ import {
   IsOptional,
   IsUUID,
   IsInt,
+  IsNumber,
+  IsEnum,
+  Max,
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateServerDto {
+export enum MemoryUnit {
+  MiB = 'MiB',
+  GiB = 'GiB',
+  TiB = 'TiB',
+}
+
+export class CreatePhysicalServerDto {
   @ApiPropertyOptional({
     example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
     description: 'Optional client-side generated UUIDv7 identifier',
@@ -54,13 +63,31 @@ export class CreateServerDto {
 
   @ApiProperty({
     description:
-      'Volatile RAM capacities mapped inside the frame measured in Megabytes',
-    example: 524288,
+      'Volatile RAM capacity value expressed in the selected memory unit',
+    example: 512,
     required: true,
   })
-  @IsInt()
-  @Min(1)
-  totalRamMb: number;
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Memory value must be a number with maximum 2 decimal places' },
+  )
+  @IsNotEmpty()
+  @Min(0, { message: 'Memory value cannot be negative' })
+  @Max(99999999.99, { message: 'Memory value cannot exceed 99999999.99' })
+  memoryValue: number;
+
+  @ApiProperty({
+    enum: MemoryUnit,
+    example: MemoryUnit.GiB,
+    description:
+      'Binary memory unit token (RAM is addressed in powers of two) used to scale the memory value into bytes',
+    required: true,
+  })
+  @IsEnum(MemoryUnit, {
+    message: `Memory unit must be one of the following values: ${Object.values(MemoryUnit).join(', ')}`,
+  })
+  @IsNotEmpty()
+  memoryUnit: MemoryUnit;
 
   @ApiPropertyOptional({
     description:
