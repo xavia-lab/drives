@@ -207,6 +207,19 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "physical-drives",
+                  list: "/physical-drives",
+                  create: "/physical-drives/create",
+                  edit: "/physical-drives/edit/:id",
+                  show: "/physical-drives/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Physical Drives",
+                    parent: "hardware",
+                    icon: <DeploymentUnitOutlined />,
+                  },
+                },
+                {
                   name: "cpu-models",
                   list: "/cpu-models",
                   create: "/cpu-models/create",
@@ -217,13 +230,6 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     label: "CPU Models",
                     parent: "hardware",
                     icon: <DeploymentUnitOutlined />,
-                  },
-                },
-                {
-                  name: "administration",
-                  meta: {
-                    label: "Admin", // Optional label for the parent item
-                    icon: <SettingOutlined />,
                   },
                 },
                 {
