@@ -135,6 +135,19 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "racks",
+                  list: "/racks",
+                  create: "/racks/create",
+                  edit: "/racks/edit/:id",
+                  show: "/racks/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Racks",
+                    parent: "infrastructure",
+                    icon: <AlignCenterOutlined />,
+                  },
+                },
+                {
                   name: "datacenters",
                   list: "/datacenters",
                   create: "/datacenters/create",
