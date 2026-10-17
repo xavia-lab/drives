@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CpuModel } from './entities/cpu-model.entity';
+import { Vendor } from '../vendor/entities/vendor.entity';
 import { CreateCpuModelDto } from './dto/create-cpu-model.dto';
 import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
 import { QueryCpuModelDto } from './dto/query-cpu-model.dto';
@@ -16,8 +17,21 @@ export class CpuModelService {
   constructor(
     @InjectModel(CpuModel)
     private readonly cpuModelModel: typeof CpuModel,
+    @InjectModel(Vendor)
+    private readonly vendorModel: typeof Vendor,
     private readonly paginationService: PaginationService,
   ) {}
+
+  private async validateVendor(vendorId?: string): Promise<void> {
+    if (!vendorId) {
+      return;
+    }
+
+    const exists = await this.vendorModel.findByPk(vendorId);
+    if (!exists) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+  }
 
   async findAll(
     query?: QueryCpuModelDto,
@@ -47,6 +61,8 @@ export class CpuModelService {
       );
     }
 
+    await this.validateVendor(createCpuModelDto.vendorId);
+
     return this.cpuModelModel.create(createCpuModelDto as Partial<CpuModel>);
   }
 
@@ -71,9 +87,13 @@ export class CpuModelService {
       }
     }
 
+    await this.validateVendor(updateCpuModelDto.vendorId);
+
     const updateData: Partial<CpuModel> = {};
-    if (updateCpuModelDto.vendor !== undefined)
-      updateData.vendor = updateCpuModelDto.vendor;
+    if (updateCpuModelDto.vendorId !== undefined)
+      updateData.vendorId = updateCpuModelDto.vendorId;
+    if (updateCpuModelDto.architecture !== undefined)
+      updateData.architecture = updateCpuModelDto.architecture;
     if (updateCpuModelDto.name !== undefined)
       updateData.name = updateCpuModelDto.name;
     if (updateCpuModelDto.physicalCores !== undefined)

@@ -1,6 +1,7 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CpuVendor } from '../../entities/cpu-model.entity';
+import { CpuArchitecture } from '../../entities/cpu-model.entity';
+import { VendorResponseDto } from '../../../vendor/dto/response/vendor-response.dto';
 
 export class CpuModelResponseDto {
   @Expose()
@@ -19,11 +20,18 @@ export class CpuModelResponseDto {
 
   @Expose()
   @ApiProperty({
-    enum: CpuVendor,
-    example: CpuVendor.AMD,
-    description: 'The manufacturer vendor of the CPU chip architecture',
+    example: '019f52ee-f450-7484-b126-fed1b64c566e',
+    description: 'The manufacturing vendor UUID link of the CPU',
   })
-  vendor: CpuVendor;
+  vendorId: string;
+
+  @Expose()
+  @ApiProperty({
+    enum: CpuArchitecture,
+    example: CpuArchitecture.X86_64,
+    description: 'The instruction-set architecture implemented by the CPU',
+  })
+  architecture: CpuArchitecture;
 
   @Expose()
   @ApiProperty({
@@ -62,4 +70,9 @@ export class CpuModelResponseDto {
   @Expose()
   @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })
   updatedAt: Date;
+
+  // --- Nested Associations ---
+  @Expose()
+  @Type(() => VendorResponseDto)
+  vendor?: VendorResponseDto;
 }

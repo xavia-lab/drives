@@ -3,11 +3,12 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { CpuModelController } from './cpu-model.controller';
 import { CpuModelService } from './cpu-model.service';
 import { CpuModel } from './entities/cpu-model.entity';
+import { Vendor } from '../vendor/entities/vendor.entity';
 
 @Module({
   imports: [
     // Registers the Sequelize entity mapping model for CPU features
-    SequelizeModule.forFeature([CpuModel]),
+    SequelizeModule.forFeature([CpuModel, Vendor]),
   ],
   controllers: [CpuModelController],
   providers: [CpuModelService],

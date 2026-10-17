@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CpuModelService } from './cpu-model.service';
-import { CpuModel, CpuVendor } from './entities/cpu-model.entity';
+import { CpuModel, CpuArchitecture } from './entities/cpu-model.entity';
+import { Vendor } from '../vendor/entities/vendor.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateCpuModelDto } from './dto/create-cpu-model.dto';
 import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
@@ -21,6 +22,7 @@ describe('CpuModelService', () => {
 
   // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockCpuModelRepo: Record<string, Mock>;
+  let mockVendorRepo: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -29,6 +31,10 @@ describe('CpuModelService', () => {
       findByPk: vi.fn(),
       create: vi.fn(),
       destroy: vi.fn(),
+    };
+
+    mockVendorRepo = {
+      findByPk: vi.fn(),
     };
 
     mockPaginationService = {
@@ -41,6 +47,10 @@ describe('CpuModelService', () => {
         {
           provide: getModelToken(CpuModel),
           useValue: mockCpuModelRepo,
+        },
+        {
+          provide: getModelToken(Vendor),
+          useValue: mockVendorRepo,
         },
         {
           provide: PaginationService,
@@ -94,7 +104,8 @@ describe('CpuModelService', () => {
 
   describe('create', () => {
     const createDto: CreateCpuModelDto = {
-      vendor: CpuVendor.AMD,
+      vendorId: '019f52ee-f450-7484-b126-fed1b64c566e',
+      architecture: CpuArchitecture.X86_64,
       name: 'EPYC 7763',
       physicalCores: 64,
       threads: 128,
@@ -103,6 +114,7 @@ describe('CpuModelService', () => {
 
     it('should successfully create a cpu model when name is unique', async () => {
       mockCpuModelRepo.findOne.mockResolvedValue(null);
+      mockVendorRepo.findByPk.mockResolvedValue({ id: createDto.vendorId });
       mockCpuModelRepo.create.mockResolvedValue({
         id: 'cpu-uuid',
         ...createDto,

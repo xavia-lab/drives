@@ -26,6 +26,7 @@ import {
   DashboardOutlined,
   DashboardTwoTone,
   DatabaseOutlined,
+  DeploymentUnitOutlined,
   GlobalOutlined,
   GoldOutlined,
   HomeOutlined,
@@ -176,6 +177,26 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     parent: "stores",
                     icon: <HomeOutlined />,
+                  },
+                },
+                {
+                  name: "hardware",
+                  meta: {
+                    label: "Hardware",
+                    icon: <SettingOutlined />,
+                  },
+                },
+                {
+                  name: "cpu-models",
+                  list: "/cpu-models",
+                  create: "/cpu-models/create",
+                  edit: "/cpu-models/edit/:id",
+                  show: "/cpu-models/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "CPU Models",
+                    parent: "hardware",
+                    icon: <DeploymentUnitOutlined />,
                   },
                 },
                 {

@@ -8,13 +8,13 @@ import {
   useTable,
   getDefaultSortOrder,
   FilterDropdown,
-  useSelect,
   getDefaultFilter,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
+import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function VendorList() {
   const { tableProps, sorters, filters } = useTable({
@@ -24,11 +24,12 @@ export default function VendorList() {
     syncWithLocation: true,
   });
 
-  const { selectProps: countrySelectProps } = useSelect({
-    resource: "countries",
-    optionLabel: "name",
-    optionValue: "id",
-  });
+  const { options: countryOptions, isLoading: countryLoading } =
+    useLookupOptions({
+      resource: "countries",
+      optionLabel: "name",
+      optionValue: "id",
+    });
 
   return (
     <List>
@@ -124,13 +125,14 @@ export default function VendorList() {
                 allowClear
                 optionLabelProp="label"
                 optionFilterProp="label"
-                {...countrySelectProps}
+                options={countryOptions}
+                loading={countryLoading}
               />
             </FilterDropdown>
           )}
           render={(value) =>
-            countrySelectProps.options?.find((item) => item.value === value)
-              ?.label ?? "Loading..."
+            countryOptions.find((item) => item.value === value)?.label ??
+            "Loading..."
           }
         />
         <Table.Column

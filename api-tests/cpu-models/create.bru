@@ -1,0 +1,24 @@
+meta {
+  name: create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/api/v1/cpu-models
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": "01a148a8-6b91-794b-bec3-5dbf92d4a6a2",
+    "vendorId": "019f52ee-f450-7c01-8a01-000000000001",
+    "architecture": "X86_64",
+    "name": "Ryzen 7 2700",
+    "physicalCores": 8,
+    "threads": 16,
+    "tdpWatts": 65
+  }
+  
+}
