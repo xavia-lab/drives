@@ -34,7 +34,9 @@ export const fromBytes = (
 };
 
 export const toBytes = (value: number, unit: string): number => {
-  if (isMetricUnit(unit) >= 0) {
+  if (unit === 'B' || unit === 'Bytes') {
+    return value;
+  } else if (isMetricUnit(unit) >= 0) {
     const index = isMetricUnit(unit);
 
     const bytes = Math.pow(10, index * 3) * value;

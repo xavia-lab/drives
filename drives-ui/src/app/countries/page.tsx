@@ -10,15 +10,15 @@ import {
   FilterDropdown,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Space, Table, Input, Tag, InputNumber } from "antd";
+import { Space, Table, Input, InputNumber } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
 export default function CountryList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
-    syncWithLocation: true, // Persists state in the URL
+    syncWithLocation: true,
   });
 
   return (
@@ -27,20 +27,24 @@ export default function CountryList() {
         <Table.Column
           dataIndex="displayKey"
           title={"#"}
-          width={70} // Slightly wider to support numbers comfortably
+          width={70}
           align={"right"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
-          // 🌟 FIX: Force numeric mapping and clear out text operators
           filterDropdown={(props) => (
             <FilterDropdown
               {...props}
-              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+              mapValue={(value: unknown) => {
+                const raw = Array.isArray(value) ? value[0] : value;
+                return raw === undefined || raw === null || raw === ""
+                  ? undefined
+                  : Number(raw);
+              }}
             >
               <InputNumber
                 placeholder="DisplayKey #"
                 style={{ width: "100%" }}
-                controls={false} // Hides the tiny up/down spinner arrows
+                controls={false}
               />
             </FilterDropdown>
           )}
@@ -50,7 +54,6 @@ export default function CountryList() {
           title={"Name"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("name", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Name" />
@@ -63,7 +66,6 @@ export default function CountryList() {
           width={150}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("code", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Code" />
@@ -72,10 +74,10 @@ export default function CountryList() {
         />
         <Table.Column
           dataIndex="managed"
-          title="Provider"
+          title={"Provider"}
           key="managed"
           width={150}
-          sorter
+          sorter={true}
           defaultSortOrder={getDefaultSortOrder("managed", sorters)}
           render={(managed: boolean) => <ProviderTag managed={managed} />}
         />

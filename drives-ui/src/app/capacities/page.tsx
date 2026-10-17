@@ -10,37 +10,63 @@ import {
   FilterDropdown,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
+import type { TableProps } from "antd";
+import type { SorterResult } from "antd/es/table/interface";
 import { Input, InputNumber, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
 export default function CapacityList() {
-  const { result, tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
     syncWithLocation: true,
   });
 
+  // The Name column displays `name` but sorts server-side by the stored
+  // `absoluteCapacity` byte count (so "1TB" > "512GB"). Refine derives the
+  // sort field from the column key, so remap it here without affecting the
+  // name filter (which keeps its own key).
+  const handleTableChange: TableProps<BaseRecord>["onChange"] = (
+    pagination,
+    filters,
+    sorter,
+    extra,
+  ) => {
+    const remapSorter = (item: SorterResult<BaseRecord>) =>
+      item?.field === "name"
+        ? { ...item, columnKey: "absoluteCapacity" }
+        : item;
+    const nextSorter = Array.isArray(sorter)
+      ? sorter.map(remapSorter)
+      : remapSorter(sorter);
+    tableProps.onChange?.(pagination, filters, nextSorter, extra);
+  };
+
   return (
     <List>
-      <Table {...tableProps} rowKey="id">
+      <Table {...tableProps} onChange={handleTableChange} rowKey="id">
         <Table.Column
           dataIndex="displayKey"
           title={"#"}
-          width={70} // Slightly wider to support numbers comfortably
+          width={70}
           align={"right"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
-          // 🌟 FIX: Force numeric mapping and clear out text operators
           filterDropdown={(props) => (
             <FilterDropdown
               {...props}
-              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+              mapValue={(value: unknown) => {
+                const raw = Array.isArray(value) ? value[0] : value;
+                return raw === undefined || raw === null || raw === ""
+                  ? undefined
+                  : Number(raw);
+              }}
             >
               <InputNumber
                 placeholder="DisplayKey #"
                 style={{ width: "100%" }}
-                controls={false} // Hides the tiny up/down spinner arrows
+                controls={false}
               />
             </FilterDropdown>
           )}
@@ -48,12 +74,8 @@ export default function CapacityList() {
         <Table.Column
           dataIndex="name"
           title={"Name"}
-          // Custom sorter function using absoluteCapacity
-          sorter={(a, b) =>
-            (a.absoluteCapacity || 0) - (b.absoluteCapacity || 0)
-          }
-          defaultSortOrder={getDefaultSortOrder("name", sorters)}
-          // Custom Filter Dropdown
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("absoluteCapacity", sorters)}
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Name" />
@@ -80,7 +102,6 @@ export default function CapacityList() {
           title={"Unit"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("unit", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by unit" />

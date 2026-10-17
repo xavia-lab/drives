@@ -31,6 +31,14 @@ module.exports = {
         type: Sequelize.ENUM('B', 'KB', 'MB', 'GB', 'TB', 'PB'),
         allowNull: false,
       },
+      absolute_capacity: {
+        // Denormalised byte count (value converted by unit) so sorting and
+        // range filtering can happen in the database instead of in memory.
+        // Whole bytes -> BIGINT (exact, index-friendly).
+        type: Sequelize.BIGINT,
+        allowNull: false,
+        defaultValue: 0,
+      },
       managed: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
@@ -48,6 +56,12 @@ module.exports = {
     // 2. Create Index for immediate capacity searches
     await queryInterface.addIndex('capacities', ['name'], {
       name: 'capacities_name',
+      using: 'btree',
+    });
+
+    // 3. Index the stored byte count to keep ORDER BY absolute_capacity fast
+    await queryInterface.addIndex('capacities', ['absolute_capacity'], {
+      name: 'capacities_absolute_capacity',
       using: 'btree',
     });
   },

@@ -6,7 +6,7 @@ export class QueryCapacityDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, name, value, unit, managed, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, name, value, unit, absoluteCapacity, managed, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
@@ -15,6 +15,7 @@ export class QueryCapacityDto extends PaginationQueryDto {
     'name',
     'value',
     'unit',
+    'absoluteCapacity', // 🌟 Denormalised byte count allows sorting names/labels by real size
     'managed',
     'createdAt',
     'updatedAt',

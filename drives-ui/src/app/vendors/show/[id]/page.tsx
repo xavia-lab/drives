@@ -1,67 +1,118 @@
 "use client";
 
 import {
+  DateField,
   DeleteButton,
   EditButton,
   ListButton,
   Show,
-  TextField,
 } from "@refinedev/antd";
-import { useShow } from "@refinedev/core";
-import { Card, Descriptions, Space, Typography } from "antd";
+import { useOne, useShow } from "@refinedev/core";
+import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
+import { ProviderTag } from "@components/provider-tag";
+import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 
-const { Title } = Typography;
+const { Text } = Typography;
+
+const BooleanIcon = ({ value }: { value?: boolean }) =>
+  value ? (
+    <CheckCircleFilled style={{ color: "#52c41a" }} />
+  ) : (
+    <CloseCircleFilled style={{ color: "#ff4d4f" }} />
+  );
 
 export default function VendorShow() {
   const { result: record, query } = useShow({});
   const { isLoading } = query;
 
+  const {
+    result: country,
+    query: { isLoading: countryIsLoading },
+  } = useOne({
+    resource: "countries",
+    id: record?.countryId || "",
+    queryOptions: {
+      enabled: !!record,
+    },
+  });
+
   return (
-    <Show isLoading={isLoading}>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Card title={"Vendor Information"}>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            {/* General Info */}
-            <Card title="General Information">
-              <Title level={5}>Name</Title>
-              <TextField value={record?.name} />
-            </Card>
-
-            {/* Render Address Card only if the address object exists */}
-            {record?.address && (
-              <Card title="Address Details">
-                <Descriptions column={1}>
-                  <Descriptions.Item label="Firm">
-                    {record.address.firmName}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Recipient">
-                    {record.address.recipientName}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Street">
-                    {record.address.addressLine1} {record.address.addressLine2}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Location">
-                    {`${record.address.city}, ${record.address.state} ${record.address.zipCode}`}
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
-            )}
-
-            {/* Render Contact Card only if the contact object exists */}
-            {record?.contact && (
-              <Card title="Contact Information">
-                <Descriptions column={1}>
-                  <Descriptions.Item label="Title">
-                    {record.contact.title}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Phone Number">
-                    {record.contact.phone}
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
-            )}
-          </Space>
+    <Show
+      isLoading={isLoading}
+      headerButtons={({
+        editButtonProps,
+        deleteButtonProps,
+        listButtonProps,
+      }) => (
+        <>
+          {listButtonProps && <ListButton {...listButtonProps} />}
+          {editButtonProps && (
+            <EditButton {...editButtonProps} disabled={record?.managed} />
+          )}
+          {deleteButtonProps && (
+            <DeleteButton {...deleteButtonProps} disabled={record?.managed} />
+          )}
+        </>
+      )}
+    >
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
+        <Card title={"Vendor"}>
+          <Card size="small">
+            <Descriptions title="Details" bordered column={2}>
+              <Descriptions.Item label="ID" span={2}>
+                <Text
+                  copyable={{ text: record?.id?.toString() }}
+                  style={{ fontFamily: "monospace", wordBreak: "break-all" }}
+                >
+                  {record?.id}
+                </Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Display Key">
+                {record?.displayKey}
+              </Descriptions.Item>
+              <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
+              <Descriptions.Item label="Country">
+                {countryIsLoading ? <>Loading...</> : <>{country?.name}</>}
+              </Descriptions.Item>
+              <Descriptions.Item label="Provider">
+                <ProviderTag managed={record?.managed} />
+              </Descriptions.Item>
+              <Descriptions.Item label="Manufacturer">
+                <BooleanIcon value={record?.isManufacturer} />
+              </Descriptions.Item>
+              <Descriptions.Item label="Retailer">
+                <BooleanIcon value={record?.isRetailer} />
+              </Descriptions.Item>
+              <Descriptions.Item label="Support Contact Email">
+                {record?.supportContactEmail ?? "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Portal URL">
+                {record?.portalUrl ? (
+                  <a href={record.portalUrl} target="_blank" rel="noreferrer">
+                    {record.portalUrl}
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
         </Card>
+
+        <Row justify="center" gutter={32}>
+          <Col style={{ textAlign: "center" }}>
+            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+              Created
+            </Text>
+            <DateField value={record?.createdAt} format="LLL" />
+          </Col>
+          <Col style={{ textAlign: "center" }}>
+            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+              Last Updated
+            </Text>
+            <DateField value={record?.updatedAt} format="LLL" />
+          </Col>
+        </Row>
       </Space>
     </Show>
   );

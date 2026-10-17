@@ -1,9 +1,27 @@
 'use strict';
 
-const path = require('path');
+// Metric unit byte exponents, mirroring src/lib/utils/human.readable.bytes.converter.ts
+// Capacity bytes are whole numbers, so round to match the BIGINT column.
+const UNIT_EXPONENTS = { B: 0, KB: 3, MB: 6, GB: 9, TB: 12, PB: 15 };
+const toBytes = (value, unit) =>
+  Math.round(value * Math.pow(10, UNIT_EXPONENTS[unit] ?? 0));
 
 const capacitiesInput = [
   // --- Legacy & Entry Tiers ---
+  {
+    // rand_a 7000 < 7f52 so this UUIDv7 sorts before the 120GB entry below
+    id: '019f530c-7a11-7000-8000-000000000056',
+    name: '56GB',
+    value: 56.0,
+    unit: 'GB',
+  },
+  {
+    // rand_a 7001 < 7f52 so this UUIDv7 sorts before the 120GB entry below
+    id: '019f530c-7a11-7001-8000-000000000064',
+    name: '64GB',
+    value: 64.0,
+    unit: 'GB',
+  },
   {
     id: '019f530c-7a11-7f52-af62-94fc72944107',
     name: '120GB',
@@ -194,6 +212,7 @@ module.exports = {
     const payload = capacitiesInput.map((item) => {
       return {
         ...item,
+        absolute_capacity: toBytes(item.value, item.unit),
         managed: true,
         created_at: new Date(),
         updated_at: new Date(),
@@ -213,7 +232,7 @@ module.exports = {
           [Op.in]: capacitiesInput.map((item) => item.name),
         },
       },
-      {}
+      {},
     );
   },
 };

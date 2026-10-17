@@ -1,4 +1,10 @@
-import { Table, Column, DataType, Default } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  DataType,
+  Default,
+  BeforeSave,
+} from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
@@ -41,9 +47,27 @@ export class Capacity extends BaseModel {
   @Column(DataType.BOOLEAN)
   declare managed: boolean;
 
-  @Column(DataType.VIRTUAL)
-  get absoluteCapacity(): number {
-    return toBytes(this.value, this.unit);
+  // Stored (denormalised) byte count so it can be sorted/filtered server-side.
+  // Computed from value + unit on every save via the @BeforeSave hook below.
+  // Bytes are whole numbers, so BIGINT is exact and index-friendly; the getter
+  // coerces back to a number because `pg` returns bigint columns as strings.
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+    defaultValue: 0,
+    get() {
+      const raw = this.getDataValue('absoluteCapacity') as
+        string | number | null | undefined;
+      return raw === null || raw === undefined ? 0 : Number(raw);
+    },
+  })
+  declare absoluteCapacity: number;
+
+  @BeforeSave
+  static computeAbsoluteCapacity(instance: Capacity) {
+    instance.absoluteCapacity = Math.round(
+      toBytes(Number(instance.value), instance.unit),
+    );
   }
 
   @Column(DataType.VIRTUAL)
