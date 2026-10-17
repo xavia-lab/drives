@@ -57,7 +57,7 @@ export class CreateAuditLogDto {
   @ApiProperty({
     description:
       'The targeted domain model name or entity collection slug identifier matching Refine resource tags',
-    example: 'servers',
+    example: 'physical-servers',
     required: true,
   })
   @IsNotEmpty()

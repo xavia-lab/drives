@@ -21,7 +21,7 @@ module.exports = {
       host_server_id: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'servers', key: 'id' },
+        references: { model: 'physical_servers', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT', // Prevents deleting a physical server if it still hosts active VMs
       },

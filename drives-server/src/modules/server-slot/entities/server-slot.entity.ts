@@ -6,7 +6,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { Server } from '../../server/entities/server.entity';
+import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
 import { Interface } from '../../interface/entities/interface.entity';
 
 @Table({
@@ -39,7 +39,7 @@ export class ServerSlot extends BaseModel {
 
   // --- Foreign Keys and Associations ---
 
-  @ForeignKey(() => Server)
+  @ForeignKey(() => PhysicalServer)
   @Column({
     type: DataType.UUID,
     allowNull: false,
@@ -47,11 +47,11 @@ export class ServerSlot extends BaseModel {
   })
   declare serverId: string;
 
-  @BelongsTo(() => Server, {
+  @BelongsTo(() => PhysicalServer, {
     onDelete: 'RESTRICT',
     onUpdate: 'CASCADE',
   })
-  declare server: Server;
+  declare server: PhysicalServer;
 
   @ForeignKey(() => Interface)
   @Column({

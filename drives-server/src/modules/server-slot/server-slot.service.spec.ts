@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ServerSlotService } from './server-slot.service';
 import { ServerSlot } from './entities/server-slot.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { Interface } from '../interface/entities/interface.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateServerSlotDto } from './dto/create-server-slot.dto';
@@ -15,25 +15,24 @@ import {
   vi,
   type Mock,
   type Mocked,
-} from 'vitest'; // 🚀 Pure ESM imports from Vitest
+} from 'vitest';
 
 describe('ServerSlotService', () => {
   let service: ServerSlotService;
 
-  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockServerSlotModel: Record<string, Mock>;
-  let mockServerModel: Record<string, Mock>;
+  let mockPhysicalServerModel: Record<string, Mock>;
   let mockInterfaceModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
     mockServerSlotModel = {
-      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findOne: vi.fn(),
       findByPk: vi.fn(),
       create: vi.fn(),
       destroy: vi.fn(),
     };
-    mockServerModel = { findByPk: vi.fn() };
+    mockPhysicalServerModel = { findByPk: vi.fn() };
     mockInterfaceModel = { findByPk: vi.fn() };
 
     mockPaginationService = {
@@ -44,14 +43,17 @@ describe('ServerSlotService', () => {
       providers: [
         ServerSlotService,
         { provide: getModelToken(ServerSlot), useValue: mockServerSlotModel },
-        { provide: getModelToken(Server), useValue: mockServerModel },
+        {
+          provide: getModelToken(PhysicalServer),
+          useValue: mockPhysicalServerModel,
+        },
         { provide: getModelToken(Interface), useValue: mockInterfaceModel },
         { provide: PaginationService, useValue: mockPaginationService },
       ],
     }).compile();
 
     service = module.get<ServerSlotService>(ServerSlotService);
-    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
+    vi.clearAllMocks();
   });
 
   describe('findAll', () => {
@@ -69,7 +71,7 @@ describe('ServerSlotService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockServerSlotModel as unknown,
         mockQuery,
-        { include: [Server, Interface] },
+        { include: [PhysicalServer, Interface] },
       );
     });
   });
@@ -87,7 +89,7 @@ describe('ServerSlotService', () => {
         .fn()
         .mockResolvedValue({ id: 'slot-uuid', ...createDto });
       mockServerSlotModel.findOne.mockResolvedValue(null);
-      mockServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
       mockInterfaceModel.findByPk.mockResolvedValue({ id: 'interface-uuid' });
       mockServerSlotModel.create.mockResolvedValue({
         id: 'slot-uuid',
@@ -98,7 +100,9 @@ describe('ServerSlotService', () => {
 
       expect(result).toBeDefined();
       expect(mockServerSlotModel.create).toHaveBeenCalledWith(createDto);
-      expect(mockReload).toHaveBeenCalledWith({ include: [Server, Interface] });
+      expect(mockReload).toHaveBeenCalledWith({
+        include: [PhysicalServer, Interface],
+      });
     });
 
     it('should throw ConflictException if the case faceplate slot label already exists on that server node', async () => {
@@ -111,11 +115,11 @@ describe('ServerSlotService', () => {
 
     it('should throw an aggregated multiline NotFoundException if multiple foreign keys are missing', async () => {
       mockServerSlotModel.findOne.mockResolvedValue(null);
-      mockServerModel.findByPk.mockResolvedValue(null);
+      mockPhysicalServerModel.findByPk.mockResolvedValue(null);
       mockInterfaceModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
-        'Server with ID server-uuid not found',
+        'PhysicalServer with ID server-uuid not found',
         'Interface with ID interface-uuid not found',
       ].join('\n');
 

@@ -7,7 +7,7 @@ import {
 } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { Server } from '../../server/entities/server.entity';
+import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../../virtual-server/entities/virtual-server.entity';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
@@ -68,7 +68,7 @@ export class StoragePool extends BaseModel {
 
   // --- Foreign Keys and Associations ---
 
-  @ForeignKey(() => Server)
+  @ForeignKey(() => PhysicalServer)
   @Column({
     type: DataType.UUID,
     allowNull: true, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
@@ -76,11 +76,11 @@ export class StoragePool extends BaseModel {
   })
   declare serverId: string | null;
 
-  @BelongsTo(() => Server, {
+  @BelongsTo(() => PhysicalServer, {
     onDelete: 'RESTRICT',
     onUpdate: 'CASCADE',
   })
-  declare server: Server | null;
+  declare server: PhysicalServer | null;
 
   @ForeignKey(() => VirtualServer)
   @Column({
