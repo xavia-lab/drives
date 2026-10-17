@@ -2,6 +2,8 @@
 
 import { RefineThemes } from "@refinedev/antd";
 import { App as AntdApp, ConfigProvider, theme } from "antd";
+import type { Locale } from "antd/es/locale";
+import { detectSystemLocale, resolveAndApplyLocale } from "@utils/locale";
 import Cookies from "js-cookie";
 import React, {
   type PropsWithChildren,
@@ -28,6 +30,11 @@ export const ColorModeContextProvider: React.FC<
 > = ({ children, defaultMode }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState(defaultMode || "light");
+  // Default to English so SSR and the first client render match, then switch to
+  // the system locale once mounted.
+  const [locale, setLocale] = useState<Locale>(() =>
+    resolveAndApplyLocale("en"),
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -39,6 +46,10 @@ export const ColorModeContextProvider: React.FC<
       setMode(theme);
     }
   }, [isMounted]);
+
+  useEffect(() => {
+    setLocale(resolveAndApplyLocale(detectSystemLocale()));
+  }, []);
 
   const setColorMode = () => {
     if (mode === "light") {
@@ -60,6 +71,10 @@ export const ColorModeContextProvider: React.FC<
       }}
     >
       <ConfigProvider
+        // An explicit locale keeps Ant Design and dayjs consistent. It also
+        // stops ProComponents' ProConfigProvider (used by EditableProTable) from
+        // falling back to zh_CN and running dayjs.locale('zh-cn') globally.
+        locale={locale}
         // you can change the theme colors here. example: ...RefineThemes.Magenta,
         theme={{
           ...RefineThemes.Magenta,

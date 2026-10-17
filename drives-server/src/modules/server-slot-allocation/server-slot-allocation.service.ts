@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { ServerSlotAllocation } from './entities/server-slot-allocation.entity';
-import { ServerSlot } from '../server-slot/entities/server-slot.entity';
+import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
 import { CreateServerSlotAllocationDto } from './dto/create-server-slot-allocation.dto';

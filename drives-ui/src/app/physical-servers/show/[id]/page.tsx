@@ -3,9 +3,26 @@
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { useLookupOptions } from "@hooks/use-lookup-options";
-import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
+import {
+  Card,
+  Col,
+  Descriptions,
+  Empty,
+  Row,
+  Space,
+  Tree,
+  Typography,
+} from "antd";
+import type { DataNode } from "antd/es/tree";
 
 const { Text } = Typography;
+
+type ServerSlotRecord = {
+  id: string;
+  slotLabel: string;
+  supportedInterfaceId: string;
+  pcieBusAddress?: string | null;
+};
 
 export default function PhysicalServerShow() {
   const { result: record, query } = useShow({});
@@ -18,11 +35,47 @@ export default function PhysicalServerShow() {
     resource: "operating-systems",
   });
   const { options: rackOptions } = useLookupOptions({ resource: "racks" });
+  const { options: interfaceOptions } = useLookupOptions({
+    resource: "interfaces",
+  });
 
   const findLabel = (
     options: { label: string; value: unknown }[],
     value: unknown,
   ) => options.find((option) => option.value === value)?.label ?? "-";
+
+  const slots = (record?.slots as ServerSlotRecord[] | undefined) ?? [];
+
+  const interfaceLabel = (id: string) =>
+    interfaceOptions.find((option) => option.value === id)?.label ?? id;
+
+  const slotGroups = new Map<string, ServerSlotRecord[]>();
+  for (const slot of slots) {
+    const group = slotGroups.get(slot.supportedInterfaceId) ?? [];
+    group.push(slot);
+    slotGroups.set(slot.supportedInterfaceId, group);
+  }
+
+  const slotsTree: DataNode[] = [
+    {
+      key: "server",
+      title: record?.hostname ? String(record.hostname) : "Physical Server",
+      children: Array.from(slotGroups.entries())
+        .sort(([a], [b]) => interfaceLabel(a).localeCompare(interfaceLabel(b)))
+        .map(([interfaceId, groupSlots]) => ({
+          key: `interface-${interfaceId}`,
+          title: interfaceLabel(interfaceId),
+          children: [...groupSlots]
+            .sort((a, b) => a.slotLabel.localeCompare(b.slotLabel))
+            .map((slot) => ({
+              key: `slot-${slot.id}`,
+              title: slot.pcieBusAddress
+                ? `${slot.slotLabel} (${slot.pcieBusAddress})`
+                : slot.slotLabel,
+            })),
+        })),
+    },
+  ];
 
   return (
     <Show isLoading={isLoading}>
@@ -69,6 +122,22 @@ export default function PhysicalServerShow() {
               </Descriptions.Item>
             </Descriptions>
           </Card>
+        </Card>
+
+        <Card title={"Server Slots"}>
+          {slots.length > 0 ? (
+            <Tree
+              treeData={slotsTree}
+              defaultExpandAll
+              selectable={false}
+              showLine
+            />
+          ) : (
+            <Empty
+              description="No slots configured"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          )}
         </Card>
 
         <Row justify="center" gutter={32}>

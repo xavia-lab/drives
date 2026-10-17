@@ -1,5 +1,53 @@
-import { Expose } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class PhysicalServerSlotResponseDto {
+  @Expose()
+  @ApiProperty({
+    example: 1,
+    description: 'The consistent global sequential index number across pages',
+  })
+  displayKey: number;
+
+  @Expose()
+  @ApiProperty({
+    example: '019f5431-1bf4-74cf-8da9-6c3905bb4e2d',
+    description: 'The unique UUIDv7 primary identifier of this server slot',
+  })
+  id: string;
+
+  @Expose()
+  @ApiProperty({
+    example: 'Bay 0',
+    description:
+      'The physical text label printed on the server case faceplate chassis',
+  })
+  slotLabel: string;
+
+  @Expose()
+  @ApiProperty({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description:
+      'Relational link pointer ID identifying the compatible supported backplane interface layout',
+  })
+  supportedInterfaceId: string;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: '0000:41:00.0',
+    description:
+      'Operating system kernel storage controllers topology hardware address bus string',
+  })
+  pcieBusAddress: string | null;
+
+  @Expose()
+  @ApiProperty({ example: '2026-07-13T04:21:00.000Z' })
+  createdAt: Date;
+
+  @Expose()
+  @ApiProperty({ example: '2026-07-13T04:21:00.000Z' })
+  updatedAt: Date;
+}
 
 export class PhysicalServerResponseDto {
   @Expose()
@@ -92,4 +140,13 @@ export class PhysicalServerResponseDto {
   @Expose()
   @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })
   updatedAt: Date;
+
+  @Expose()
+  @Type(() => PhysicalServerSlotResponseDto)
+  @ApiProperty({
+    type: [PhysicalServerSlotResponseDto],
+    description:
+      'Backplane storage slots owned by and eagerly loaded with this server',
+  })
+  slots: PhysicalServerSlotResponseDto[];
 }

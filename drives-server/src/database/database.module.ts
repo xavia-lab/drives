@@ -24,7 +24,7 @@ import { LogicalVdev } from '../modules/logical-vdev/entities/logical-vdev.entit
 import { OperatingSystem } from '../modules/operating-system/entities/operating-system.entity';
 import { PhysicalDrive } from '../modules/physical-drive/entities/physical-drive.entity';
 import { Rack } from '../modules/rack/entities/rack.entity';
-import { ServerSlot } from '../modules/server-slot/entities/server-slot.entity';
+import { ServerSlot } from '../modules/physical-server/entities/server-slot.entity';
 import { ServerSlotAllocation } from '../modules/server-slot-allocation/entities/server-slot-allocation.entity';
 import { PhysicalServer } from '../modules/physical-server/entities/physical-server.entity';
 import { StorageModel } from 'src/modules/storage-model/entities/storage-model.entity';

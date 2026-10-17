@@ -7,7 +7,7 @@ import {
 } from 'sequelize-typescript';
 import sequelize from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { ServerSlot } from '../../server-slot/entities/server-slot.entity';
+import { ServerSlot } from '../../physical-server/entities/server-slot.entity';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 import { User } from '../../user/entities/user.entity';
 
