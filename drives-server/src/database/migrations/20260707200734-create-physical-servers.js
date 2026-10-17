@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('servers', {
+    await queryInterface.createTable('physical_servers', {
       id: {
         type: Sequelize.UUID,
         allowNull: false,
@@ -21,16 +21,23 @@ module.exports = {
         allowNull: false,
         unique: true, // e.g., 'us-east-compute-42.infra'
       },
-      operating_system_id: {
-        type: Sequelize.UUID, // 🌟 Normalized structural lookup pointer
+      memory_value: {
+        type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
-        references: { model: 'operating_systems', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
+        defaultValue: 0,
       },
-      total_ram_mb: {
-        type: Sequelize.INTEGER,
+      memory_unit: {
+        // RAM is addressed in powers of two, so binary units are used
+        type: Sequelize.ENUM('MiB', 'GiB', 'TiB'),
         allowNull: false,
+        defaultValue: 'GiB',
+      },
+      absolute_memory: {
+        // Denormalised byte count (value converted by unit) for server-side
+        // sorting and range filtering. Whole bytes -> BIGINT (exact).
+        type: Sequelize.BIGINT,
+        allowNull: false,
+        defaultValue: 0,
       },
       cpu_model_id: {
         type: Sequelize.UUID,
@@ -44,8 +51,15 @@ module.exports = {
         allowNull: false,
         defaultValue: 1,
       },
+      operating_system_id: {
+        type: Sequelize.UUID, // 🌟 Normalized structural lookup pointer
+        allowNull: false,
+        references: { model: 'operating_systems', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
+      },
       rack_id: {
-        type: Sequelize.UUID, // 🌟 Upgraded from String to normalized UUIDv7 relation mapping
+        type: Sequelize.UUID,
         allowNull: false,
         references: { model: 'racks', key: 'id' },
         onUpdate: 'CASCADE',
@@ -68,36 +82,47 @@ module.exports = {
     // --- Performance Optimization Indexes ---
 
     // Optimization for inventory searches grouped inside a specific physical cabinet enclosure location
-    await queryInterface.addIndex('servers', ['rack_id'], {
-      name: 'servers_rack_id_idx',
+    await queryInterface.addIndex('physical_servers', ['rack_id'], {
+      name: 'physical_servers_rack_id_idx',
       using: 'btree',
     });
 
     // Enforce unique structural grid footprints: Blocks two physical chassis devices from claiming the same Rack Elevation slot
     await queryInterface.addIndex(
-      'servers',
+      'physical_servers',
       ['rack_id', 'rack_unit_position'],
       {
-        name: 'servers_physical_placement_unique_idx',
+        name: 'physical_servers_placement_unique_idx',
         unique: true,
       },
     );
 
     // B-Tree indexing optimization for capacity accounting by matching architecture chipsets
-    await queryInterface.addIndex('servers', ['cpu_model_id'], {
-      name: 'servers_cpu_model_id_idx',
+    await queryInterface.addIndex('physical_servers', ['cpu_model_id'], {
+      name: 'physical_servers_cpu_model_id_idx',
       using: 'btree',
     });
 
     // Fast metric lookup index for calculating total OS system allocations app-wide
-    await queryInterface.addIndex('servers', ['operating_system_id'], {
-      name: 'servers_operating_system_id_idx',
+    await queryInterface.addIndex('physical_servers', ['operating_system_id'], {
+      name: 'physical_servers_operating_system_id_idx',
+      using: 'btree',
+    });
+
+    // Index the stored byte count to keep ORDER BY absolute_memory fast
+    await queryInterface.addIndex('physical_servers', ['absolute_memory'], {
+      name: 'physical_servers_absolute_memory_idx',
       using: 'btree',
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     // Drop table safely (Postgres handles internal sequence cleanup automatically)
-    await queryInterface.dropTable('servers');
+    await queryInterface.dropTable('physical_servers');
+
+    // Clean up Postgres ENUM type created by Sequelize
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_physical_servers_memory_unit";',
+    );
   },
 };

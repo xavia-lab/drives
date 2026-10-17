@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { StoragePoolService } from './storage-pool.service';
 import { StoragePool } from './entities/storage-pool.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
@@ -23,7 +23,7 @@ describe('StoragePoolService', () => {
 
   // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockStoragePoolModel: Record<string, Mock>;
-  let mockServerModel: Record<string, Mock>;
+  let mockPhysicalServerModel: Record<string, Mock>;
   let mockVirtualServerModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
 
@@ -34,7 +34,7 @@ describe('StoragePoolService', () => {
       create: vi.fn(),
       destroy: vi.fn(),
     };
-    mockServerModel = { findByPk: vi.fn() };
+    mockPhysicalServerModel = { findByPk: vi.fn() };
     mockVirtualServerModel = { findByPk: vi.fn() };
 
     mockPaginationService = {
@@ -48,7 +48,10 @@ describe('StoragePoolService', () => {
           provide: getModelToken(StoragePool),
           useValue: mockStoragePoolModel,
         },
-        { provide: getModelToken(Server), useValue: mockServerModel },
+        {
+          provide: getModelToken(PhysicalServer),
+          useValue: mockPhysicalServerModel,
+        },
         {
           provide: getModelToken(VirtualServer),
           useValue: mockVirtualServerModel,
@@ -76,7 +79,7 @@ describe('StoragePoolService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockStoragePoolModel as unknown,
         mockQuery,
-        { include: [Server, VirtualServer] },
+        { include: [PhysicalServer, VirtualServer] },
       );
     });
   });
@@ -93,7 +96,7 @@ describe('StoragePoolService', () => {
       const mockReload = vi
         .fn()
         .mockResolvedValue({ id: 'pool-uuid', ...createDto });
-      mockServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
       mockStoragePoolModel.create.mockResolvedValue({
         id: 'pool-uuid',
         reload: mockReload,
@@ -104,7 +107,7 @@ describe('StoragePoolService', () => {
       expect(result).toBeDefined();
       expect(mockStoragePoolModel.create).toHaveBeenCalledWith(createDto);
       expect(mockReload).toHaveBeenCalledWith({
-        include: [Server, VirtualServer],
+        include: [PhysicalServer, VirtualServer],
       });
     });
 
@@ -120,7 +123,7 @@ describe('StoragePoolService', () => {
     });
 
     it('should throw NotFoundException if targeted physical server does not exist', async () => {
-      mockServerModel.findByPk.mockResolvedValue(null);
+      mockPhysicalServerModel.findByPk.mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         NotFoundException,

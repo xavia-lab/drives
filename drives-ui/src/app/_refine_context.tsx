@@ -135,6 +135,27 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "physical",
+                  meta: {
+                    label: "Physical",
+                    parent: "infrastructure",
+                    icon: <AccountBookOutlined />,
+                  },
+                },
+                {
+                  name: "physical-servers",
+                  list: "/physical-servers",
+                  create: "/physical-servers/create",
+                  edit: "/physical-servers/edit/:id",
+                  show: "/physical-servers/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Physical Servers",
+                    parent: "physical",
+                    icon: <AlignCenterOutlined />,
+                  },
+                },
+                {
                   name: "racks",
                   list: "/racks",
                   create: "/racks/create",
@@ -143,7 +164,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Racks",
-                    parent: "infrastructure",
+                    parent: "physical",
                     icon: <AlignCenterOutlined />,
                   },
                 },
@@ -156,7 +177,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Datacenters",
-                    parent: "infrastructure",
+                    parent: "physical",
                     icon: <AlignCenterOutlined />,
                   },
                 },

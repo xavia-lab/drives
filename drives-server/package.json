@@ -27,6 +27,8 @@
     "seed:run": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:all",
     "seed:undo": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:undo",
     "seed:undo:all": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:undo:all",
+    "seed:test": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:all --seeders-path src/database/test-seeders",
+    "seed:test:undo": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:undo --seeders-path src/database/test-seeders --seed $(basename -a src/database/test-seeders/*.js)",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:sync:force": "ts-node -r tsconfig-paths/register scripts/sync-database.ts --force",
     "db:sync:alter": "ts-node -r tsconfig-paths/register scripts/sync-database.ts --alter"

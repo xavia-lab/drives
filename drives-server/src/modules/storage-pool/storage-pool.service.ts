@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StoragePool } from './entities/storage-pool.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
@@ -18,8 +18,8 @@ export class StoragePoolService {
   constructor(
     @InjectModel(StoragePool)
     private readonly storagePoolModel: typeof StoragePool,
-    @InjectModel(Server)
-    private readonly serverModel: typeof Server,
+    @InjectModel(PhysicalServer)
+    private readonly physicalServerModel: typeof PhysicalServer,
     @InjectModel(VirtualServer)
     private readonly virtualServerModel: typeof VirtualServer,
     private readonly paginationService: PaginationService,
@@ -34,10 +34,10 @@ export class StoragePoolService {
 
     if (ids.serverId) {
       checkPromises.push(
-        this.serverModel
+        this.physicalServerModel
           .findByPk(ids.serverId)
           .then((exists) =>
-            exists ? null : `Server with ID ${ids.serverId} not found`,
+            exists ? null : `PhysicalServer with ID ${ids.serverId} not found`,
           ),
       );
     }
@@ -85,14 +85,14 @@ export class StoragePoolService {
       this.storagePoolModel,
       query,
       {
-        include: [Server, VirtualServer],
+        include: [PhysicalServer, VirtualServer],
       },
     );
   }
 
   async findOne(id: string): Promise<StoragePool | null> {
     const pool = await this.storagePoolModel.findByPk(id, {
-      include: [Server, VirtualServer],
+      include: [PhysicalServer, VirtualServer],
     });
 
     if (!pool) {
@@ -113,7 +113,7 @@ export class StoragePoolService {
     const pool = await this.storagePoolModel.create(
       createDto as Partial<StoragePool>,
     );
-    return pool.reload({ include: [Server, VirtualServer] });
+    return pool.reload({ include: [PhysicalServer, VirtualServer] });
   }
 
   async update(
@@ -162,7 +162,7 @@ export class StoragePoolService {
       updateData.virtualServerId = updateDto.virtualServerId;
 
     await poolObject.update(updateData);
-    return poolObject.reload({ include: [Server, VirtualServer] });
+    return poolObject.reload({ include: [PhysicalServer, VirtualServer] });
   }
 
   async delete(id: string): Promise<boolean> {
