@@ -43,6 +43,9 @@ export class PhysicalDriveResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  displayKey: number;
+
   // --- Nested Enterprise Lookup Associations ---
 
   @Expose()
