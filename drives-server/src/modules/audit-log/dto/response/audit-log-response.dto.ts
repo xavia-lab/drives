@@ -40,7 +40,7 @@ export class AuditLogResponseDto {
   @ApiProperty({
     description:
       'The targeted domain model name or entity collection slug identifier',
-    example: 'servers',
+    example: 'physical-servers',
   })
   @Expose()
   resource: string;

@@ -4,12 +4,12 @@ import { RackController } from './rack.controller';
 import { RackService } from './rack.service';
 import { Rack } from './entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Rack, Datacenter, Server])],
+  imports: [SequelizeModule.forFeature([Rack, Datacenter, PhysicalServer])],
   controllers: [RackController],
   providers: [RackService],
-  exports: [RackService], // Allows downstream inventory or network modules to inject RackService
+  exports: [RackService],
 })
 export class RackModule {}

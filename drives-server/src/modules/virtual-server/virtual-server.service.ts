@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { VirtualServer } from './entities/virtual-server.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
 import { UpdateVirtualServerDto } from './dto/update-virtual-server.dto';
@@ -18,8 +18,8 @@ export class VirtualServerService {
   constructor(
     @InjectModel(VirtualServer)
     private readonly virtualServerModel: typeof VirtualServer,
-    @InjectModel(Server)
-    private readonly serverModel: typeof Server,
+    @InjectModel(PhysicalServer)
+    private readonly physicalServerModel: typeof PhysicalServer,
     @InjectModel(OperatingSystem)
     private readonly osModel: typeof OperatingSystem,
     private readonly paginationService: PaginationService,
@@ -34,10 +34,12 @@ export class VirtualServerService {
 
     if (ids.hostServerId) {
       checkPromises.push(
-        this.serverModel
+        this.physicalServerModel
           .findByPk(ids.hostServerId)
           .then((exists) =>
-            exists ? null : `Host Server with ID ${ids.hostServerId} not found`,
+            exists
+              ? null
+              : `Host PhysicalServer with ID ${ids.hostServerId} not found`,
           ),
       );
     }
@@ -68,14 +70,14 @@ export class VirtualServerService {
       this.virtualServerModel,
       query,
       {
-        include: [Server, OperatingSystem],
+        include: [PhysicalServer, OperatingSystem],
       },
     );
   }
 
   async findOne(id: string): Promise<VirtualServer | null> {
     const virtualServer = await this.virtualServerModel.findByPk(id, {
-      include: [Server, OperatingSystem],
+      include: [PhysicalServer, OperatingSystem],
     });
 
     if (!virtualServer) {
@@ -120,7 +122,7 @@ export class VirtualServerService {
     const virtualServer = await this.virtualServerModel.create(
       createDto as Partial<VirtualServer>,
     );
-    return virtualServer.reload({ include: [Server, OperatingSystem] });
+    return virtualServer.reload({ include: [PhysicalServer, OperatingSystem] });
   }
 
   async update(
@@ -187,7 +189,9 @@ export class VirtualServerService {
       updateData.operatingSystemId = updateDto.operatingSystemId;
 
     await virtualServerObject.update(updateData);
-    return virtualServerObject.reload({ include: [Server, OperatingSystem] });
+    return virtualServerObject.reload({
+      include: [PhysicalServer, OperatingSystem],
+    });
   }
 
   async delete(id: string): Promise<boolean> {

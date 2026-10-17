@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { ServerSlot } from './entities/server-slot.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { Interface } from '../interface/entities/interface.entity';
 import { CreateServerSlotDto } from './dto/create-server-slot.dto';
 import { UpdateServerSlotDto } from './dto/update-server-slot.dto';
@@ -18,8 +18,8 @@ export class ServerSlotService {
   constructor(
     @InjectModel(ServerSlot)
     private readonly serverSlotModel: typeof ServerSlot,
-    @InjectModel(Server)
-    private readonly serverModel: typeof Server,
+    @InjectModel(PhysicalServer)
+    private readonly physicalServerModel: typeof PhysicalServer,
     @InjectModel(Interface)
     private readonly interfaceModel: typeof Interface,
     private readonly paginationService: PaginationService,
@@ -34,10 +34,10 @@ export class ServerSlotService {
 
     if (ids.serverId) {
       checkPromises.push(
-        this.serverModel
+        this.physicalServerModel
           .findByPk(ids.serverId)
           .then((exists) =>
-            exists ? null : `Server with ID ${ids.serverId} not found`,
+            exists ? null : `PhysicalServer with ID ${ids.serverId} not found`,
           ),
       );
     }
@@ -69,14 +69,14 @@ export class ServerSlotService {
       this.serverSlotModel,
       query,
       {
-        include: [Server, Interface],
+        include: [PhysicalServer, Interface],
       },
     );
   }
 
   async findOne(id: string): Promise<ServerSlot | null> {
     const slot = await this.serverSlotModel.findByPk(id, {
-      include: [Server, Interface],
+      include: [PhysicalServer, Interface],
     });
 
     if (!slot) {
@@ -97,7 +97,7 @@ export class ServerSlotService {
 
     if (existingByLabel) {
       throw new ConflictException(
-        `ServerSlot with label "${createServerSlotDto.slotLabel}" already exists on server ${createServerSlotDto.serverId}`,
+        `ServerSlot with label "${createServerSlotDto.slotLabel}" already exists on physical server ${createServerSlotDto.serverId}`,
       );
     }
 
@@ -107,7 +107,7 @@ export class ServerSlotService {
     const slot = await this.serverSlotModel.create(
       createServerSlotDto as Partial<ServerSlot>,
     );
-    return slot.reload({ include: [Server, Interface] });
+    return slot.reload({ include: [PhysicalServer, Interface] });
   }
 
   async update(
@@ -130,7 +130,7 @@ export class ServerSlotService {
       });
       if (existing && existing.id !== id) {
         throw new ConflictException(
-          `ServerSlot with label "${targetLabel}" already exists on server ${targetServer}`,
+          `ServerSlot with label "${targetLabel}" already exists on physical server ${targetServer}`,
         );
       }
     }
@@ -150,7 +150,7 @@ export class ServerSlotService {
         updateServerSlotDto.supportedInterfaceId;
 
     await slotObject.update(updateData);
-    return slotObject.reload({ include: [Server, Interface] });
+    return slotObject.reload({ include: [PhysicalServer, Interface] });
   }
 
   async delete(id: string): Promise<boolean> {

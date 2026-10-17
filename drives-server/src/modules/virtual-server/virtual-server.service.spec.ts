@@ -6,7 +6,7 @@ import {
   VirtualServer,
   VirtualServerType,
 } from './entities/virtual-server.entity';
-import { Server } from '../server/entities/server.entity';
+import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
@@ -25,7 +25,7 @@ describe('VirtualServerService', () => {
 
   // 🚀 Explicit Vitest mock types replace loose legacy configurations
   let mockVirtualServerModel: Record<string, Mock>;
-  let mockServerModel: Record<string, Mock>;
+  let mockPhysicalServerModel: Record<string, Mock>;
   let mockOsModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
 
@@ -36,7 +36,7 @@ describe('VirtualServerService', () => {
       create: vi.fn(),
       destroy: vi.fn(),
     };
-    mockServerModel = { findByPk: vi.fn() };
+    mockPhysicalServerModel = { findByPk: vi.fn() };
     mockOsModel = { findByPk: vi.fn() };
 
     mockPaginationService = {
@@ -50,7 +50,10 @@ describe('VirtualServerService', () => {
           provide: getModelToken(VirtualServer),
           useValue: mockVirtualServerModel,
         },
-        { provide: getModelToken(Server), useValue: mockServerModel },
+        {
+          provide: getModelToken(PhysicalServer),
+          useValue: mockPhysicalServerModel,
+        },
         { provide: getModelToken(OperatingSystem), useValue: mockOsModel },
         { provide: PaginationService, useValue: mockPaginationService },
       ],
@@ -75,7 +78,7 @@ describe('VirtualServerService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockVirtualServerModel as unknown,
         mockQuery,
-        { include: [Server, OperatingSystem] },
+        { include: [PhysicalServer, OperatingSystem] },
       );
     });
   });
@@ -97,7 +100,7 @@ describe('VirtualServerService', () => {
         .mockResolvedValue({ id: 'vs-uuid', ...createDto });
 
       mockVirtualServerModel.findOne.mockResolvedValue(null);
-      mockServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
       mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
       mockVirtualServerModel.create.mockResolvedValue({
         id: 'vs-uuid',
@@ -109,7 +112,7 @@ describe('VirtualServerService', () => {
       expect(result).toBeDefined();
       expect(mockVirtualServerModel.create).toHaveBeenCalledWith(createDto);
       expect(mockReload).toHaveBeenCalledWith({
-        include: [Server, OperatingSystem],
+        include: [PhysicalServer, OperatingSystem],
       });
     });
 
@@ -123,11 +126,11 @@ describe('VirtualServerService', () => {
 
     it('should aggregate multiple missing parent foreign keys into a single multiline NotFoundException', async () => {
       mockVirtualServerModel.findOne.mockResolvedValue(null);
-      mockServerModel.findByPk.mockResolvedValue(null);
+      mockPhysicalServerModel.findByPk.mockResolvedValue(null);
       mockOsModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
-        'Host Server with ID server-uuid not found',
+        'Host PhysicalServer with ID server-uuid not found',
         'OperatingSystem with ID os-uuid not found',
       ].join('\n');
 
