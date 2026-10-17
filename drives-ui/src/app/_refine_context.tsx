@@ -180,6 +180,26 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "software",
+                  meta: {
+                    label: "Software",
+                    icon: <SettingOutlined />,
+                  },
+                },
+                {
+                  name: "operating-systems",
+                  list: "/operating-systems",
+                  create: "/operating-systems/create",
+                  edit: "/operating-systems/edit/:id",
+                  show: "/operating-systems/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Operating Systems",
+                    parent: "software",
+                    icon: <GlobalOutlined />,
+                  },
+                },
+                {
                   name: "hardware",
                   meta: {
                     label: "Hardware",

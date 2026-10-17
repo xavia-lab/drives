@@ -67,7 +67,15 @@ export class OperatingSystemService {
 
     const updateData: Partial<OperatingSystem> = {};
     if (updateDto.name !== undefined) updateData.name = updateDto.name;
+    if (updateDto.codeName !== undefined)
+      updateData.codeName = updateDto.codeName;
     if (updateDto.vendor !== undefined) updateData.vendor = updateDto.vendor;
+    if (updateDto.family !== undefined) updateData.family = updateDto.family;
+    if (updateDto.majorVersion !== undefined)
+      updateData.majorVersion = updateDto.majorVersion;
+    if (updateDto.minorVersion !== undefined)
+      updateData.minorVersion = updateDto.minorVersion;
+    if (updateDto.eolDate !== undefined) updateData.eolDate = updateDto.eolDate;
 
     return os.update(updateData);
   }
