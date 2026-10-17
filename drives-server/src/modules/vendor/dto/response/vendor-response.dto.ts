@@ -1,5 +1,4 @@
-import { Expose, Type } from 'class-transformer';
-import { CountryResponseDto } from '../../../country/dto/response/country-response.dto';
+import { Expose } from 'class-transformer';
 
 export class VendorResponseDto {
   @Expose()
@@ -37,11 +36,6 @@ export class VendorResponseDto {
 
   @Expose()
   displayKey: number;
-
-  // --- Nested Associations ---
-  @Expose()
-  @Type(() => CountryResponseDto)
-  country?: CountryResponseDto;
 
   constructor(partial: Partial<VendorResponseDto>) {
     Object.assign(this, partial);

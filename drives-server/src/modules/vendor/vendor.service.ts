@@ -127,7 +127,7 @@ export class VendorService {
       updateData.countryId = updateVendorDto.countryId;
 
     await vendor.update(updateData);
-    return vendor.reload({ include: [Country] });
+    return vendor.reload();
   }
 
   async delete(id: string): Promise<boolean> {

@@ -1,20 +1,5 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-
-// Shallow relationship serialization context for Country
-class CountryShallowDto {
-  @Expose()
-  @ApiProperty({ example: '019f4fa1-57db-72d7-b037-2f35d54f2794' })
-  id: string;
-
-  @Expose()
-  @ApiProperty({ example: 'United States' })
-  name: string;
-
-  @Expose()
-  @ApiProperty({ example: 'US' })
-  code: string;
-}
 
 export class DatacenterResponseDto {
   @Expose()
@@ -66,11 +51,4 @@ export class DatacenterResponseDto {
   @Expose()
   @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })
   updatedAt: Date;
-
-  // --- Populated Relation Properties ---
-
-  @Expose()
-  @Type(() => CountryShallowDto)
-  @ApiProperty({ type: CountryShallowDto })
-  country: CountryShallowDto;
 }

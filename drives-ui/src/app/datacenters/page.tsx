@@ -1,0 +1,139 @@
+"use client";
+
+import {
+  DeleteButton,
+  EditButton,
+  List,
+  ShowButton,
+  useTable,
+  getDefaultSortOrder,
+  FilterDropdown,
+  getDefaultFilter,
+} from "@refinedev/antd";
+import type { BaseRecord } from "@refinedev/core";
+import { Input, InputNumber, Select, Space, Table } from "antd";
+import { useLookupOptions } from "@hooks/use-lookup-options";
+
+export default function DatacenterList() {
+  const { tableProps, sorters, filters } = useTable({
+    sorters: {
+      initial: [{ field: "displayKey", order: "asc" }],
+    },
+    syncWithLocation: true,
+  });
+
+  const { options: countryOptions, isLoading: countryLoading } =
+    useLookupOptions({ resource: "countries" });
+
+  return (
+    <List>
+      <Table {...tableProps} rowKey="id">
+        <Table.Column
+          dataIndex="displayKey"
+          title={"#"}
+          width={70}
+          align={"right"}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
+          filterDropdown={(props) => (
+            <FilterDropdown
+              {...props}
+              mapValue={(value: unknown) => {
+                const raw = Array.isArray(value) ? value[0] : value;
+                return raw === undefined || raw === null || raw === ""
+                  ? undefined
+                  : Number(raw);
+              }}
+            >
+              <InputNumber
+                placeholder="DisplayKey #"
+                style={{ width: "100%" }}
+                controls={false}
+              />
+            </FilterDropdown>
+          )}
+        />
+        <Table.Column
+          dataIndex="code"
+          title={"Code"}
+          width={140}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("code", sorters)}
+          filterDropdown={(props) => (
+            <FilterDropdown {...props}>
+              <Input placeholder="Search by Code" />
+            </FilterDropdown>
+          )}
+        />
+        <Table.Column
+          dataIndex="name"
+          title={"Name"}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("name", sorters)}
+          filterDropdown={(props) => (
+            <FilterDropdown {...props}>
+              <Input placeholder="Search by Name" />
+            </FilterDropdown>
+          )}
+        />
+        <Table.Column
+          dataIndex="city"
+          title={"City"}
+          width={180}
+          sorter={true}
+          defaultSortOrder={getDefaultSortOrder("city", sorters)}
+          filterDropdown={(props) => (
+            <FilterDropdown {...props}>
+              <Input placeholder="Search by City" />
+            </FilterDropdown>
+          )}
+        />
+        <Table.Column
+          dataIndex="countryId"
+          title={"Country"}
+          width={200}
+          sorter={{ multiple: 1 }}
+          filteredValue={getDefaultFilter("countryId", filters, "in") || null}
+          filterDropdown={(props) => (
+            <FilterDropdown
+              {...props}
+              mapValue={(selectedKeys) =>
+                selectedKeys?.map((val) =>
+                  isNaN(Number(val)) ? val : Number(val),
+                )
+              }
+            >
+              <Select
+                style={{ minWidth: 200 }}
+                placeholder="Search Country"
+                mode="multiple"
+                showSearch
+                allowClear
+                optionLabelProp="label"
+                optionFilterProp="label"
+                options={countryOptions}
+                loading={countryLoading}
+              />
+            </FilterDropdown>
+          )}
+          render={(value) =>
+            countryOptions.find((item) => item.value === value)?.label ??
+            "Loading..."
+          }
+        />
+        <Table.Column
+          title={"Actions"}
+          dataIndex="actions"
+          width={150}
+          render={(_, record: BaseRecord) => (
+            <Space>
+              <EditButton hideText size="small" recordItemId={record.id} />
+              <ShowButton hideText size="small" recordItemId={record.id} />
+              <DeleteButton hideText size="small" recordItemId={record.id} />
+            </Space>
+          )}
+        />
+      </Table>
+    </List>
+  );
+}
