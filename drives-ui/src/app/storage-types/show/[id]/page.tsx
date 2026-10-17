@@ -1,18 +1,18 @@
 "use client";
 
 import {
+  DateField,
   DeleteButton,
   EditButton,
   ListButton,
   Show,
-  TextField,
 } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Descriptions, Space, Typography } from "antd";
+import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 
-const { Title } = Typography;
+const { Text } = Typography;
 
 export default function StorageTypeShow() {
   const { result: record, query } = useShow({});
@@ -21,7 +21,6 @@ export default function StorageTypeShow() {
   return (
     <Show
       isLoading={isLoading}
-      // 2. Customize header buttons based on record data
       headerButtons={({
         editButtonProps,
         deleteButtonProps,
@@ -30,41 +29,58 @@ export default function StorageTypeShow() {
         <>
           {listButtonProps && <ListButton {...listButtonProps} />}
           {editButtonProps && (
-            <EditButton
-              {...editButtonProps}
-              // Disable if 'managed' field is true
-              disabled={record?.managed}
-            />
+            <EditButton {...editButtonProps} disabled={record?.managed} />
           )}
           {deleteButtonProps && (
-            <DeleteButton
-              {...deleteButtonProps}
-              // Disable if 'managed' field is true
-              disabled={record?.managed}
-            />
+            <DeleteButton {...deleteButtonProps} disabled={record?.managed} />
           )}
         </>
       )}
     >
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Card title={"Storage Type Information"}>
-          <Title level={5}>{"ID"}</Title>
-          <TextField value={record?.id} />
-          <Title level={5}>{"Name"}</Title>
-          <TextField value={record?.name} />
-          <Title level={5}>{"Wear Trackable"}</Title>
-          <TextField
-            value={
-              record?.wearTrackable ? (
-                <CheckCircleFilled style={{ color: "#52c41a" }} />
-              ) : (
-                <CloseCircleFilled style={{ color: "#ff4d4f" }} />
-              )
-            }
-          />
-          <Title level={5}>{"Provider"}</Title>
-          <ProviderTag managed={record?.managed} />
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
+        <Card title={"Storage Type"}>
+          <Card size="small">
+            <Descriptions title="Details" bordered column={2}>
+              <Descriptions.Item label="ID" span={2}>
+                <Text
+                  copyable={{ text: record?.id?.toString() }}
+                  style={{ fontFamily: "monospace", wordBreak: "break-all" }}
+                >
+                  {record?.id}
+                </Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Display Key">
+                {record?.displayKey}
+              </Descriptions.Item>
+              <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
+              <Descriptions.Item label="Wear Trackable">
+                {record?.wearTrackable ? (
+                  <CheckCircleFilled style={{ color: "#52c41a" }} />
+                ) : (
+                  <CloseCircleFilled style={{ color: "#ff4d4f" }} />
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Provider">
+                <ProviderTag managed={record?.managed} />
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
         </Card>
+
+        <Row justify="center" gutter={32}>
+          <Col style={{ textAlign: "center" }}>
+            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+              Created
+            </Text>
+            <DateField value={record?.createdAt} format="LLL" />
+          </Col>
+          <Col style={{ textAlign: "center" }}>
+            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+              Last Updated
+            </Text>
+            <DateField value={record?.updatedAt} format="LLL" />
+          </Col>
+        </Row>
       </Space>
     </Show>
   );

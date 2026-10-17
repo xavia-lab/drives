@@ -15,11 +15,11 @@ import { ProviderTag } from "@components/provider-tag";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 
 export default function StorageTypeList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
-    syncWithLocation: true, // Persists state in the URL
+    syncWithLocation: true,
   });
 
   return (
@@ -28,20 +28,24 @@ export default function StorageTypeList() {
         <Table.Column
           dataIndex="displayKey"
           title={"#"}
-          width={70} // Slightly wider to support numbers comfortably
+          width={70}
           align={"right"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
-          // 🌟 FIX: Force numeric mapping and clear out text operators
           filterDropdown={(props) => (
             <FilterDropdown
               {...props}
-              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+              mapValue={(value: unknown) => {
+                const raw = Array.isArray(value) ? value[0] : value;
+                return raw === undefined || raw === null || raw === ""
+                  ? undefined
+                  : Number(raw);
+              }}
             >
               <InputNumber
                 placeholder="DisplayKey #"
                 style={{ width: "100%" }}
-                controls={false} // Hides the tiny up/down spinner arrows
+                controls={false}
               />
             </FilterDropdown>
           )}
@@ -51,7 +55,6 @@ export default function StorageTypeList() {
           title={"Name"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("name", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Name" />

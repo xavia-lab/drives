@@ -160,18 +160,6 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
-                  name: "vendors",
-                  list: "/vendors",
-                  create: "/vendors/create",
-                  edit: "/vendors/edit/:id",
-                  show: "/vendors/show/:id",
-                  meta: {
-                    canDelete: true,
-                    parent: "procurement",
-                    icon: <GlobalOutlined />,
-                  },
-                },
-                {
                   name: "stores",
                   meta: {
                     label: "Stores",
@@ -195,6 +183,18 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Admin", // Optional label for the parent item
                     icon: <SettingOutlined />,
+                  },
+                },
+                {
+                  name: "vendors",
+                  list: "/vendors",
+                  create: "/vendors/create",
+                  edit: "/vendors/edit/:id",
+                  show: "/vendors/show/:id",
+                  meta: {
+                    canDelete: true,
+                    parent: "administration",
+                    icon: <GlobalOutlined />,
                   },
                 },
                 {

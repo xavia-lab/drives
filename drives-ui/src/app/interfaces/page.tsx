@@ -11,7 +11,7 @@ import {
   useSelect,
   getDefaultFilter,
 } from "@refinedev/antd";
-import { BaseRecord } from "@refinedev/core";
+import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
@@ -25,8 +25,8 @@ export default function InterfaceList() {
 
   const { selectProps: busProtocolsSelectProps } = useSelect({
     resource: "bus-protocols",
-    optionLabel: "title", // Automatically maps 'title' to label
-    optionValue: "id", // Automatically maps 'id' to value
+    optionLabel: "title",
+    optionValue: "id",
   });
 
   return (
@@ -35,20 +35,24 @@ export default function InterfaceList() {
         <Table.Column
           dataIndex="displayKey"
           title={"#"}
-          width={70} // Slightly wider to support numbers comfortably
+          width={70}
           align={"right"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("displayKey", sorters)}
-          // 🌟 FIX: Force numeric mapping and clear out text operators
           filterDropdown={(props) => (
             <FilterDropdown
               {...props}
-              mapValue={(value) => Number(value) || undefined} // Cast input to a strict number
+              mapValue={(value: unknown) => {
+                const raw = Array.isArray(value) ? value[0] : value;
+                return raw === undefined || raw === null || raw === ""
+                  ? undefined
+                  : Number(raw);
+              }}
             >
               <InputNumber
                 placeholder="DisplayKey #"
                 style={{ width: "100%" }}
-                controls={false} // Hides the tiny up/down spinner arrows
+                controls={false}
               />
             </FilterDropdown>
           )}
@@ -58,7 +62,6 @@ export default function InterfaceList() {
           title={"Name"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("name", sorters)}
-          // Custom Filter Dropdown
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Name" />
@@ -77,12 +80,11 @@ export default function InterfaceList() {
           filterDropdown={(props) => (
             <FilterDropdown
               {...props}
-              mapValue={(selectedKeys) => {
-                // For multiple mode, selectedKeys is an array of IDs
-                return selectedKeys?.map((val) =>
+              mapValue={(selectedKeys) =>
+                selectedKeys?.map((val) =>
                   isNaN(Number(val)) ? val : Number(val),
-                );
-              }}
+                )
+              }
             >
               <Select
                 style={{ minWidth: 200 }}
@@ -92,12 +94,11 @@ export default function InterfaceList() {
                 allowClear
                 optionLabelProp="label"
                 optionFilterProp="label"
-                {...busProtocolsSelectProps} // Spreads all options, loading state, and search logic
+                {...busProtocolsSelectProps}
               />
             </FilterDropdown>
           )}
           render={(value) =>
-            // We still use the 'options' from selectProps to find the label for the current row
             busProtocolsSelectProps.options?.find(
               (item) => item.value === value,
             )?.label ?? "Loading..."
@@ -110,9 +111,6 @@ export default function InterfaceList() {
           width={200}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("linkGeneration", sorters)}
-          // render={(value) =>
-          //   value !== undefined ? `${Number(value).toFixed(2)}` : "-"
-          // }
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by link generation" />
