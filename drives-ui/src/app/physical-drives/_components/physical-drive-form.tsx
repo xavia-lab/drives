@@ -56,12 +56,12 @@ export const PhysicalDriveForm = ({ formProps }: { formProps: FormProps }) => (
               <Input maxLength={64} placeholder="e.g. PHG2134001A87" />
             </Form.Item>
             <Form.Item
-              label={"Storage Model"}
-              name={["storageModelId"]}
+              label={"Drive Model"}
+              name={["driveModelId"]}
               rules={STORAGE_MODEL_RULES}
             >
               <LookupSelect
-                resource="storage-models"
+                resource="drive-models"
                 optionLabel="title"
                 placeholder="Select storage model"
               />

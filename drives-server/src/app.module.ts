@@ -30,7 +30,7 @@ import { PoolTypeModule } from './modules/pool-type/pool-type.module';
 import { RackModule } from './modules/rack/rack.module';
 import { PhysicalServerModule } from './modules/physical-server/physical-server.module';
 import { ServerSlotAllocationModule } from './modules/server-slot-allocation/server-slot-allocation.module';
-import { StorageModelModule } from './modules/storage-model/storage-model.module';
+import { DriveModelModule } from './modules/drive-model/drive-model.module';
 import { StoragePoolModule } from './modules/storage-pool/storage-pool.module';
 import { StorageTypeModule } from './modules/storage-type/storage-type.module';
 import { VendorModule } from './modules/vendor/vendor.module';
@@ -74,7 +74,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     RackModule,
     PhysicalServerModule,
     ServerSlotAllocationModule,
-    StorageModelModule,
+    DriveModelModule,
     StoragePoolModule,
     StorageTypeModule,
     VendorModule,

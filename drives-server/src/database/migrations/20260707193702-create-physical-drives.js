@@ -18,11 +18,11 @@ module.exports = {
         autoIncrement: true,
         unique: true, // Automatically builds a unique index for sorting/filtering
       },
-      storage_model_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match storage_models.id
+      drive_model_id: {
+        type: Sequelize.UUID, // Upgraded to UUID to match drive_models.id
         allowNull: false,
         references: {
-          model: 'storage_models',
+          model: 'drive_models',
           key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -94,8 +94,8 @@ module.exports = {
     });
 
     // B-Tree indexing map optimizing multi-node lookup aggregations across unified model catalogs
-    await queryInterface.addIndex('physical_drives', ['storage_model_id'], {
-      name: 'physical_drives_storage_model_idx',
+    await queryInterface.addIndex('physical_drives', ['drive_model_id'], {
+      name: 'physical_drives_drive_model_idx',
       using: 'btree',
     });
 

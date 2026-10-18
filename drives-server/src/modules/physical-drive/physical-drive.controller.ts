@@ -37,7 +37,7 @@ import { Public } from '../../common/decorators/public.decorator';
 @ApiBearerAuth()
 @Serialize(PhysicalDriveResponseDto)
 export class PhysicalDriveController {
-  constructor(private readonly storageModelService: PhysicalDriveService) {}
+  constructor(private readonly physicalDriveService: PhysicalDriveService) {}
 
   @Get()
   @Public()
@@ -50,7 +50,7 @@ export class PhysicalDriveController {
   async findAll(
     @Query() query: QueryPhysicalDriveDto,
   ): Promise<PaginatedResponse<PhysicalDrive>> {
-    return await this.storageModelService.findAll(query);
+    return await this.physicalDriveService.findAll(query);
   }
 
   @Get(':id')
@@ -71,11 +71,11 @@ export class PhysicalDriveController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
   ): Promise<PhysicalDrive> {
     // 3. Set version '7' validation and changed type to string
-    const storageModelObject = await this.storageModelService.findOne(id);
-    if (!storageModelObject) {
+    const physicalDriveObject = await this.physicalDriveService.findOne(id);
+    if (!physicalDriveObject) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     }
-    return storageModelObject;
+    return physicalDriveObject;
   }
 
   @Post()
@@ -89,7 +89,7 @@ export class PhysicalDriveController {
   async create(
     @Body() createPhysicalDriveDto: CreatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    return this.storageModelService.create(createPhysicalDriveDto);
+    return this.physicalDriveService.create(createPhysicalDriveDto);
   }
 
   @Put(':id')
@@ -113,7 +113,7 @@ export class PhysicalDriveController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 4. Updated validation pipe and parameter typing
     @Body() updatePhysicalDriveDto: UpdatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
-    const result = await this.storageModelService.update(
+    const result = await this.physicalDriveService.update(
       id,
       updatePhysicalDriveDto,
     );
@@ -143,7 +143,7 @@ export class PhysicalDriveController {
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string, // 5. Updated validation pipe and parameter typing
   ): Promise<{ message: string }> {
-    const deleted = await this.storageModelService.delete(id);
+    const deleted = await this.physicalDriveService.delete(id);
     if (!deleted) {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     } else {

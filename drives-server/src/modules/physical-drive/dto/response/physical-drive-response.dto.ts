@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { StorageModelResponseDto } from '../../../storage-model/dto/response/storage-model-response.dto';
+import { DriveModelResponseDto } from '../../../drive-model/dto/response/drive-model-response.dto';
 import { VendorResponseDto } from '../../../vendor/dto/response/vendor-response.dto';
 import { CurrencyResponseDto } from '../../../currency/dto/response/currency-response.dto';
 
@@ -29,7 +29,7 @@ export class PhysicalDriveResponseDto {
   title: string;
 
   @Expose()
-  storageModelId: string;
+  driveModelId: string;
 
   @Expose()
   retailerVendorId: string;
@@ -49,8 +49,8 @@ export class PhysicalDriveResponseDto {
   // --- Nested Enterprise Lookup Associations ---
 
   @Expose()
-  @Type(() => StorageModelResponseDto)
-  storageModel?: StorageModelResponseDto;
+  @Type(() => DriveModelResponseDto)
+  driveModel?: DriveModelResponseDto;
 
   @Expose()
   @Type(() => VendorResponseDto)

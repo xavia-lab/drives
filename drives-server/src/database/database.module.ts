@@ -28,7 +28,7 @@ import { Rack } from '../modules/rack/entities/rack.entity';
 import { ServerSlot } from '../modules/physical-server/entities/server-slot.entity';
 import { ServerSlotAllocation } from '../modules/server-slot-allocation/entities/server-slot-allocation.entity';
 import { PhysicalServer } from '../modules/physical-server/entities/physical-server.entity';
-import { StorageModel } from 'src/modules/storage-model/entities/storage-model.entity';
+import { DriveModel } from 'src/modules/drive-model/entities/drive-model.entity';
 import { StoragePool } from '../modules/storage-pool/entities/storage-pool.entity';
 import { StoragePoolHost } from '../modules/storage-pool/entities/storage-pool-host.entity';
 import { StorageType } from '../modules/storage-type/entities/storage-type.entity';
@@ -73,7 +73,7 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             PhysicalServer,
             ServerSlot,
             ServerSlotAllocation,
-            StorageModel,
+            DriveModel,
             StoragePool,
             StoragePoolHost,
             StorageType,

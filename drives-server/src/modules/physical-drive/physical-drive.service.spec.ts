@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
-import { StorageModel } from '../storage-model/entities/storage-model.entity';
+import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
@@ -24,7 +24,7 @@ describe('PhysicalDriveService', () => {
 
   // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockPhysicalDriveRepo: Record<string, Mock>;
-  let mockStorageModelRepo: Record<string, Mock>;
+  let mockDriveModelRepo: Record<string, Mock>;
   let mockVendorRepo: Record<string, Mock>;
   let mockCurrencyRepo: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
@@ -37,7 +37,7 @@ describe('PhysicalDriveService', () => {
       create: vi.fn(),
       destroy: vi.fn(),
     };
-    mockStorageModelRepo = { findByPk: vi.fn() };
+    mockDriveModelRepo = { findByPk: vi.fn() };
     mockVendorRepo = { findByPk: vi.fn() };
     mockCurrencyRepo = { findByPk: vi.fn() };
 
@@ -54,8 +54,8 @@ describe('PhysicalDriveService', () => {
           useValue: mockPhysicalDriveRepo,
         },
         {
-          provide: getModelToken(StorageModel),
-          useValue: mockStorageModelRepo,
+          provide: getModelToken(DriveModel),
+          useValue: mockDriveModelRepo,
         },
         { provide: getModelToken(Vendor), useValue: mockVendorRepo },
         { provide: getModelToken(Currency), useValue: mockCurrencyRepo },
@@ -105,14 +105,14 @@ describe('PhysicalDriveService', () => {
       acquisitionCost: 150.0,
       purchaseDate: '2026-01-01',
       warrantyExpiryDate: '2031-01-01',
-      storageModelId: 'sm-uuid',
+      driveModelId: 'sm-uuid',
       retailerVendorId: 'vendor-uuid',
       currencyId: 'currency-uuid',
     };
 
     it('should successfully create a physical drive when serial number is unique and all keys exist', async () => {
       mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
-      mockStorageModelRepo.findByPk.mockResolvedValue({ id: 'sm-uuid' });
+      mockDriveModelRepo.findByPk.mockResolvedValue({ id: 'sm-uuid' });
       mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
       mockCurrencyRepo.findByPk.mockResolvedValue({ id: 'currency-uuid' });
       mockPhysicalDriveRepo.create.mockResolvedValue({
@@ -139,12 +139,12 @@ describe('PhysicalDriveService', () => {
 
     it('should aggregate multiple non-existent foreign keys into a single multiline NotFoundException', async () => {
       mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
-      mockStorageModelRepo.findByPk.mockResolvedValue(null);
+      mockDriveModelRepo.findByPk.mockResolvedValue(null);
       mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
       mockCurrencyRepo.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
-        'StorageModel with ID sm-uuid not found',
+        'DriveModel with ID sm-uuid not found',
         'Currency with ID currency-uuid not found',
       ].join('\n');
 

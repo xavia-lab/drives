@@ -12,8 +12,8 @@ export default function PhysicalDriveShow() {
   const { result: record, query } = useShow({});
   const { isLoading } = query;
 
-  const { options: storageModelOptions } = useLookupOptions({
-    resource: "storage-models",
+  const { options: driveModelOptions } = useLookupOptions({
+    resource: "drive-models",
     optionLabel: "title",
   });
   const { options: retailerOptions } = useLookupOptions({
@@ -49,11 +49,11 @@ export default function PhysicalDriveShow() {
               <Descriptions.Item label="Worldwide Name (WWN)">
                 {record?.worldwideNameWwn ?? "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Storage Model" span={2}>
+              <Descriptions.Item label="Drive Model" span={2}>
                 <LinkedLabel
-                  resource="storage-models"
-                  options={storageModelOptions}
-                  value={record?.storageModelId}
+                  resource="drive-models"
+                  options={driveModelOptions}
+                  value={record?.driveModelId}
                   fallback="-"
                 />
               </Descriptions.Item>
