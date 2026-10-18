@@ -2,6 +2,7 @@
 
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import {
   Card,
@@ -45,19 +46,6 @@ export default function VirtualServerShow() {
     resource: "interfaces",
   });
 
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => {
-    const label = options.find((option) => option.value === value)?.label;
-    if (label !== undefined) {
-      return label;
-    }
-    return value === undefined || value === null || value === ""
-      ? "-"
-      : String(value);
-  };
-
   const passthroughSlots =
     (record?.passthroughSlots as PassthroughSlotRecord[] | undefined) ?? [];
 
@@ -82,7 +70,12 @@ export default function VirtualServerShow() {
                 {record?.hostname}
               </Descriptions.Item>
               <Descriptions.Item label="Host Server" span={2}>
-                {findLabel(hostServerOptions, record?.hostServerId)}
+                <LinkedLabel
+                  resource="physical-servers"
+                  options={hostServerOptions}
+                  value={record?.hostServerId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="VMID">
                 {record?.vmid ?? "-"}
@@ -91,7 +84,12 @@ export default function VirtualServerShow() {
                 <Tag>{String(record?.type ?? "-")}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Operating System" span={2}>
-                {findLabel(operatingSystemOptions, record?.operatingSystemId)}
+                <LinkedLabel
+                  resource="operating-systems"
+                  options={operatingSystemOptions}
+                  value={record?.operatingSystemId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Allocated vCPUs">
                 {record?.allocatedVcpus}
@@ -133,12 +131,16 @@ export default function VirtualServerShow() {
               <Table.Column
                 title={"Interface"}
                 render={(_, row: PassthroughSlotRecord) =>
-                  row.serverSlot
-                    ? findLabel(
-                        interfaceOptions,
-                        row.serverSlot.supportedInterfaceId,
-                      )
-                    : "-"
+                  row.serverSlot ? (
+                    <LinkedLabel
+                      resource="interfaces"
+                      options={interfaceOptions}
+                      value={row.serverSlot.supportedInterfaceId}
+                      fallback="-"
+                    />
+                  ) : (
+                    "-"
+                  )
                 }
               />
               <Table.Column

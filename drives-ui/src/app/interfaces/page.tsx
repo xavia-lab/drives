@@ -13,6 +13,7 @@ import {
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function InterfaceList() {
@@ -100,10 +101,13 @@ export default function InterfaceList() {
               />
             </FilterDropdown>
           )}
-          render={(value) =>
-            busProtocolOptions.find((item) => item.value === value)?.label ??
-            "Loading..."
-          }
+          render={(value) => (
+            <LinkedLabel
+              resource="bus-protocols"
+              options={busProtocolOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="linkGeneration"

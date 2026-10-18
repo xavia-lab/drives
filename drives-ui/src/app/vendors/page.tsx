@@ -13,6 +13,7 @@ import {
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
+import { LinkedLabel } from "@components/linked-label";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
@@ -130,10 +131,13 @@ export default function VendorList() {
               />
             </FilterDropdown>
           )}
-          render={(value) =>
-            countryOptions.find((item) => item.value === value)?.label ??
-            "Loading..."
-          }
+          render={(value) => (
+            <LinkedLabel
+              resource="countries"
+              options={countryOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="managed"

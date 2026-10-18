@@ -13,6 +13,7 @@ import {
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { EnumTag } from "@components/enum-tag";
+import { LinkedLabel } from "@components/linked-label";
 import {
   ARCHITECTURE_OPTIONS,
   ARCHITECTURE_COLORS,
@@ -104,10 +105,13 @@ export default function CpuModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) =>
-            vendorOptions.find((item) => item.value === value)?.label ??
-            "Loading..."
-          }
+          render={(value) => (
+            <LinkedLabel
+              resource="vendors"
+              options={vendorOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="architecture"

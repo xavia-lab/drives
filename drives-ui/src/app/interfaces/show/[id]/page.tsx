@@ -4,6 +4,7 @@ import { DateField, NumberField, Show } from "@refinedev/antd";
 import { useOne, useShow } from "@refinedev/core";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 import { ProviderTag } from "@components/provider-tag";
+import { LinkedLabel } from "@components/linked-label";
 
 const { Text } = Typography;
 
@@ -41,11 +42,12 @@ export default function InterfaceShow() {
               </Descriptions.Item>
               <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
               <Descriptions.Item label="Bus Protocol">
-                {busProtocolIsLoading ? (
-                  <>Loading...</>
-                ) : (
-                  <>{busProtocol?.title}</>
-                )}
+                <LinkedLabel
+                  resource="bus-protocols"
+                  value={record?.busProtocolId}
+                  label={busProtocol?.title}
+                  fallback={busProtocolIsLoading ? "Loading..." : "-"}
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Link Generation">
                 <NumberField

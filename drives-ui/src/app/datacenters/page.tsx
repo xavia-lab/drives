@@ -12,6 +12,7 @@ import {
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function DatacenterList() {
@@ -116,10 +117,13 @@ export default function DatacenterList() {
               />
             </FilterDropdown>
           )}
-          render={(value) =>
-            countryOptions.find((item) => item.value === value)?.label ??
-            "Loading..."
-          }
+          render={(value) => (
+            <LinkedLabel
+              resource="countries"
+              options={countryOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           title={"Actions"}

@@ -2,6 +2,7 @@
 
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import {
   Card,
@@ -38,11 +39,6 @@ export default function PhysicalServerShow() {
   const { options: interfaceOptions } = useLookupOptions({
     resource: "interfaces",
   });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "-";
 
   const slots = (record?.slots as ServerSlotRecord[] | undefined) ?? [];
 
@@ -98,7 +94,12 @@ export default function PhysicalServerShow() {
                 {record?.hostname}
               </Descriptions.Item>
               <Descriptions.Item label="CPU Model" span={2}>
-                {findLabel(cpuModelOptions, record?.cpuModelId)}
+                <LinkedLabel
+                  resource="cpu-models"
+                  options={cpuModelOptions}
+                  value={record?.cpuModelId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="CPU Count">
                 {record?.cpuCount}
@@ -112,10 +113,20 @@ export default function PhysicalServerShow() {
                 {record?.absoluteMemory}
               </Descriptions.Item>
               <Descriptions.Item label="Operating System" span={2}>
-                {findLabel(operatingSystemOptions, record?.operatingSystemId)}
+                <LinkedLabel
+                  resource="operating-systems"
+                  options={operatingSystemOptions}
+                  value={record?.operatingSystemId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Rack">
-                {findLabel(rackOptions, record?.rackId)}
+                <LinkedLabel
+                  resource="racks"
+                  options={rackOptions}
+                  value={record?.rackId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Rack Unit Position">
                 {record?.rackUnitPosition}

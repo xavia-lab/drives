@@ -3,6 +3,7 @@
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { useLookupOptions } from "@hooks/use-lookup-options";
+import { LinkedLabel } from "@components/linked-label";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
 const { Text } = Typography;
@@ -26,11 +27,6 @@ export default function StorageModelShow() {
   const { options: capacityOptions } = useLookupOptions({
     resource: "capacities",
   });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "-";
 
   return (
     <Show isLoading={isLoading}>
@@ -57,19 +53,44 @@ export default function StorageModelShow() {
                 {record?.maxEnduranceTbw ?? "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Manufacturer">
-                {findLabel(manufacturerOptions, record?.manufacturerId)}
+                <LinkedLabel
+                  resource="vendors"
+                  options={manufacturerOptions}
+                  value={record?.manufacturerId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Storage Type">
-                {findLabel(storageTypeOptions, record?.storageTypeId)}
+                <LinkedLabel
+                  resource="storage-types"
+                  options={storageTypeOptions}
+                  value={record?.storageTypeId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Form Factor">
-                {findLabel(formFactorOptions, record?.formFactorId)}
+                <LinkedLabel
+                  resource="form-factors"
+                  options={formFactorOptions}
+                  value={record?.formFactorId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Interface">
-                {findLabel(interfaceOptions, record?.interfaceId)}
+                <LinkedLabel
+                  resource="interfaces"
+                  options={interfaceOptions}
+                  value={record?.interfaceId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Capacity" span={2}>
-                {findLabel(capacityOptions, record?.capacityId)}
+                <LinkedLabel
+                  resource="capacities"
+                  options={capacityOptions}
+                  value={record?.capacityId}
+                  fallback="-"
+                />
               </Descriptions.Item>
             </Descriptions>
           </Card>

@@ -14,6 +14,7 @@ import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table, Tag } from "antd";
 import type { TableProps } from "antd";
 import type { SorterResult } from "antd/es/table/interface";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function VirtualServerList() {
@@ -54,11 +55,6 @@ export default function VirtualServerList() {
       ? undefined
       : Number(raw);
   };
-
-  const renderLookup = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((item) => item.value === value)?.label ?? "Loading...";
 
   return (
     <List>
@@ -114,7 +110,13 @@ export default function VirtualServerList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => renderLookup(hostServerOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="physical-servers"
+              options={hostServerOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="type"
@@ -159,7 +161,13 @@ export default function VirtualServerList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => renderLookup(operatingSystemOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="operating-systems"
+              options={operatingSystemOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="allocatedVcpus"

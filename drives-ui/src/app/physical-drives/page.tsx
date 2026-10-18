@@ -12,6 +12,7 @@ import {
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function PhysicalDriveList() {
@@ -28,11 +29,6 @@ export default function PhysicalDriveList() {
     useLookupOptions({ resource: "vendors" });
   const { options: currencyOptions, isLoading: currencyLoading } =
     useLookupOptions({ resource: "currencies" });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "Loading...";
 
   return (
     <List>
@@ -117,7 +113,13 @@ export default function PhysicalDriveList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(storageModelOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="storage-models"
+              options={storageModelOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="retailerVendorId"
@@ -149,7 +151,13 @@ export default function PhysicalDriveList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(retailerOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="vendors"
+              options={retailerOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="currencyId"
@@ -179,7 +187,13 @@ export default function PhysicalDriveList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(currencyOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="currencies"
+              options={currencyOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="acquisitionCost"
