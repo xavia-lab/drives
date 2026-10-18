@@ -277,6 +277,21 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "reference",
+                  meta: {
+                    label: "Reference",
+                    icon: <BookOutlined />,
+                  },
+                },
+                {
+                  name: "reference-hardware",
+                  meta: {
+                    label: "Hardware",
+                    parent: "reference",
+                    icon: <ApartmentOutlined />,
+                  },
+                },
+                {
                   name: "cpu-models",
                   list: "/cpu-models",
                   create: "/cpu-models/create",
@@ -285,15 +300,16 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "CPU Models",
-                    parent: "hardware",
+                    parent: "reference-hardware",
                     icon: <ThunderboltOutlined />,
                   },
                 },
                 {
-                  name: "reference",
+                  name: "reference-storage",
                   meta: {
-                    label: "Reference",
-                    icon: <BookOutlined />,
+                    label: "Storage",
+                    parent: "reference",
+                    icon: <ApartmentOutlined />,
                   },
                 },
                 {
@@ -305,7 +321,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Models",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <GoldOutlined />,
                   },
                 },
@@ -317,7 +333,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/capacities/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <NumberOutlined />,
                   },
                 },
@@ -329,7 +345,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/interfaces/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <ApiOutlined />,
                   },
                 },
@@ -342,7 +358,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Form Factors",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <BorderOutlined />,
                   },
                 },
@@ -355,7 +371,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Bus Protocols",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <LinkOutlined />,
                   },
                 },
@@ -368,14 +384,15 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Types",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <BoxPlotOutlined />,
                   },
                 },
                 {
-                  name: "general",
+                  name: "reference-general",
                   meta: {
                     label: "General",
+                    parent: "reference",
                     icon: <SettingOutlined />,
                   },
                 },
@@ -387,7 +404,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/vendors/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <ShopOutlined />,
                   },
                 },
@@ -400,7 +417,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Countries",
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <GlobalOutlined />,
                   },
                 },
@@ -412,7 +429,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/currencies/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <PoundOutlined />,
                   },
                 },

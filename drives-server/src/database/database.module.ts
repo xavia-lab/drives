@@ -30,6 +30,7 @@ import { ServerSlotAllocation } from '../modules/server-slot-allocation/entities
 import { PhysicalServer } from '../modules/physical-server/entities/physical-server.entity';
 import { StorageModel } from 'src/modules/storage-model/entities/storage-model.entity';
 import { StoragePool } from '../modules/storage-pool/entities/storage-pool.entity';
+import { StoragePoolHost } from '../modules/storage-pool/entities/storage-pool-host.entity';
 import { StorageType } from '../modules/storage-type/entities/storage-type.entity';
 import { Vendor } from '../modules/vendor/entities/vendor.entity';
 import { VirtualServer } from '../modules/virtual-server/entities/virtual-server.entity';
@@ -74,6 +75,7 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             ServerSlotAllocation,
             StorageModel,
             StoragePool,
+            StoragePoolHost,
             StorageType,
             Vendor,
             VirtualServer,

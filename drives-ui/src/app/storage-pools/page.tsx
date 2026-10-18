@@ -95,32 +95,24 @@ export default function StoragePoolList() {
           )}
         />
         <Table.Column
-          key="target"
-          title={"Target"}
+          key="currentHost"
+          title={"Current Host"}
           width={240}
           render={(_, record: BaseRecord) => {
-            if (record.serverId) {
-              const server = record.server as BaseRecord | undefined;
-              return (
-                <Space size={4}>
-                  <Tag color="geekblue">Physical</Tag>
-                  <LinkedLabel
-                    resource="physical-servers"
-                    value={record.serverId}
-                    label={server?.hostname as string | undefined}
-                  />
-                </Space>
-              );
+            const current = record.currentHost as BaseRecord | undefined;
+            if (!current) {
+              return <Tag>Detached</Tag>;
             }
-            const virtualServer = record.virtualServer as
-              BaseRecord | undefined;
+            const isPhysical = current.type === "PHYSICAL";
             return (
               <Space size={4}>
-                <Tag color="purple">Virtual</Tag>
+                <Tag color={isPhysical ? "geekblue" : "purple"}>
+                  {isPhysical ? "Physical" : "Virtual"}
+                </Tag>
                 <LinkedLabel
-                  resource="virtual-servers"
-                  value={record.virtualServerId}
-                  label={virtualServer?.hostname as string | undefined}
+                  resource={isPhysical ? "physical-servers" : "virtual-servers"}
+                  value={current.serverId}
+                  label={current.hostname as string | undefined}
                   fallback="-"
                 />
               </Space>

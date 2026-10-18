@@ -1,36 +1,81 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class ServerShallowDto {
+class HostShallowDto {
   @Expose()
   @ApiProperty({
     example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
-    description: 'The unique identifier of the hosting physical server',
+    description: 'The unique identifier of the host (physical or virtual)',
   })
   id: string;
 
   @Expose()
   @ApiProperty({
     example: 'us-east-compute-42.infra',
-    description: 'The unique hostname of the physical node',
+    description: 'The unique hostname of the host',
   })
   hostname: string;
 }
 
-class VirtualServerShallowDto {
+export class CurrentStoragePoolHostDto {
   @Expose()
-  @ApiProperty({
-    example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
-    description: 'The unique identifier of the guest virtual server',
-  })
-  id: string;
+  @ApiProperty({ enum: ['PHYSICAL', 'VIRTUAL'] })
+  type: 'PHYSICAL' | 'VIRTUAL';
 
   @Expose()
   @ApiProperty({
-    example: 'truenas-core.local',
-    description: 'The unique hostname of the guest virtual machine',
+    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
+    description: 'The id of the currently attached host',
   })
+  serverId: string;
+
+  @Expose()
+  @ApiProperty({ example: 'us-east-compute-42.infra' })
   hostname: string;
+}
+
+export class StoragePoolHostEventResponseDto {
+  @Expose()
+  @ApiProperty({ example: '019f5431-1bf4-7e4b-accd-617e39d8a372' })
+  id: string;
+
+  @Expose()
+  @ApiProperty({ example: 1 })
+  displayKey: number;
+
+  @Expose()
+  @ApiProperty({ enum: ['IMPORT', 'EXPORT'] })
+  eventType: string;
+
+  @Expose()
+  @ApiProperty({ example: '2026-07-13T05:31:00.000Z' })
+  eventTimestamp: Date;
+
+  @Expose()
+  @ApiPropertyOptional()
+  notes: string | null;
+
+  @Expose()
+  @ApiPropertyOptional()
+  physicalServerId: string | null;
+
+  @Expose()
+  @ApiPropertyOptional()
+  virtualServerId: string | null;
+
+  @Expose()
+  @Type(() => HostShallowDto)
+  @ApiPropertyOptional({ type: HostShallowDto })
+  physicalServer: HostShallowDto | null;
+
+  @Expose()
+  @Type(() => HostShallowDto)
+  @ApiPropertyOptional({ type: HostShallowDto })
+  virtualServer: HostShallowDto | null;
+
+  @Expose()
+  @ApiProperty({ example: '2026-07-13T05:31:00.000Z' })
+  createdAt: Date;
 }
 
 export class StoragePoolResponseDto {
@@ -74,20 +119,23 @@ export class StoragePoolResponseDto {
   encryptionEnabled: boolean;
 
   @Expose()
+  @Type(() => CurrentStoragePoolHostDto)
   @ApiPropertyOptional({
-    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
+    type: CurrentStoragePoolHostDto,
     description:
-      'Relational link pointer ID connecting to the baremetal server host node if mapped physical',
+      'The host the pool is currently attached to, derived from the latest IMPORT/EXPORT event. Null when detached.',
   })
-  serverId: string | null;
+  currentHost: CurrentStoragePoolHostDto | null;
 
   @Expose()
+  @Type(() => StoragePoolHostEventResponseDto)
   @ApiPropertyOptional({
-    example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
+    type: StoragePoolHostEventResponseDto,
+    isArray: true,
     description:
-      'Relational link pointer ID connecting to the virtualized hypervisor server node guest if mapped logical',
+      'Ascending IMPORT/EXPORT event history for this pool (present on single-record reads).',
   })
-  virtualServerId: string | null;
+  hosts: StoragePoolHostEventResponseDto[];
 
   @Expose()
   @ApiProperty({ example: '2026-07-13T05:31:00.000Z' })
@@ -95,14 +143,4 @@ export class StoragePoolResponseDto {
   @Expose()
   @ApiProperty({ example: '2026-07-13T05:31:00.000Z' })
   updatedAt: Date;
-
-  @Expose()
-  @Type(() => ServerShallowDto)
-  @ApiPropertyOptional({ type: ServerShallowDto })
-  server: ServerShallowDto | null;
-
-  @Expose()
-  @Type(() => VirtualServerShallowDto)
-  @ApiPropertyOptional({ type: VirtualServerShallowDto })
-  virtualServer: VirtualServerShallowDto | null;
 }

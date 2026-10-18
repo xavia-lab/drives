@@ -6,7 +6,7 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled, serverId, virtualServerId, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
@@ -15,8 +15,6 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
     'poolName',
     'poolTypeId',
     'encryptionEnabled',
-    'serverId',
-    'virtualServerId',
     'createdAt',
     'updatedAt',
   ])
@@ -25,7 +23,7 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled, serverId, virtualServerId',
+      'Filterable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled',
   })
   @IsOptional()
   @IsIn([
@@ -34,8 +32,6 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
     'poolName',
     'poolTypeId',
     'encryptionEnabled',
-    'serverId',
-    'virtualServerId',
   ])
   declare filterField?: string;
 }

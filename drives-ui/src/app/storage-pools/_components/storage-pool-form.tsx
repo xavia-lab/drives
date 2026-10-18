@@ -19,6 +19,14 @@ const { Text } = Typography;
 
 type TargetType = "physical" | "virtual";
 
+type StoragePoolFormProps = {
+  formProps: FormProps;
+  form: FormInstance;
+  /** `edit` hides the host section: attaching/detaching a pool is done through
+   * the IMPORT/EXPORT actions on the show page so it is recorded in history. */
+  mode?: "create" | "edit";
+};
+
 const POOL_NAME_RULES = [
   { required: true, message: "Pool name is required" },
   { max: 64, message: "Pool name cannot exceed 64 characters" },
@@ -26,17 +34,11 @@ const POOL_NAME_RULES = [
 
 const POOL_TYPE_RULES = [{ required: true, message: "Pool type is required" }];
 
-const TARGET_RULES = [
-  { required: true, message: "A target server is required" },
-];
-
 export const StoragePoolForm = ({
   formProps,
   form,
-}: {
-  formProps: FormProps;
-  form: FormInstance;
-}) => {
+  mode = "create",
+}: StoragePoolFormProps) => {
   const [targetType, setTargetType] = useState<TargetType>("physical");
   const initializedRef = useRef(false);
 
@@ -44,8 +46,7 @@ export const StoragePoolForm = ({
   const virtualServerId = Form.useWatch("virtualServerId", form) as
     string | undefined;
 
-  // On edit, derive the target from the loaded record exactly once (before the
-  // user interacts). Create keeps the "physical" default.
+  // Derive the target from the loaded record exactly once (before interaction).
   useEffect(() => {
     if (initializedRef.current) return;
     if (virtualServerId && !serverId) {
@@ -56,7 +57,7 @@ export const StoragePoolForm = ({
     }
   }, [serverId, virtualServerId]);
 
-  // A storage pool targets exactly one resource. Switching the type clears the
+  // A storage pool targets at most one resource. Switching the type clears the
   // other side so the payload always satisfies the server's XOR rule.
   const handleTargetChange = (next: TargetType) => {
     setTargetType(next);
@@ -105,51 +106,52 @@ export const StoragePoolForm = ({
           </Form.Item>
         </Card>
 
-        <Card title={"Target"}>
-          <Form.Item label={"Target Type"} style={{ marginBottom: 16 }}>
-            <Radio.Group
-              value={targetType}
-              onChange={(event) =>
-                handleTargetChange(event.target.value as TargetType)
-              }
-            >
-              <Radio.Button value="physical">Physical Server</Radio.Button>
-              <Radio.Button value="virtual">Virtual Server</Radio.Button>
-            </Radio.Group>
-            <Text
-              type="secondary"
-              style={{ display: "block", marginTop: 8, fontSize: 12 }}
-            >
-              A storage pool is attached to either a physical server or a
-              virtual server, never both.
-            </Text>
-          </Form.Item>
+        {mode === "create" && (
+          <Card title={"Initial Host (optional)"}>
+            <Form.Item label={"Host Type"} style={{ marginBottom: 16 }}>
+              <Radio.Group
+                value={targetType}
+                onChange={(event) =>
+                  handleTargetChange(event.target.value as TargetType)
+                }
+              >
+                <Radio.Button value="physical">Physical Server</Radio.Button>
+                <Radio.Button value="virtual">Virtual Server</Radio.Button>
+              </Radio.Group>
+              <Text
+                type="secondary"
+                style={{ display: "block", marginTop: 8, fontSize: 12 }}
+              >
+                Optionally IMPORT the new pool onto a host. Leave empty to
+                create a detached pool; it can be attached later via the Import
+                action.
+              </Text>
+            </Form.Item>
 
-          <Form.Item
-            label={"Physical Server"}
-            name={["serverId"]}
-            hidden={targetType !== "physical"}
-            rules={targetType === "physical" ? TARGET_RULES : []}
-          >
-            <LookupSelect
-              resource="physical-servers"
-              optionLabel="hostname"
-              placeholder="Select physical server"
-            />
-          </Form.Item>
-          <Form.Item
-            label={"Virtual Server"}
-            name={["virtualServerId"]}
-            hidden={targetType !== "virtual"}
-            rules={targetType === "virtual" ? TARGET_RULES : []}
-          >
-            <LookupSelect
-              resource="virtual-servers"
-              optionLabel="hostname"
-              placeholder="Select virtual server"
-            />
-          </Form.Item>
-        </Card>
+            <Form.Item
+              label={"Physical Server"}
+              name={["serverId"]}
+              hidden={targetType !== "physical"}
+            >
+              <LookupSelect
+                resource="physical-servers"
+                optionLabel="hostname"
+                placeholder="Select physical server"
+              />
+            </Form.Item>
+            <Form.Item
+              label={"Virtual Server"}
+              name={["virtualServerId"]}
+              hidden={targetType !== "virtual"}
+            >
+              <LookupSelect
+                resource="virtual-servers"
+                optionLabel="hostname"
+                placeholder="Select virtual server"
+              />
+            </Form.Item>
+          </Card>
+        )}
       </Space>
     </Form>
   );

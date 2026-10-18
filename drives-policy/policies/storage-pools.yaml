@@ -3,8 +3,9 @@ resourcePolicy:
   version: "default"
   resource: "storage-pools"
   rules:
-    # 1. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list", "edit", "delete"]
+    # 1. Admin can ALWAYS create, show, list, and attach/detach pools
+    - actions:
+        ["create", "show", "list", "edit", "delete", "import", "export"]
       effect: EFFECT_ALLOW
       roles:
         - admin

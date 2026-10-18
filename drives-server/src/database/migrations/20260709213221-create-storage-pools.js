@@ -34,21 +34,6 @@ module.exports = {
         defaultValue: false,
         allowNull: false,
       },
-      // --- Topographical Mapping Targets ---
-      server_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match physical_servers.id
-        allowNull: true, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
-        references: { model: 'physical_servers', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
-      },
-      virtual_server_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match virtual_servers.id
-        allowNull: true, // Nullable: Only populated if the pool belongs to a virtualized guest VM/container
-        references: { model: 'virtual_servers', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
-      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -59,31 +44,11 @@ module.exports = {
       },
     });
 
-    // 2. Database Check Constraint: Enforces that the storage pool is tied to EXACTLY ONE compute resource target
-    await queryInterface.sequelize.query(`
-      ALTER TABLE "storage_pools"
-        ADD CONSTRAINT "storage_pools_target_exclusivity_check"
-          CHECK (
-            (server_id IS NOT NULL AND virtual_server_id IS NOT NULL) = FALSE AND
-            (server_id IS NOT NULL OR virtual_server_id IS NOT NULL) = TRUE
-            );
-    `);
-
-    // --- Performance Optimization Indexes ---
-
-    // Fast scans for isolating storage groupings across physical servers
-    await queryInterface.addIndex('storage_pools', ['server_id'], {
-      name: 'storage_pools_server_id_idx',
-      using: 'btree',
-      where: { server_id: { [Sequelize.Op.ne]: null } },
-    });
-
-    // Fast scans for isolating storage groupings across virtual nodes
-    await queryInterface.addIndex('storage_pools', ['virtual_server_id'], {
-      name: 'storage_pools_virtual_server_id_idx',
-      using: 'btree',
-      where: { virtual_server_id: { [Sequelize.Op.ne]: null } },
-    });
+    // A pool's compute host is no longer a rigid column on this table. Hosting
+    // is modelled as a many-to-many-over-time relationship in the
+    // `storage_pool_hosts` IMPORT/EXPORT event log (see
+    // 20260709213300-create-storage-pool-hosts.js), which lets a pool be
+    // exported from one server and imported into another while keeping history.
 
     // Fast scans for isolating storage groupings by their pool type lookup
     await queryInterface.addIndex('storage_pools', ['pool_type_id'], {

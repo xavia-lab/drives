@@ -3,6 +3,7 @@
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
+import { AttachedStoragePools } from "@components/attached-storage-pools";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import {
   Card,
@@ -150,6 +151,11 @@ export default function PhysicalServerShow() {
             />
           )}
         </Card>
+
+        <AttachedStoragePools
+          serverType="physical"
+          serverId={record?.id as string | undefined}
+        />
 
         <Row justify="center" gutter={32}>
           <Col style={{ textAlign: "center" }}>

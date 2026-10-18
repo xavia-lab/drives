@@ -1,14 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { getModelToken, getConnectionToken } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { StoragePoolService } from './storage-pool.service';
 import { StoragePool } from './entities/storage-pool.entity';
+import { StoragePoolHost } from './entities/storage-pool-host.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
-import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
 import {
   describe,
   it,
@@ -24,17 +29,26 @@ describe('StoragePoolService', () => {
 
   // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockStoragePoolModel: Record<string, Mock>;
+  let mockStoragePoolHostModel: Record<string, Mock>;
   let mockPhysicalServerModel: Record<string, Mock>;
   let mockVirtualServerModel: Record<string, Mock>;
   let mockPoolTypeModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
+  let mockTransaction: { LOCK: { UPDATE: string } };
+  let mockSequelize: { transaction: Mock };
 
   beforeEach(async () => {
     mockStoragePoolModel = {
-      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findOne: vi.fn(),
       findByPk: vi.fn(),
+      findAll: vi.fn(),
       create: vi.fn(),
       destroy: vi.fn(),
+    };
+    mockStoragePoolHostModel = {
+      findOne: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
     };
     mockPhysicalServerModel = { findByPk: vi.fn() };
     mockVirtualServerModel = { findByPk: vi.fn() };
@@ -44,12 +58,21 @@ describe('StoragePoolService', () => {
       paginate: vi.fn(),
     };
 
+    mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
+    mockSequelize = {
+      transaction: vi.fn((cb: (t: unknown) => unknown) => cb(mockTransaction)),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StoragePoolService,
         {
           provide: getModelToken(StoragePool),
           useValue: mockStoragePoolModel,
+        },
+        {
+          provide: getModelToken(StoragePoolHost),
+          useValue: mockStoragePoolHostModel,
         },
         {
           provide: getModelToken(PhysicalServer),
@@ -63,6 +86,10 @@ describe('StoragePoolService', () => {
           provide: getModelToken(PoolType),
           useValue: mockPoolTypeModel,
         },
+        {
+          provide: getConnectionToken(),
+          useValue: mockSequelize,
+        },
         { provide: PaginationService, useValue: mockPaginationService },
       ],
     }).compile();
@@ -71,23 +98,89 @@ describe('StoragePoolService', () => {
     vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
   });
 
+  const hostEvent = (overrides: Record<string, unknown> = {}) => ({
+    id: 'event-uuid',
+    displayKey: 1,
+    storagePoolId: 'pool-uuid',
+    eventType: 'IMPORT',
+    eventTimestamp: new Date('2026-07-01T00:00:00.000Z'),
+    notes: null,
+    physicalServerId: 'server-uuid',
+    virtualServerId: null,
+    physicalServer: { hostname: 'ash-storage-01' },
+    virtualServer: null,
+    ...overrides,
+  });
+
   describe('findAll', () => {
-    it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
-      const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: StoragePool[];
-        meta: Record<string, unknown>;
-      };
-      mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
+    it('derives the current host for every page row', async () => {
+      const rowOne = { id: 'pool-1', setDataValue: vi.fn() };
+      const rowTwo = { id: 'pool-2', setDataValue: vi.fn() };
+      mockPaginationService.paginate.mockResolvedValue({
+        data: [rowOne, rowTwo],
+        meta: {},
+      });
+      mockStoragePoolHostModel.findAll.mockResolvedValue([
+        hostEvent({ storagePoolId: 'pool-1' }),
+      ]);
 
-      const result = await service.findAll(mockQuery);
+      await service.findAll({ pageNumber: 1, pageSize: 10 });
 
-      expect(result).toEqual(expectedPaginatedOutput);
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockStoragePoolModel as unknown,
-        mockQuery,
-        { include: [PhysicalServer, VirtualServer] },
+        { pageNumber: 1, pageSize: 10 },
+        {},
       );
+      expect(rowOne.setDataValue).toHaveBeenCalledWith('currentHost', {
+        type: 'PHYSICAL',
+        serverId: 'server-uuid',
+        hostname: 'ash-storage-01',
+      });
+      expect(rowTwo.setDataValue).toHaveBeenCalledWith('currentHost', null);
+    });
+  });
+
+  describe('findOne', () => {
+    it('derives currentHost from the chronologically latest event even when returned unordered', async () => {
+      const setDataValue = vi.fn();
+      const newestImport = hostEvent({
+        id: 'event-newest',
+        displayKey: 5,
+        eventTimestamp: new Date('2026-07-02T11:00:00.000Z'),
+        physicalServerId: 'compute-uuid',
+        physicalServer: { hostname: 'ash-compute-01' },
+      });
+      const exportEvent = hostEvent({
+        id: 'event-export',
+        displayKey: 4,
+        eventType: 'EXPORT',
+        eventTimestamp: new Date('2026-07-02T10:00:00.000Z'),
+      });
+      const olderImport = hostEvent({
+        id: 'event-oldest',
+        displayKey: 3,
+        eventTimestamp: new Date('2026-07-02T08:00:00.000Z'),
+      });
+      // Deliberately unordered, mirroring the bug where Sequelize ignored the
+      // include-level `order`.
+      mockStoragePoolModel.findByPk.mockResolvedValue({
+        id: 'pool-uuid',
+        hosts: [newestImport, exportEvent, olderImport],
+        setDataValue,
+      });
+
+      await service.findOne('pool-uuid');
+
+      expect(setDataValue).toHaveBeenCalledWith('currentHost', {
+        type: 'PHYSICAL',
+        serverId: 'compute-uuid',
+        hostname: 'ash-compute-01',
+      });
+      expect(setDataValue).toHaveBeenCalledWith('hosts', [
+        olderImport,
+        exportEvent,
+        newestImport,
+      ]);
     });
   });
 
@@ -96,169 +189,237 @@ describe('StoragePoolService', () => {
       poolName: 'tank',
       poolTypeId: 'pooltype-uuid',
       encryptionEnabled: true,
-      serverId: 'server-uuid',
     };
 
-    it('should successfully create and reload a storage pool if XOR target check passes and parent exists', async () => {
-      const mockReload = vi
-        .fn()
-        .mockResolvedValue({ id: 'pool-uuid', ...createDto });
-      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+    beforeEach(() => {
       mockPoolTypeModel.findByPk.mockResolvedValue({ id: 'pooltype-uuid' });
-      mockStoragePoolModel.create.mockResolvedValue({
+      mockStoragePoolModel.create.mockResolvedValue({ id: 'pool-uuid' });
+      mockStoragePoolModel.findByPk.mockResolvedValue({
         id: 'pool-uuid',
-        reload: mockReload,
-      });
-
-      const result = await service.create(createDto);
-
-      expect(result).toBeDefined();
-      expect(mockStoragePoolModel.create).toHaveBeenCalledWith(createDto);
-      expect(mockReload).toHaveBeenCalledWith({
-        include: [PhysicalServer, VirtualServer],
+        hosts: [],
+        setDataValue: vi.fn(),
       });
     });
 
-    it('should throw BadRequestException if both serverId and virtualServerId are assigned', async () => {
-      const invalidDto: CreateStoragePoolDto = {
-        ...createDto,
-        virtualServerId: 'vm-uuid',
-      };
+    it('creates a detached pool without any host event', async () => {
+      await service.create(createDto);
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
+      expect(mockStoragePoolModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          poolName: 'tank',
+          poolTypeId: 'pooltype-uuid',
+          encryptionEnabled: true,
+        }),
+        { transaction: mockTransaction },
+      );
+      expect(mockStoragePoolHostModel.create).not.toHaveBeenCalled();
+    });
+
+    it('records an initial IMPORT when a host is supplied', async () => {
+      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+
+      await service.create({ ...createDto, serverId: 'server-uuid' });
+
+      expect(mockStoragePoolHostModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storagePoolId: 'pool-uuid',
+          physicalServerId: 'server-uuid',
+          virtualServerId: null,
+          eventType: 'IMPORT',
+        }),
+        { transaction: mockTransaction },
       );
     });
 
-    it('should throw BadRequestException if neither serverId nor virtualServerId is assigned', async () => {
-      const invalidDto: CreateStoragePoolDto = {
-        poolName: 'tank',
-        poolTypeId: 'pooltype-uuid',
-        encryptionEnabled: true,
-      };
-
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
+    it('throws BadRequestException when both host kinds are supplied', async () => {
+      await expect(
+        service.create({
+          ...createDto,
+          serverId: 'server-uuid',
+          virtualServerId: 'vm-uuid',
+        }),
+      ).rejects.toThrow(BadRequestException);
       expect(mockStoragePoolModel.create).not.toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if targeted physical server does not exist', async () => {
+    it('throws NotFoundException if the targeted physical server does not exist', async () => {
       mockPhysicalServerModel.findByPk.mockResolvedValue(null);
-      mockPoolTypeModel.findByPk.mockResolvedValue({ id: 'pooltype-uuid' });
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create({ ...createDto, serverId: 'server-uuid' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    const updateDto: UpdateStoragePoolDto = {
-      poolName: 'tank-updated',
-    };
-
-    it('should successfully update a storage pool when parent constraint targets exist', async () => {
+    it('updates scalar columns and reloads the timeline', async () => {
       const mockInstance = {
         id: 'pool-uuid',
-        serverId: 'server-uuid',
-        virtualServerId: null,
         update: vi.fn().mockResolvedValue(true),
-        reload: vi
-          .fn()
-          .mockResolvedValue({ id: 'pool-uuid', poolName: 'tank-updated' }),
       };
-      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
-
-      await service.update('pool-uuid', updateDto);
-
-      expect(mockInstance.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          poolName: 'tank-updated',
-        }),
-      );
-    });
-
-    it('should allow moving a pool from a physical server to a virtual server', async () => {
-      const mockInstance = {
-        id: 'pool-uuid',
-        serverId: 'server-uuid',
-        virtualServerId: null,
-        update: vi.fn().mockResolvedValue(true),
-        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
-      };
-      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
-      mockVirtualServerModel.findByPk.mockResolvedValue({ id: 'vm-uuid' });
+      mockStoragePoolModel.findByPk
+        .mockResolvedValueOnce(mockInstance)
+        .mockResolvedValueOnce({
+          id: 'pool-uuid',
+          hosts: [],
+          setDataValue: vi.fn(),
+        });
 
       await service.update('pool-uuid', {
-        serverId: null,
-        virtualServerId: 'vm-uuid',
+        poolName: 'tank-updated',
       });
 
       expect(mockInstance.update).toHaveBeenCalledWith(
+        expect.objectContaining({ poolName: 'tank-updated' }),
+      );
+    });
+  });
+
+  describe('importPool', () => {
+    it('appends an IMPORT event when the pool is detached', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+      mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+      mockStoragePoolHostModel.findOne.mockResolvedValue(null);
+      mockStoragePoolHostModel.create.mockResolvedValue({});
+      mockStoragePoolModel.findByPk
+        .mockResolvedValueOnce({ id: 'pool-uuid' })
+        .mockResolvedValueOnce({
+          id: 'pool-uuid',
+          hosts: [],
+          setDataValue: vi.fn(),
+        });
+
+      await service.importPool('pool-uuid', { serverId: 'server-uuid' });
+
+      expect(mockStoragePoolHostModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          serverId: null,
-          virtualServerId: 'vm-uuid',
+          storagePoolId: 'pool-uuid',
+          physicalServerId: 'server-uuid',
+          eventType: 'IMPORT',
         }),
+        { transaction: mockTransaction },
       );
     });
 
-    it('should allow moving a pool from a virtual server to a physical server', async () => {
-      const mockInstance = {
-        id: 'pool-uuid',
-        serverId: null,
-        virtualServerId: 'vm-uuid',
-        update: vi.fn().mockResolvedValue(true),
-        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
-      };
-      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
-      mockPhysicalServerModel.findByPk.mockResolvedValue({
-        id: 'server-uuid',
-      });
+    it('throws ConflictException when the pool is already attached', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+      mockStoragePoolHostModel.findOne.mockResolvedValue(
+        hostEvent({ storagePoolId: 'pool-uuid' }),
+      );
 
-      await service.update('pool-uuid', {
-        virtualServerId: null,
-        serverId: 'server-uuid',
-      });
+      await expect(
+        service.importPool('pool-uuid', { serverId: 'server-uuid' }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockStoragePoolHostModel.create).not.toHaveBeenCalled();
+    });
 
-      expect(mockInstance.update).toHaveBeenCalledWith(
+    it('throws BadRequestException when no host is provided', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+
+      await expect(service.importPool('pool-uuid', {})).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('exportPool', () => {
+    it('appends an EXPORT event for the current host', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+      mockStoragePoolHostModel.findOne.mockResolvedValue(
+        hostEvent({ storagePoolId: 'pool-uuid' }),
+      );
+      mockStoragePoolHostModel.create.mockResolvedValue({});
+      mockStoragePoolModel.findByPk
+        .mockResolvedValueOnce({ id: 'pool-uuid' })
+        .mockResolvedValueOnce({
+          id: 'pool-uuid',
+          hosts: [],
+          setDataValue: vi.fn(),
+        });
+
+      await service.exportPool('pool-uuid', {});
+
+      expect(mockStoragePoolHostModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          serverId: 'server-uuid',
-          virtualServerId: null,
+          storagePoolId: 'pool-uuid',
+          physicalServerId: 'server-uuid',
+          eventType: 'EXPORT',
         }),
+        { transaction: mockTransaction },
       );
     });
 
-    it('should throw BadRequestException when an update would assign both targets', async () => {
-      const mockInstance = {
-        id: 'pool-uuid',
-        serverId: null,
-        virtualServerId: 'vm-uuid',
-        update: vi.fn().mockResolvedValue(true),
-        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
-      };
-      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+    it('throws ConflictException when the pool is detached', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+      mockStoragePoolHostModel.findOne.mockResolvedValue({
+        eventType: 'EXPORT',
+      });
 
-      await expect(
-        service.update('pool-uuid', { serverId: 'server-uuid' }),
-      ).rejects.toThrow(BadRequestException);
-      expect(mockInstance.update).not.toHaveBeenCalled();
+      await expect(service.exportPool('pool-uuid', {})).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockStoragePoolHostModel.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findAttached', () => {
+    it('returns only pools whose latest event attaches them to the host', async () => {
+      // First call: candidate pool ids that ever referenced the host.
+      mockStoragePoolHostModel.findAll.mockResolvedValueOnce([
+        { storagePoolId: 'pool-1' },
+        { storagePoolId: 'pool-2' },
+      ]);
+      // Second call (getCurrentHostMap): the current host per candidate.
+      mockStoragePoolHostModel.findAll.mockResolvedValueOnce([
+        hostEvent({ storagePoolId: 'pool-1' }),
+        hostEvent({
+          storagePoolId: 'pool-2',
+          eventType: 'EXPORT',
+        }),
+      ]);
+      const poolOne = { id: 'pool-1', setDataValue: vi.fn() };
+      mockStoragePoolModel.findAll.mockResolvedValue([poolOne]);
+
+      const result = await service.findAttached({
+        physicalServerId: 'server-uuid',
+      });
+
+      expect(mockStoragePoolHostModel.findAll).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          where: { physicalServerId: 'server-uuid' },
+          attributes: ['storagePoolId'],
+        }),
+      );
+      expect(mockStoragePoolModel.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { [Op.in]: ['pool-1'] } },
+        }),
+      );
+      expect(result).toEqual([poolOne]);
     });
 
-    it('should throw BadRequestException when an update would remove both targets', async () => {
-      const mockInstance = {
-        id: 'pool-uuid',
-        serverId: 'server-uuid',
-        virtualServerId: null,
-        update: vi.fn().mockResolvedValue(true),
-        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
-      };
-      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+    it('throws BadRequestException when no host id is provided', async () => {
+      await expect(service.findAttached({})).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
 
-      await expect(
-        service.update('pool-uuid', { serverId: null }),
-      ).rejects.toThrow(BadRequestException);
-      expect(mockInstance.update).not.toHaveBeenCalled();
+  describe('delete', () => {
+    it('destroys the pool when it exists', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
+      mockStoragePoolModel.destroy.mockResolvedValue(1);
+
+      await expect(service.delete('pool-uuid')).resolves.toBe(true);
+    });
+
+    it('throws NotFoundException when the pool does not exist', async () => {
+      mockStoragePoolModel.findByPk.mockResolvedValue(null);
+
+      await expect(service.delete('pool-uuid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

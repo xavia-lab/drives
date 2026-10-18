@@ -13,6 +13,11 @@ import { Card, Col, Descriptions, Row, Space, Tag, Typography } from "antd";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
+import { StoragePoolHostActions } from "@app/storage-pools/_components/storage-pool-host-actions";
+import {
+  StoragePoolHostsTimeline,
+  type StoragePoolHostEvent,
+} from "@app/storage-pools/_components/storage-pool-hosts-timeline";
 
 const { Text } = Typography;
 
@@ -24,8 +29,9 @@ export default function StoragePoolShow() {
     resource: "pool-types",
   });
 
-  const server = record?.server as BaseRecord | undefined;
-  const virtualServer = record?.virtualServer as BaseRecord | undefined;
+  const currentHost = record?.currentHost as BaseRecord | undefined;
+  const hosts = (record?.hosts as StoragePoolHostEvent[] | undefined) ?? [];
+  const isPhysical = currentHost?.type === "PHYSICAL";
 
   return (
     <Show
@@ -75,32 +81,42 @@ export default function StoragePoolShow() {
                   <CloseCircleFilled style={{ color: "#ff4d4f" }} />
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Target Type">
-                {record?.serverId ? (
-                  <Tag color="geekblue">Physical</Tag>
+              <Descriptions.Item label="Current Host" span={2}>
+                {currentHost ? (
+                  <Space size={4}>
+                    <Tag color={isPhysical ? "geekblue" : "purple"}>
+                      {isPhysical ? "Physical" : "Virtual"}
+                    </Tag>
+                    <LinkedLabel
+                      resource={
+                        isPhysical ? "physical-servers" : "virtual-servers"
+                      }
+                      value={currentHost.serverId}
+                      label={currentHost.hostname as string | undefined}
+                      fallback="-"
+                    />
+                  </Space>
                 ) : (
-                  <Tag color="purple">Virtual</Tag>
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item label="Target Server">
-                {record?.serverId ? (
-                  <LinkedLabel
-                    resource="physical-servers"
-                    value={record?.serverId}
-                    label={server?.hostname as string | undefined}
-                    fallback="-"
-                  />
-                ) : (
-                  <LinkedLabel
-                    resource="virtual-servers"
-                    value={record?.virtualServerId}
-                    label={virtualServer?.hostname as string | undefined}
-                    fallback="-"
-                  />
+                  <Tag>Detached</Tag>
                 )}
               </Descriptions.Item>
             </Descriptions>
           </Card>
+        </Card>
+
+        <Card
+          title={"Host History"}
+          extra={
+            <StoragePoolHostActions
+              poolId={record?.id as string}
+              isAttached={Boolean(currentHost)}
+              onDone={async () => {
+                await query.refetch();
+              }}
+            />
+          }
+        >
+          <StoragePoolHostsTimeline events={hosts} />
         </Card>
 
         <Row justify="center" gutter={32}>

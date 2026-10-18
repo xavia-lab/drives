@@ -8,7 +8,7 @@ export default function StoragePoolEdit() {
 
   return (
     <Edit saveButtonProps={saveButtonProps}>
-      <StoragePoolForm formProps={formProps} form={form} />
+      <StoragePoolForm formProps={formProps} form={form} mode="edit" />
     </Edit>
   );
 }

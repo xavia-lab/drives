@@ -52,7 +52,7 @@ export class CreateStoragePoolDto {
 
   @ApiPropertyOptional({
     description:
-      'Relational link pointer identifier mapping onto physical hardware chassis node (mutually exclusive with virtualServerId)',
+      'Optional physical host to IMPORT the pool onto on creation (mutually exclusive with virtualServerId). Omit to create the pool detached.',
     example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
     required: false,
   })
@@ -62,7 +62,7 @@ export class CreateStoragePoolDto {
 
   @ApiPropertyOptional({
     description:
-      'Relational link pointer identifier mapping onto virtualized guest machine node (mutually exclusive with serverId)',
+      'Optional virtualized guest to IMPORT the pool onto on creation (mutually exclusive with serverId). Omit to create the pool detached.',
     example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
     required: false,
   })
