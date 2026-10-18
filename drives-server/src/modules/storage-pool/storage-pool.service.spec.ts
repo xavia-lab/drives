@@ -5,6 +5,7 @@ import { StoragePoolService } from './storage-pool.service';
 import { StoragePool } from './entities/storage-pool.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
@@ -25,6 +26,7 @@ describe('StoragePoolService', () => {
   let mockStoragePoolModel: Record<string, Mock>;
   let mockPhysicalServerModel: Record<string, Mock>;
   let mockVirtualServerModel: Record<string, Mock>;
+  let mockPoolTypeModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
 
   beforeEach(async () => {
@@ -36,6 +38,7 @@ describe('StoragePoolService', () => {
     };
     mockPhysicalServerModel = { findByPk: vi.fn() };
     mockVirtualServerModel = { findByPk: vi.fn() };
+    mockPoolTypeModel = { findByPk: vi.fn() };
 
     mockPaginationService = {
       paginate: vi.fn(),
@@ -55,6 +58,10 @@ describe('StoragePoolService', () => {
         {
           provide: getModelToken(VirtualServer),
           useValue: mockVirtualServerModel,
+        },
+        {
+          provide: getModelToken(PoolType),
+          useValue: mockPoolTypeModel,
         },
         { provide: PaginationService, useValue: mockPaginationService },
       ],
@@ -87,7 +94,7 @@ describe('StoragePoolService', () => {
   describe('create', () => {
     const createDto: CreateStoragePoolDto = {
       poolName: 'tank',
-      poolType: 'zfs',
+      poolTypeId: 'pooltype-uuid',
       encryptionEnabled: true,
       serverId: 'server-uuid',
     };
@@ -97,6 +104,7 @@ describe('StoragePoolService', () => {
         .fn()
         .mockResolvedValue({ id: 'pool-uuid', ...createDto });
       mockPhysicalServerModel.findByPk.mockResolvedValue({ id: 'server-uuid' });
+      mockPoolTypeModel.findByPk.mockResolvedValue({ id: 'pooltype-uuid' });
       mockStoragePoolModel.create.mockResolvedValue({
         id: 'pool-uuid',
         reload: mockReload,
@@ -122,8 +130,22 @@ describe('StoragePoolService', () => {
       );
     });
 
+    it('should throw BadRequestException if neither serverId nor virtualServerId is assigned', async () => {
+      const invalidDto: CreateStoragePoolDto = {
+        poolName: 'tank',
+        poolTypeId: 'pooltype-uuid',
+        encryptionEnabled: true,
+      };
+
+      await expect(service.create(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockStoragePoolModel.create).not.toHaveBeenCalled();
+    });
+
     it('should throw NotFoundException if targeted physical server does not exist', async () => {
       mockPhysicalServerModel.findByPk.mockResolvedValue(null);
+      mockPoolTypeModel.findByPk.mockResolvedValue({ id: 'pooltype-uuid' });
 
       await expect(service.create(createDto)).rejects.toThrow(
         NotFoundException,
@@ -155,6 +177,88 @@ describe('StoragePoolService', () => {
           poolName: 'tank-updated',
         }),
       );
+    });
+
+    it('should allow moving a pool from a physical server to a virtual server', async () => {
+      const mockInstance = {
+        id: 'pool-uuid',
+        serverId: 'server-uuid',
+        virtualServerId: null,
+        update: vi.fn().mockResolvedValue(true),
+        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
+      };
+      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+      mockVirtualServerModel.findByPk.mockResolvedValue({ id: 'vm-uuid' });
+
+      await service.update('pool-uuid', {
+        serverId: null,
+        virtualServerId: 'vm-uuid',
+      });
+
+      expect(mockInstance.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serverId: null,
+          virtualServerId: 'vm-uuid',
+        }),
+      );
+    });
+
+    it('should allow moving a pool from a virtual server to a physical server', async () => {
+      const mockInstance = {
+        id: 'pool-uuid',
+        serverId: null,
+        virtualServerId: 'vm-uuid',
+        update: vi.fn().mockResolvedValue(true),
+        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
+      };
+      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+      mockPhysicalServerModel.findByPk.mockResolvedValue({
+        id: 'server-uuid',
+      });
+
+      await service.update('pool-uuid', {
+        virtualServerId: null,
+        serverId: 'server-uuid',
+      });
+
+      expect(mockInstance.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serverId: 'server-uuid',
+          virtualServerId: null,
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when an update would assign both targets', async () => {
+      const mockInstance = {
+        id: 'pool-uuid',
+        serverId: null,
+        virtualServerId: 'vm-uuid',
+        update: vi.fn().mockResolvedValue(true),
+        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
+      };
+      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+
+      await expect(
+        service.update('pool-uuid', { serverId: 'server-uuid' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockInstance.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when an update would remove both targets', async () => {
+      const mockInstance = {
+        id: 'pool-uuid',
+        serverId: 'server-uuid',
+        virtualServerId: null,
+        update: vi.fn().mockResolvedValue(true),
+        reload: vi.fn().mockResolvedValue({ id: 'pool-uuid' }),
+      };
+      mockStoragePoolModel.findByPk.mockResolvedValue(mockInstance);
+
+      await expect(
+        service.update('pool-uuid', { serverId: null }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockInstance.update).not.toHaveBeenCalled();
     });
   });
 });

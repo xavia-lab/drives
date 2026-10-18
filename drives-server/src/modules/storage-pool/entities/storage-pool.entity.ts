@@ -9,15 +9,7 @@ import { Op } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../../virtual-server/entities/virtual-server.entity';
-
-// Define a structural TypeScript enum matching your explicit database ENUM constraints
-export enum StoragePoolType {
-  ZFS = 'ZFS',
-  BTRFS = 'BTRFS',
-  CEPH_OSD_POOL = 'CEPH_OSD_POOL',
-  MDRAID = 'MDRAID',
-  RAW_JBOD = 'RAW_JBOD',
-}
+import { PoolType } from '../../pool-type/entities/pool-type.entity';
 
 @Table({
   tableName: 'storage_pools',
@@ -41,6 +33,11 @@ export enum StoragePoolType {
         virtual_server_id: { [Op.ne]: null },
       },
     },
+    {
+      name: 'storage_pools_pool_type_id_idx',
+      using: 'btree',
+      fields: ['pool_type_id'],
+    },
   ],
 })
 export class StoragePool extends BaseModel {
@@ -52,13 +49,6 @@ export class StoragePool extends BaseModel {
   declare poolName: string;
 
   @Column({
-    type: DataType.ENUM(...Object.values(StoragePoolType)),
-    allowNull: false,
-    field: 'pool_type',
-  })
-  declare poolType: StoragePoolType;
-
-  @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
     allowNull: false,
@@ -67,6 +57,20 @@ export class StoragePool extends BaseModel {
   declare encryptionEnabled: boolean;
 
   // --- Foreign Keys and Associations ---
+
+  @ForeignKey(() => PoolType)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+    field: 'pool_type_id',
+  })
+  declare poolTypeId: string;
+
+  @BelongsTo(() => PoolType, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  declare poolType: PoolType;
 
   @ForeignKey(() => PhysicalServer)
   @Column({

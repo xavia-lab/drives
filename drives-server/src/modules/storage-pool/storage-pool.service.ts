@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { StoragePool } from './entities/storage-pool.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
 import { QueryStoragePoolDto } from './dto/query-storage-pool.dto';
@@ -22,16 +23,28 @@ export class StoragePoolService {
     private readonly physicalServerModel: typeof PhysicalServer,
     @InjectModel(VirtualServer)
     private readonly virtualServerModel: typeof VirtualServer,
+    @InjectModel(PoolType)
+    private readonly poolTypeModel: typeof PoolType,
     private readonly paginationService: PaginationService,
   ) {}
 
   // 🌟 Private helper to check foreign key constraints concurrently and aggregate errors
   private async validateForeignKeys(ids: {
+    poolTypeId?: string;
     serverId?: string;
     virtualServerId?: string;
   }): Promise<void> {
     const checkPromises: Promise<string | null>[] = [];
 
+    if (ids.poolTypeId) {
+      checkPromises.push(
+        this.poolTypeModel
+          .findByPk(ids.poolTypeId)
+          .then((exists) =>
+            exists ? null : `PoolType with ID ${ids.poolTypeId} not found`,
+          ),
+      );
+    }
     if (ids.serverId) {
       checkPromises.push(
         this.physicalServerModel
@@ -152,8 +165,8 @@ export class StoragePoolService {
     const updateData: Partial<StoragePool> = {};
     if (updateDto.poolName !== undefined)
       updateData.poolName = updateDto.poolName;
-    if (updateDto.poolType !== undefined)
-      updateData.poolType = updateDto.poolType;
+    if (updateDto.poolTypeId !== undefined)
+      updateData.poolTypeId = updateDto.poolTypeId;
     if (updateDto.encryptionEnabled !== undefined)
       updateData.encryptionEnabled = updateDto.encryptionEnabled;
     if (updateDto.serverId !== undefined)
@@ -162,7 +175,9 @@ export class StoragePoolService {
       updateData.virtualServerId = updateDto.virtualServerId;
 
     await poolObject.update(updateData);
-    return poolObject.reload({ include: [PhysicalServer, VirtualServer] });
+    return poolObject.reload({
+      include: [PhysicalServer, VirtualServer],
+    });
   }
 
   async delete(id: string): Promise<boolean> {

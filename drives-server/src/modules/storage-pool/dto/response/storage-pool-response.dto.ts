@@ -1,6 +1,5 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StoragePoolType } from '../../entities/storage-pool.entity';
 
 class ServerShallowDto {
   @Expose()
@@ -60,12 +59,11 @@ export class StoragePoolResponseDto {
 
   @Expose()
   @ApiProperty({
-    enum: StoragePoolType,
-    example: StoragePoolType.ZFS,
+    example: '019f5431-1bf4-7e4b-accd-617e39d8a372',
     description:
-      'The logical system volume format topology architecture design standard type',
+      'Relational link pointer ID referencing the storage pool type lookup record',
   })
-  poolType: StoragePoolType;
+  poolTypeId: string;
 
   @Expose()
   @ApiProperty({

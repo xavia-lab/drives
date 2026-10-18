@@ -6,14 +6,14 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, poolName, poolType, encryptionEnabled, serverId, virtualServerId, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled, serverId, virtualServerId, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
     'displayKey', // 🌟 Added to support rapid numeric sequence sorting in the UI
     'poolName',
-    'poolType',
+    'poolTypeId',
     'encryptionEnabled',
     'serverId',
     'virtualServerId',
@@ -25,14 +25,14 @@ export class QueryStoragePoolDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable fields: id, displayKey, poolName, poolType, encryptionEnabled, serverId, virtualServerId',
+      'Filterable fields: id, displayKey, poolName, poolTypeId, encryptionEnabled, serverId, virtualServerId',
   })
   @IsOptional()
   @IsIn([
     'id',
     'displayKey', // 🌟 Added to allow strict numerical equality filtering from UI inputs
     'poolName',
-    'poolType',
+    'poolTypeId',
     'encryptionEnabled',
     'serverId',
     'virtualServerId',

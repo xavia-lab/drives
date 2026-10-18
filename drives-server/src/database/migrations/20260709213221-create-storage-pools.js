@@ -22,15 +22,12 @@ module.exports = {
         type: Sequelize.STRING(64),
         allowNull: false, // e.g., 'tank-nvme-cache', 'btrfs-data-array'
       },
-      pool_type: {
-        type: Sequelize.ENUM(
-          'ZFS',
-          'BTRFS',
-          'CEPH_OSD_POOL',
-          'MDRAID',
-          'RAW_JBOD',
-        ),
+      pool_type_id: {
+        type: Sequelize.UUID, // Upgraded to lookup FK to match pool_types.id
         allowNull: false,
+        references: { model: 'pool_types', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       encryption_enabled: {
         type: Sequelize.BOOLEAN,
@@ -87,15 +84,16 @@ module.exports = {
       using: 'btree',
       where: { virtual_server_id: { [Sequelize.Op.ne]: null } },
     });
+
+    // Fast scans for isolating storage groupings by their pool type lookup
+    await queryInterface.addIndex('storage_pools', ['pool_type_id'], {
+      name: 'storage_pools_pool_type_id_idx',
+      using: 'btree',
+    });
   },
 
   async down(queryInterface, Sequelize) {
     // Drop target table cleanly to remove structural dependencies (Postgres handles internal sequence cleanup automatically)
     await queryInterface.dropTable('storage_pools');
-
-    // Clean up localized PostgreSQL types created exclusively for this table state
-    await queryInterface.sequelize.query(
-      `DROP TYPE IF EXISTS "enum_storage_pools_pool_type";`,
-    );
   },
 };
