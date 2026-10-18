@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { VirtualServerService } from './virtual-server.service';
 import {
+  MemoryUnit,
   VirtualServer,
   VirtualServerType,
 } from './entities/virtual-server.entity';
@@ -91,7 +92,8 @@ describe('VirtualServerService', () => {
       type: VirtualServerType.VM,
       operatingSystemId: 'os-uuid',
       allocatedVcpus: 4,
-      allocatedRamMb: 8192,
+      allocatedMemoryValue: 8,
+      allocatedMemoryUnit: MemoryUnit.GiB,
     };
 
     it('should successfully create and reload a virtual server if all constraints pass and parents exist', async () => {

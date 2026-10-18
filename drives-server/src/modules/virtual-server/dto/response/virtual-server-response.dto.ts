@@ -101,11 +101,27 @@ export class VirtualServerResponseDto {
 
   @Expose()
   @ApiProperty({
-    example: 8192,
+    example: 8,
     description:
-      'Total RAM memory ceiling limitation capacity provisioned rated in Megabytes',
+      'Volatile RAM allocation value expressed in the selected memory unit',
   })
-  allocatedRamMb: number;
+  allocatedMemoryValue: number;
+
+  @Expose()
+  @ApiProperty({
+    example: 'GiB',
+    description:
+      'Binary memory unit token used to scale the allocated memory value into bytes',
+  })
+  allocatedMemoryUnit: string;
+
+  @Expose()
+  @ApiProperty({
+    example: 8589934592,
+    description:
+      'Denormalised allocated memory capacity converted into whole bytes for server-side sorting and range filtering',
+  })
+  absoluteAllocatedMemory: number;
 
   @Expose()
   @ApiProperty({

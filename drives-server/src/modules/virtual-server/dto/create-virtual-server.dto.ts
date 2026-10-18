@@ -6,11 +6,16 @@ import {
   IsUUID,
   IsEnum,
   IsInt,
-  Min,
+  IsNumber,
   IsBoolean,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VirtualServerType } from '../entities/virtual-server.entity';
+import {
+  MemoryUnit,
+  VirtualServerType,
+} from '../entities/virtual-server.entity';
 
 export class CreateVirtualServerDto {
   @ApiPropertyOptional({
@@ -92,13 +97,31 @@ export class CreateVirtualServerDto {
 
   @ApiProperty({
     description:
-      'Total volatile random access RAM volume memory constraints assigned measured in Megabytes',
-    example: 8192,
+      'Volatile RAM allocation value expressed in the selected memory unit',
+    example: 8,
     required: true,
   })
-  @IsInt()
-  @Min(1)
-  allocatedRamMb: number;
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Memory value must be a number with maximum 2 decimal places' },
+  )
+  @IsNotEmpty()
+  @Min(0, { message: 'Memory value cannot be negative' })
+  @Max(99999999.99, { message: 'Memory value cannot exceed 99999999.99' })
+  allocatedMemoryValue: number;
+
+  @ApiProperty({
+    description:
+      'Binary memory unit token (RAM is addressed in powers of two) used to scale the allocated memory value into bytes',
+    enum: MemoryUnit,
+    example: MemoryUnit.GiB,
+    required: true,
+  })
+  @IsEnum(MemoryUnit, {
+    message: `Memory unit must be one of the following values: ${Object.values(MemoryUnit).join(', ')}`,
+  })
+  @IsNotEmpty()
+  allocatedMemoryUnit: MemoryUnit;
 
   @ApiPropertyOptional({
     description:

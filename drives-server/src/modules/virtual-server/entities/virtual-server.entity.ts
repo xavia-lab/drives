@@ -4,16 +4,25 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  BeforeSave,
 } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
+import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
 export enum VirtualServerType {
   VM = 'VM',
   CONTAINER = 'CONTAINER',
+}
+
+// Binary memory units for allocated RAM (RAM is addressed in powers of two)
+export enum MemoryUnit {
+  MiB = 'MiB',
+  GiB = 'GiB',
+  TiB = 'TiB',
 }
 
 @Table({
@@ -73,11 +82,48 @@ export class VirtualServer extends BaseModel {
   declare allocatedVcpus: number;
 
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false, // Stored in MB for precise integer computation
-    field: 'allocated_ram_mb',
+    type: DataType.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+    field: 'allocated_memory_value',
   })
-  declare allocatedRamMb: number;
+  declare allocatedMemoryValue: number;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(MemoryUnit)),
+    allowNull: false,
+    defaultValue: MemoryUnit.GiB,
+    field: 'allocated_memory_unit',
+  })
+  declare allocatedMemoryUnit: MemoryUnit;
+
+  // Stored (denormalised) byte count so it can be sorted/filtered server-side.
+  // Computed from allocatedMemoryValue + allocatedMemoryUnit on every save via
+  // the @BeforeSave hook below. Bytes are whole numbers, so BIGINT is exact and
+  // index-friendly; the getter coerces back to a number because `pg` returns
+  // bigint columns as strings.
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'absolute_allocated_memory',
+    get() {
+      const raw = this.getDataValue('absoluteAllocatedMemory') as
+        string | number | null | undefined;
+      return raw === null || raw === undefined ? 0 : Number(raw);
+    },
+  })
+  declare absoluteAllocatedMemory: number;
+
+  @BeforeSave
+  static computeAbsoluteAllocatedMemory(instance: VirtualServer) {
+    instance.absoluteAllocatedMemory = Math.round(
+      toBytes(
+        Number(instance.allocatedMemoryValue),
+        instance.allocatedMemoryUnit,
+      ),
+    );
+  }
 
   @Column({
     type: DataType.BOOLEAN,
