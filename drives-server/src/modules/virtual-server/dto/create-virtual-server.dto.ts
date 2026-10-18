@@ -8,14 +8,18 @@ import {
   IsInt,
   IsNumber,
   IsBoolean,
+  IsArray,
+  ValidateNested,
   Min,
   Max,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   MemoryUnit,
   VirtualServerType,
 } from '../entities/virtual-server.entity';
+import { PassthroughSlotDto } from './passthrough-slot.dto';
 
 export class CreateVirtualServerDto {
   @ApiPropertyOptional({
@@ -143,4 +147,16 @@ export class CreateVirtualServerDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({
+    type: [PassthroughSlotDto],
+    description:
+      'Backplane slots of the host physical server passed through to this guest. Replaces the full set of passthrough mappings on update.',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PassthroughSlotDto)
+  passthroughSlots?: PassthroughSlotDto[];
 }

@@ -4,12 +4,14 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  HasMany,
   BeforeSave,
 } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
+import { PassthroughSlot } from './passthrough-slot.entity';
 import { toBytes } from '../../../lib/utils/human.readable.bytes.converter';
 
 // Define a structural TypeScript enum matching your explicit database ENUM constraints
@@ -165,4 +167,9 @@ export class VirtualServer extends BaseModel {
     onUpdate: 'CASCADE',
   })
   declare operatingSystem: OperatingSystem;
+
+  // --- Owned Children ---
+
+  @HasMany(() => PassthroughSlot)
+  declare passthroughSlots: PassthroughSlot[];
 }

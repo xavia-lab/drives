@@ -32,6 +32,7 @@ import { StoragePool } from '../modules/storage-pool/entities/storage-pool.entit
 import { StorageType } from '../modules/storage-type/entities/storage-type.entity';
 import { Vendor } from '../modules/vendor/entities/vendor.entity';
 import { VirtualServer } from '../modules/virtual-server/entities/virtual-server.entity';
+import { PassthroughSlot } from '../modules/virtual-server/entities/passthrough-slot.entity';
 import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim.entity';
 
 @Global()
@@ -74,6 +75,7 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             StorageType,
             Vendor,
             VirtualServer,
+            PassthroughSlot,
             WarrantyClaim,
           ],
           autoLoadModels: true,

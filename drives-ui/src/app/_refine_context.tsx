@@ -135,6 +135,27 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "virtual",
+                  meta: {
+                    label: "Virtual",
+                    parent: "infrastructure",
+                    icon: <AccountBookOutlined />,
+                  },
+                },
+                {
+                  name: "virtual-servers",
+                  list: "/virtual-servers",
+                  create: "/virtual-servers/create",
+                  edit: "/virtual-servers/edit/:id",
+                  show: "/virtual-servers/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Servers",
+                    parent: "virtual",
+                    icon: <AlignCenterOutlined />,
+                  },
+                },
+                {
                   name: "physical",
                   meta: {
                     label: "Physical",

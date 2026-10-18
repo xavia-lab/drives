@@ -34,6 +34,79 @@ class OperatingSystemShallowDto {
   name: string;
 }
 
+class PassthroughServerSlotDto {
+  @Expose()
+  @ApiProperty({
+    example: '019f6a00-0000-7e00-8e00-000000000001',
+    description: 'The unique identifier of the host backplane slot',
+  })
+  id: string;
+
+  @Expose()
+  @ApiProperty({
+    example: 'Bay 0',
+    description: 'The physical text label printed on the server case faceplate',
+  })
+  slotLabel: string;
+
+  @Expose()
+  @ApiProperty({
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    description:
+      'Relational link pointer ID identifying the compatible backplane interface layout',
+  })
+  supportedInterfaceId: string;
+
+  @Expose()
+  @ApiPropertyOptional({
+    example: '0000:41:00.0',
+    description:
+      'Operating system kernel storage controllers topology hardware address bus string',
+  })
+  pcieBusAddress: string | null;
+}
+
+export class PassthroughSlotResponseDto {
+  @Expose()
+  @ApiProperty({
+    example: 1,
+    description: 'The consistent global sequential index number across pages',
+  })
+  displayKey: number;
+
+  @Expose()
+  @ApiProperty({
+    example: '019f6a10-0000-7e00-8e00-000000000abc',
+    description:
+      'The unique UUIDv7 primary identifier of this passthrough mapping',
+  })
+  id: string;
+
+  @Expose()
+  @ApiProperty({
+    example: '019f6a00-0000-7e00-8e00-000000000001',
+    description: 'Relational link pointer ID of the passed-through host slot',
+  })
+  serverSlotId: string;
+
+  @Expose()
+  @Type(() => PassthroughServerSlotDto)
+  @ApiProperty({
+    type: PassthroughServerSlotDto,
+    description:
+      'The host backplane slot resolved through the passthrough mapping',
+  })
+  serverSlot: PassthroughServerSlotDto;
+
+  @Expose()
+  @ApiProperty({ example: '2026-10-17T05:22:00.000Z' })
+  createdAt: Date;
+
+  @Expose()
+  @ApiProperty({ example: '2026-10-17T05:22:00.000Z' })
+  updatedAt: Date;
+}
+
 export class VirtualServerResponseDto {
   @Expose()
   @ApiProperty({
@@ -155,4 +228,13 @@ export class VirtualServerResponseDto {
   @Type(() => OperatingSystemShallowDto)
   @ApiProperty({ type: OperatingSystemShallowDto })
   operatingSystem: OperatingSystemShallowDto;
+
+  @Expose()
+  @Type(() => PassthroughSlotResponseDto)
+  @ApiProperty({
+    type: [PassthroughSlotResponseDto],
+    description:
+      'Host backplane slots passed through to this guest, eagerly loaded with the record',
+  })
+  passthroughSlots: PassthroughSlotResponseDto[];
 }
