@@ -10,6 +10,7 @@ import {
 import { useOne, useShow } from "@refinedev/core";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 import { ProviderTag } from "@components/provider-tag";
+import { LinkedLabel } from "@components/linked-label";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -72,7 +73,12 @@ export default function VendorShow() {
               </Descriptions.Item>
               <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
               <Descriptions.Item label="Country">
-                {countryIsLoading ? <>Loading...</> : <>{country?.name}</>}
+                <LinkedLabel
+                  resource="countries"
+                  value={record?.countryId}
+                  label={country?.name}
+                  fallback={countryIsLoading ? "Loading..." : "-"}
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Provider">
                 <ProviderTag managed={record?.managed} />

@@ -2,6 +2,7 @@
 
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
@@ -14,11 +15,6 @@ export default function RackShow() {
   const { options: datacenterOptions } = useLookupOptions({
     resource: "datacenters",
   });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "-";
 
   return (
     <Show isLoading={isLoading}>
@@ -39,7 +35,12 @@ export default function RackShow() {
               </Descriptions.Item>
               <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
               <Descriptions.Item label="Datacenter" span={2}>
-                {findLabel(datacenterOptions, record?.datacenterId)}
+                <LinkedLabel
+                  resource="datacenters"
+                  options={datacenterOptions}
+                  value={record?.datacenterId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Total Rack Units">
                 {record?.totalRackUnits}

@@ -2,6 +2,7 @@
 
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
@@ -14,11 +15,6 @@ export default function DatacenterShow() {
   const { options: countryOptions } = useLookupOptions({
     resource: "countries",
   });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "-";
 
   return (
     <Show isLoading={isLoading}>
@@ -43,7 +39,12 @@ export default function DatacenterShow() {
               </Descriptions.Item>
               <Descriptions.Item label="City">{record?.city}</Descriptions.Item>
               <Descriptions.Item label="Country">
-                {findLabel(countryOptions, record?.countryId)}
+                <LinkedLabel
+                  resource="countries"
+                  options={countryOptions}
+                  value={record?.countryId}
+                  fallback="-"
+                />
               </Descriptions.Item>
             </Descriptions>
           </Card>

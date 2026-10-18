@@ -4,6 +4,7 @@ import { DateField, Show } from "@refinedev/antd";
 import { useOne, useShow } from "@refinedev/core";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 import { EnumTag } from "@components/enum-tag";
+import { LinkedLabel } from "@components/linked-label";
 import {
   ARCHITECTURE_OPTIONS,
   ARCHITECTURE_COLORS,
@@ -45,7 +46,12 @@ export default function CpuModelShow() {
               </Descriptions.Item>
               <Descriptions.Item label="Name">{record?.name}</Descriptions.Item>
               <Descriptions.Item label="Vendor">
-                {vendorIsLoading ? <>Loading...</> : <>{vendor?.name}</>}
+                <LinkedLabel
+                  resource="vendors"
+                  value={record?.vendorId}
+                  label={vendor?.name}
+                  fallback={vendorIsLoading ? "Loading..." : "-"}
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Architecture">
                 <EnumTag

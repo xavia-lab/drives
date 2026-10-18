@@ -14,6 +14,7 @@ import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import type { TableProps } from "antd";
 import type { SorterResult } from "antd/es/table/interface";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function PhysicalServerList() {
@@ -57,11 +58,6 @@ export default function PhysicalServerList() {
       ? undefined
       : Number(raw);
   };
-
-  const renderLookup = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((item) => item.value === value)?.label ?? "Loading...";
 
   return (
     <List>
@@ -115,7 +111,13 @@ export default function PhysicalServerList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => renderLookup(cpuModelOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="cpu-models"
+              options={cpuModelOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="cpuCount"
@@ -177,7 +179,13 @@ export default function PhysicalServerList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => renderLookup(operatingSystemOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="operating-systems"
+              options={operatingSystemOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="rackId"
@@ -200,7 +208,9 @@ export default function PhysicalServerList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => renderLookup(rackOptions, value)}
+          render={(value) => (
+            <LinkedLabel resource="racks" options={rackOptions} value={value} />
+          )}
         />
         <Table.Column
           dataIndex="rackUnitPosition"

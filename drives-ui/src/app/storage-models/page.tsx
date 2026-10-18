@@ -12,6 +12,7 @@ import {
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function StorageModelList() {
@@ -32,11 +33,6 @@ export default function StorageModelList() {
     useLookupOptions({ resource: "interfaces" });
   const { options: capacityOptions, isLoading: capacityLoading } =
     useLookupOptions({ resource: "capacities" });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "Loading...";
 
   return (
     <List>
@@ -118,7 +114,13 @@ export default function StorageModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(manufacturerOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="vendors"
+              options={manufacturerOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="storageTypeId"
@@ -150,7 +152,13 @@ export default function StorageModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(storageTypeOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="storage-types"
+              options={storageTypeOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="formFactorId"
@@ -182,7 +190,13 @@ export default function StorageModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(formFactorOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="form-factors"
+              options={formFactorOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="interfaceId"
@@ -212,7 +226,13 @@ export default function StorageModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(interfaceOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="interfaces"
+              options={interfaceOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="capacityId"
@@ -242,7 +262,13 @@ export default function StorageModelList() {
               />
             </FilterDropdown>
           )}
-          render={(value) => findLabel(capacityOptions, value)}
+          render={(value) => (
+            <LinkedLabel
+              resource="capacities"
+              options={capacityOptions}
+              value={value}
+            />
+          )}
         />
         <Table.Column
           dataIndex="maxEnduranceTbw"

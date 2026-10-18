@@ -2,6 +2,7 @@
 
 import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
+import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
@@ -21,11 +22,6 @@ export default function PhysicalDriveShow() {
   const { options: currencyOptions } = useLookupOptions({
     resource: "currencies",
   });
-
-  const findLabel = (
-    options: { label: string; value: unknown }[],
-    value: unknown,
-  ) => options.find((option) => option.value === value)?.label ?? "-";
 
   return (
     <Show isLoading={isLoading}>
@@ -54,13 +50,28 @@ export default function PhysicalDriveShow() {
                 {record?.worldwideNameWwn ?? "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Storage Model" span={2}>
-                {findLabel(storageModelOptions, record?.storageModelId)}
+                <LinkedLabel
+                  resource="storage-models"
+                  options={storageModelOptions}
+                  value={record?.storageModelId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Retailer">
-                {findLabel(retailerOptions, record?.retailerVendorId)}
+                <LinkedLabel
+                  resource="vendors"
+                  options={retailerOptions}
+                  value={record?.retailerVendorId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Currency">
-                {findLabel(currencyOptions, record?.currencyId)}
+                <LinkedLabel
+                  resource="currencies"
+                  options={currencyOptions}
+                  value={record?.currencyId}
+                  fallback="-"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="Acquisition Cost">
                 {record?.acquisitionCost !== undefined &&
