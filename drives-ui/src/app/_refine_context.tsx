@@ -1,13 +1,13 @@
 "use client";
 
-import { App as AntdApp } from "antd";
+import { App as AntdApp, theme } from "antd";
 import { useNotificationProvider } from "@refinedev/antd";
 import { Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import React from "react";
-import { Gem } from "lucide-react";
+import { HardDrive } from "lucide-react";
 
 import routerProvider from "@refinedev/nextjs-router";
 
@@ -16,37 +16,54 @@ import { ColorModeContextProvider } from "@contexts/color-mode";
 import { dataProvider } from "@providers/data-provider";
 import "@refinedev/antd/dist/reset.css";
 import {
-  AccountBookOutlined,
-  AlignCenterOutlined,
-  BarChartOutlined,
+  ApiOutlined,
+  AppstoreOutlined,
+  ApartmentOutlined,
+  BankOutlined,
   BookOutlined,
+  BorderOutlined,
   BoxPlotOutlined,
   CheckCircleOutlined,
-  CloudSyncOutlined,
+  CloudOutlined,
+  CloudServerOutlined,
+  ClusterOutlined,
+  CodeOutlined,
   DashboardOutlined,
   DashboardTwoTone,
   DatabaseOutlined,
-  DeploymentUnitOutlined,
+  DesktopOutlined,
   GlobalOutlined,
   GoldOutlined,
-  HomeOutlined,
+  HddOutlined,
+  LayoutOutlined,
+  LinkOutlined,
+  MonitorOutlined,
+  NumberOutlined,
   PoundOutlined,
   ProductOutlined,
-  ReadOutlined,
   SettingOutlined,
+  ShopOutlined,
+  ThunderboltOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import { createAuthProvider } from "@providers/auth-provider";
 import { createAccessControlProvider } from "@providers/access-control-provider";
 
+const { useToken } = theme;
+
 type RefineContextProps = {
   defaultMode?: string;
+  defaultPrimaryColor?: string;
 };
 
-const EmeraldLogo = () => (
-  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-    <Gem size={24} color="#50C878" fill="#50C878" fillOpacity={0.2} />
-  </div>
-);
+const AppLogo = () => {
+  const { token } = useToken();
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <HardDrive size={24} color={token.colorPrimary} strokeWidth={2} />
+    </div>
+  );
+};
 
 export const RefineContext = (
   props: React.PropsWithChildren<RefineContextProps>,
@@ -62,6 +79,7 @@ export const RefineContext = (
 
 type AppProps = {
   defaultMode?: string;
+  defaultPrimaryColor?: string;
 };
 
 const App = (props: React.PropsWithChildren<AppProps>) => {
@@ -76,13 +94,16 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
   const authProvider = createAuthProvider(to);
   const accessControlProvider = createAccessControlProvider();
 
-  const defaultMode = props?.defaultMode;
+  const { defaultMode, defaultPrimaryColor } = props;
 
   return (
     <>
       <RefineKbarProvider>
         <AntdRegistry>
-          <ColorModeContextProvider defaultMode={defaultMode}>
+          <ColorModeContextProvider
+            defaultMode={defaultMode}
+            defaultPrimaryColor={defaultPrimaryColor}
+          >
             <Refine
               routerProvider={routerProvider}
               dataProvider={dataProvider}
@@ -110,7 +131,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   name: "inventory",
                   meta: {
                     label: "Inventory",
-                    icon: <BarChartOutlined />,
+                    icon: <AppstoreOutlined />,
                   },
                 },
                 {
@@ -131,7 +152,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   name: "infrastructure",
                   meta: {
                     label: "Infrastructure",
-                    icon: <AccountBookOutlined />,
+                    icon: <ClusterOutlined />,
                   },
                 },
                 {
@@ -139,7 +160,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Virtual",
                     parent: "infrastructure",
-                    icon: <AccountBookOutlined />,
+                    icon: <CloudOutlined />,
                   },
                 },
                 {
@@ -152,7 +173,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Servers",
                     parent: "virtual",
-                    icon: <AlignCenterOutlined />,
+                    icon: <CloudServerOutlined />,
                   },
                 },
                 {
@@ -160,7 +181,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Physical",
                     parent: "infrastructure",
-                    icon: <AccountBookOutlined />,
+                    icon: <ApartmentOutlined />,
                   },
                 },
                 {
@@ -173,7 +194,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Servers",
                     parent: "physical",
-                    icon: <AlignCenterOutlined />,
+                    icon: <DatabaseOutlined />,
                   },
                 },
                 {
@@ -186,7 +207,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Racks",
                     parent: "physical",
-                    icon: <AlignCenterOutlined />,
+                    icon: <LayoutOutlined />,
                   },
                 },
                 {
@@ -199,14 +220,14 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Datacenters",
                     parent: "physical",
-                    icon: <AlignCenterOutlined />,
+                    icon: <BankOutlined />,
                   },
                 },
                 {
                   name: "software",
                   meta: {
                     label: "Software",
-                    icon: <SettingOutlined />,
+                    icon: <CodeOutlined />,
                   },
                 },
                 {
@@ -219,14 +240,14 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Operating Systems",
                     parent: "software",
-                    icon: <GlobalOutlined />,
+                    icon: <DesktopOutlined />,
                   },
                 },
                 {
                   name: "hardware",
                   meta: {
                     label: "Hardware",
-                    icon: <SettingOutlined />,
+                    icon: <ToolOutlined />,
                   },
                 },
                 {
@@ -239,7 +260,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Physical Drives",
                     parent: "hardware",
-                    icon: <DeploymentUnitOutlined />,
+                    icon: <HddOutlined />,
                   },
                 },
                 {
@@ -252,14 +273,14 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "CPU Models",
                     parent: "hardware",
-                    icon: <DeploymentUnitOutlined />,
+                    icon: <ThunderboltOutlined />,
                   },
                 },
                 {
-                  name: "storage",
+                  name: "reference",
                   meta: {
-                    label: "Storage",
-                    icon: <SettingOutlined />,
+                    label: "Reference",
+                    icon: <BookOutlined />,
                   },
                 },
                 {
@@ -271,8 +292,8 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Models",
-                    parent: "storage",
-                    icon: <BarChartOutlined />,
+                    parent: "reference",
+                    icon: <GoldOutlined />,
                   },
                 },
                 {
@@ -283,8 +304,8 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/capacities/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "storage",
-                    icon: <BarChartOutlined />,
+                    parent: "reference",
+                    icon: <NumberOutlined />,
                   },
                 },
                 {
@@ -295,8 +316,8 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/interfaces/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "storage",
-                    icon: <CloudSyncOutlined />,
+                    parent: "reference",
+                    icon: <ApiOutlined />,
                   },
                 },
                 {
@@ -308,8 +329,8 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Form Factors",
-                    parent: "storage",
-                    icon: <GoldOutlined />,
+                    parent: "reference",
+                    icon: <BorderOutlined />,
                   },
                 },
                 {
@@ -321,8 +342,8 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Bus Protocols",
-                    parent: "storage",
-                    icon: <ReadOutlined />,
+                    parent: "reference",
+                    icon: <LinkOutlined />,
                   },
                 },
                 {
@@ -334,7 +355,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Types",
-                    parent: "storage",
+                    parent: "reference",
                     icon: <BoxPlotOutlined />,
                   },
                 },
@@ -354,7 +375,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     parent: "general",
-                    icon: <GlobalOutlined />,
+                    icon: <ShopOutlined />,
                   },
                 },
                 {
@@ -386,7 +407,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   name: "system",
                   meta: {
                     label: "System",
-                    icon: <GlobalOutlined />,
+                    icon: <MonitorOutlined />,
                   },
                 },
                 {
@@ -403,7 +424,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                 syncWithLocation: true,
                 warnWhenUnsavedChanges: true,
                 title: {
-                  icon: <EmeraldLogo />,
+                  icon: <AppLogo />,
                   text: "Drives System",
                 },
                 disableTelemetry: true,

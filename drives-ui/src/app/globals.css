@@ -1,29 +1,28 @@
 /* src/app/globals.css */
 
 /* 1. Theme Variable Definitions */
-/* These variables control the loader and the initial body background */
+/* `--color-primary` is driven by the cookie/theme picker (set on <html>), while
+   the loader background/text below are mode-aware fallbacks. */
 
 :root {
-  /* Default Light Mode Colors (Applied if no theme is set or light is chosen) */
+  --color-primary: #50c878;
   --loader-bg: #ffffff;
-  --loader-text-primary: #065f46; /* Deep Emerald */
-  --loader-text-secondary: #50c878; /* Bright Emerald */
-  --loader-accent: rgba(80, 200, 120, 0.2);
+  --loader-text: #1f2937;
 }
 
 /* 2. Force Light Mode if attribute is present */
 [data-theme="light"] {
-  --loader-bg: #ffffff !important;
-  --loader-text: #065f46 !important;
+  --loader-bg: #ffffff;
+  --loader-text: #1f2937;
 }
 
 /* 3. Force Dark Mode if attribute is present */
 [data-theme="dark"] {
-  --loader-bg: #141414 !important;
-  --loader-text: #f0fdf4 !important;
+  --loader-bg: #141414;
+  --loader-text: #f0fdf4;
 }
 
-/* 2. Global Resets */
+/* 4. Global Resets */
 body {
   margin: 0;
   padding: 0;
@@ -32,7 +31,7 @@ body {
   transition: background-color 0.3s ease;
 }
 
-/* 3. Loader Container */
+/* 5. Loader Container */
 .emerald-loader-container {
   height: 100vh;
   width: 100%;
@@ -49,9 +48,12 @@ body {
   gap: 24px;
 }
 
-/* 4. Gem Icon & Animation */
+/* 6. App Icon & Animation */
 .emerald-gem-pulse {
-  filter: drop-shadow(0 0 10px var(--loader-accent));
+  color: var(--color-primary);
+  filter: drop-shadow(
+    0 0 10px color-mix(in srgb, var(--color-primary) 40%, transparent)
+  );
   animation: gem-float 2.5s infinite ease-in-out;
 }
 
@@ -60,20 +62,20 @@ body {
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 28px;
   font-weight: 800;
-  color: var(--loader-text-primary);
+  color: var(--loader-text);
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 .emerald-loader-text span {
-  color: var(--loader-text-secondary);
+  color: var(--color-primary);
 }
 
-/* 5. Progress Bar Styling */
+/* 7. Progress Bar Styling */
 .emerald-progress-bar {
   width: 160px;
   height: 6px;
-  background-color: var(--loader-accent);
+  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -81,12 +83,12 @@ body {
 .emerald-progress-fill {
   width: 40%;
   height: 100%;
-  background-color: var(--loader-text-secondary);
+  background-color: var(--color-primary);
   border-radius: 10px;
   animation: progress-slide 1.8s infinite ease-in-out;
 }
 
-/* 6. Animations */
+/* 8. Animations */
 @keyframes gem-float {
   0%,
   100% {
@@ -96,7 +98,7 @@ body {
   50% {
     transform: translateY(-12px) scale(1.05);
     opacity: 1;
-    filter: drop-shadow(0 0 20px var(--loader-text-secondary));
+    filter: drop-shadow(0 0 20px var(--color-primary));
   }
 }
 
