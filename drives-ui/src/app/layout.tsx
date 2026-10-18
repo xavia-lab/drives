@@ -24,6 +24,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const theme = cookieStore.get("theme");
   const defaultMode = theme?.value === "dark" ? "dark" : "light";
+  const defaultPrimaryColor = cookieStore.get("primaryColor")?.value;
 
   const config = getPublicConfig();
 
@@ -52,6 +53,11 @@ export default async function RootLayout({
 
             // Apply to HTML element instantly
             document.documentElement.setAttribute("data-theme", theme);
+
+            // Apply the selected primary color so the loading screen (and any
+            // CSS that reads --color-primary) matches the chosen theme.
+            var primaryColor = getCookie("primaryColor") || "#50C878";
+            document.documentElement.style.setProperty("--color-primary", primaryColor);
           } catch (e) {}
         })()
       `,
@@ -61,7 +67,12 @@ export default async function RootLayout({
       <body>
         <ConfigProvider config={config}>
           <Suspense fallback={<Loading />}>
-            <RefineContext defaultMode={defaultMode}>{children}</RefineContext>
+            <RefineContext
+              defaultMode={defaultMode}
+              defaultPrimaryColor={defaultPrimaryColor}
+            >
+              {children}
+            </RefineContext>
           </Suspense>
         </ConfigProvider>
       </body>

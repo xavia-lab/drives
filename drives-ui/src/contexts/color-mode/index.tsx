@@ -12,9 +12,29 @@ import React, {
   useState,
 } from "react";
 
+export type PrimaryColorPreset = {
+  name: string;
+  color: string;
+};
+
+export const PRIMARY_COLOR_PRESETS: PrimaryColorPreset[] = [
+  { name: "Emerald", color: "#50C878" },
+  { name: "Ocean", color: "#1677FF" },
+  { name: "Violet", color: "#722ED1" },
+  { name: "Magenta", color: "#EB2F96" },
+  { name: "Crimson", color: "#F5222D" },
+  { name: "Sunset", color: "#FA8C16" },
+  { name: "Teal", color: "#13C2C2" },
+  { name: "Graphite", color: "#595959" },
+];
+
+export const DEFAULT_PRIMARY_COLOR = "#50C878";
+
 type ColorModeContextType = {
   mode: string;
   setMode: (mode: string) => void;
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
 };
 
 export const ColorModeContext = createContext<ColorModeContextType>(
@@ -23,13 +43,17 @@ export const ColorModeContext = createContext<ColorModeContextType>(
 
 type ColorModeContextProviderProps = {
   defaultMode?: string;
+  defaultPrimaryColor?: string;
 };
 
 export const ColorModeContextProvider: React.FC<
   PropsWithChildren<ColorModeContextProviderProps>
-> = ({ children, defaultMode }) => {
+> = ({ children, defaultMode, defaultPrimaryColor }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState(defaultMode || "light");
+  const [primaryColor, setPrimaryColorState] = useState(
+    defaultPrimaryColor || DEFAULT_PRIMARY_COLOR,
+  );
   // Default to English so SSR and the first client render match, then switch to
   // the system locale once mounted.
   const [locale, setLocale] = useState<Locale>(() =>
@@ -44,6 +68,15 @@ export const ColorModeContextProvider: React.FC<
     if (isMounted) {
       const theme = Cookies.get("theme") || "light";
       setMode(theme);
+
+      const storedPrimaryColor = Cookies.get("primaryColor");
+      if (storedPrimaryColor) {
+        setPrimaryColorState(storedPrimaryColor);
+        document.documentElement.style.setProperty(
+          "--color-primary",
+          storedPrimaryColor,
+        );
+      }
     }
   }, [isMounted]);
 
@@ -61,6 +94,12 @@ export const ColorModeContextProvider: React.FC<
     }
   };
 
+  const setPrimaryColor = (color: string) => {
+    setPrimaryColorState(color);
+    Cookies.set("primaryColor", color);
+    document.documentElement.style.setProperty("--color-primary", color);
+  };
+
   const { darkAlgorithm, defaultAlgorithm } = theme;
 
   return (
@@ -68,6 +107,8 @@ export const ColorModeContextProvider: React.FC<
       value={{
         setMode: setColorMode,
         mode,
+        setPrimaryColor,
+        primaryColor,
       }}
     >
       <ConfigProvider
@@ -75,12 +116,14 @@ export const ColorModeContextProvider: React.FC<
         // stops ProComponents' ProConfigProvider (used by EditableProTable) from
         // falling back to zh_CN and running dayjs.locale('zh-cn') globally.
         locale={locale}
-        // you can change the theme colors here. example: ...RefineThemes.Magenta,
+        // `colorPrimary` is user-selectable (see the header color picker); the
+        // `primaryColor` state is seeded from the `primaryColor` cookie so SSR
+        // and the first client render match.
         theme={{
           ...RefineThemes.Magenta,
           algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
           token: {
-            colorPrimary: "#50C878", // Emerald Green
+            colorPrimary: primaryColor,
             borderRadius: 6,
           },
         }}

@@ -1,9 +1,18 @@
 "use client";
 
-import { ColorModeContext } from "@contexts/color-mode";
+import { ColorModeContext, PRIMARY_COLOR_PRESETS } from "@contexts/color-mode";
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
 import { useGetIdentity } from "@refinedev/core";
-import { Layout as AntdLayout, Space, Switch, theme } from "antd";
+import {
+  Button,
+  Dropdown,
+  Layout as AntdLayout,
+  Space,
+  Switch,
+  theme,
+  Tooltip,
+} from "antd";
+import { BgColorsOutlined } from "@ant-design/icons";
 import React, { useContext } from "react";
 import UserProfileDisplay from "@components/user-profile-display";
 
@@ -20,7 +29,26 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
 }) => {
   const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
-  const { mode, setMode } = useContext(ColorModeContext);
+  const { mode, setMode, primaryColor, setPrimaryColor } =
+    useContext(ColorModeContext);
+
+  const colorMenuItems = PRIMARY_COLOR_PRESETS.map((preset) => ({
+    key: preset.color,
+    label: (
+      <Space>
+        <span
+          style={{
+            display: "inline-block",
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            backgroundColor: preset.color,
+          }}
+        />
+        {preset.name}
+      </Space>
+    ),
+  }));
 
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
@@ -40,6 +68,28 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   return (
     <AntdLayout.Header style={headerStyles}>
       <Space>
+        <Dropdown
+          trigger={["click"]}
+          menu={{
+            items: colorMenuItems,
+            selectable: true,
+            selectedKeys: [primaryColor],
+            onClick: ({ key }) => setPrimaryColor(key),
+          }}
+        >
+          <Tooltip title="Theme color">
+            <Button
+              type="text"
+              shape="circle"
+              aria-label="Change theme color"
+              icon={
+                <BgColorsOutlined
+                  style={{ fontSize: 18, color: primaryColor }}
+                />
+              }
+            />
+          </Tooltip>
+        </Dropdown>
         <Switch
           checkedChildren="🌛"
           unCheckedChildren="🔆"
