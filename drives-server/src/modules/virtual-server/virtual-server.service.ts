@@ -178,8 +178,10 @@ export class VirtualServerService {
     if (updateDto.type !== undefined) updateData.type = updateDto.type;
     if (updateDto.allocatedVcpus !== undefined)
       updateData.allocatedVcpus = updateDto.allocatedVcpus;
-    if (updateDto.allocatedRamMb !== undefined)
-      updateData.allocatedRamMb = updateDto.allocatedRamMb;
+    if (updateDto.allocatedMemoryValue !== undefined)
+      updateData.allocatedMemoryValue = updateDto.allocatedMemoryValue;
+    if (updateDto.allocatedMemoryUnit !== undefined)
+      updateData.allocatedMemoryUnit = updateDto.allocatedMemoryUnit;
     if (updateDto.isActive !== undefined)
       updateData.isActive = updateDto.isActive;
     if (updateDto.notes !== undefined) updateData.notes = updateDto.notes;

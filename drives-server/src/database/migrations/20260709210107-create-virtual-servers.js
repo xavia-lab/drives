@@ -52,9 +52,23 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false, // e.g., 4, 8
       },
-      allocated_ram_mb: {
-        type: Sequelize.INTEGER,
-        allowNull: false, // e.g., 8192, 16384 (Stored in MB for precise integer computation)
+      allocated_memory_value: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0, // e.g., 8, 16 expressed in the selected allocated_memory_unit
+      },
+      allocated_memory_unit: {
+        // RAM is addressed in powers of two, so binary units are used
+        type: Sequelize.ENUM('MiB', 'GiB', 'TiB'),
+        allowNull: false,
+        defaultValue: 'GiB',
+      },
+      absolute_allocated_memory: {
+        // Denormalised byte count (value converted by unit) for server-side
+        // sorting and range filtering. Whole bytes -> BIGINT (exact).
+        type: Sequelize.BIGINT,
+        allowNull: false,
+        defaultValue: 0,
       },
       is_active: {
         type: Sequelize.BOOLEAN,
@@ -101,6 +115,16 @@ module.exports = {
       name: 'virtual_servers_operating_system_id_idx',
       using: 'btree',
     });
+
+    // Index the stored byte count to keep ORDER BY absolute_allocated_memory fast
+    await queryInterface.addIndex(
+      'virtual_servers',
+      ['absolute_allocated_memory'],
+      {
+        name: 'virtual_servers_absolute_allocated_memory_idx',
+        using: 'btree',
+      },
+    );
   },
 
   async down(queryInterface, Sequelize) {
@@ -110,6 +134,9 @@ module.exports = {
     // Drop the specialized enum schema mapping type safely
     await queryInterface.sequelize.query(
       `DROP TYPE IF EXISTS "enum_virtual_servers_type";`,
+    );
+    await queryInterface.sequelize.query(
+      `DROP TYPE IF EXISTS "enum_virtual_servers_allocated_memory_unit";`,
     );
   },
 };

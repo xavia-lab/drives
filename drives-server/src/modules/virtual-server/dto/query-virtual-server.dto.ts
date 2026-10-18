@@ -6,7 +6,7 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive, notes, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedMemoryValue, allocatedMemoryUnit, absoluteAllocatedMemory, isActive, notes, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
@@ -18,7 +18,9 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
     'type',
     'operatingSystemId',
     'allocatedVcpus',
-    'allocatedRamMb',
+    'allocatedMemoryValue',
+    'allocatedMemoryUnit',
+    'absoluteAllocatedMemory', // 🌟 Denormalised byte count allows sorting by real memory size
     'isActive',
     'notes',
     'createdAt',
@@ -29,7 +31,7 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: '105',
     description:
-      'Filterable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedRamMb, isActive',
+      'Filterable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedMemoryValue, allocatedMemoryUnit, isActive',
   })
   @IsOptional()
   @IsIn([
@@ -41,7 +43,8 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
     'type',
     'operatingSystemId',
     'allocatedVcpus',
-    'allocatedRamMb',
+    'allocatedMemoryValue',
+    'allocatedMemoryUnit',
     'isActive',
   ])
   declare filterField?: string;
