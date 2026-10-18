@@ -4,20 +4,11 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  HasMany,
 } from 'sequelize-typescript';
-import { Op } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { PhysicalServer } from '../../physical-server/entities/physical-server.entity';
-import { VirtualServer } from '../../virtual-server/entities/virtual-server.entity';
-
-// Define a structural TypeScript enum matching your explicit database ENUM constraints
-export enum StoragePoolType {
-  ZFS = 'ZFS',
-  BTRFS = 'BTRFS',
-  CEPH_OSD_POOL = 'CEPH_OSD_POOL',
-  MDRAID = 'MDRAID',
-  RAW_JBOD = 'RAW_JBOD',
-}
+import { PoolType } from '../../pool-type/entities/pool-type.entity';
+import { StoragePoolHost } from './storage-pool-host.entity';
 
 @Table({
   tableName: 'storage_pools',
@@ -26,20 +17,9 @@ export enum StoragePoolType {
   // 🌟 Class-level partial database indexes mapped exactly from the migration file
   indexes: [
     {
-      name: 'storage_pools_server_id_idx',
+      name: 'storage_pools_pool_type_id_idx',
       using: 'btree',
-      fields: ['server_id'],
-      where: {
-        server_id: { [Op.ne]: null },
-      },
-    },
-    {
-      name: 'storage_pools_virtual_server_id_idx',
-      using: 'btree',
-      fields: ['virtual_server_id'],
-      where: {
-        virtual_server_id: { [Op.ne]: null },
-      },
+      fields: ['pool_type_id'],
     },
   ],
 })
@@ -52,13 +32,6 @@ export class StoragePool extends BaseModel {
   declare poolName: string;
 
   @Column({
-    type: DataType.ENUM(...Object.values(StoragePoolType)),
-    allowNull: false,
-    field: 'pool_type',
-  })
-  declare poolType: StoragePoolType;
-
-  @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
     allowNull: false,
@@ -68,31 +41,22 @@ export class StoragePool extends BaseModel {
 
   // --- Foreign Keys and Associations ---
 
-  @ForeignKey(() => PhysicalServer)
+  @ForeignKey(() => PoolType)
   @Column({
     type: DataType.UUID,
-    allowNull: true, // Nullable: Only populated if the pool is managed directly by a bare-metal host OS
-    field: 'server_id',
+    allowNull: false,
+    field: 'pool_type_id',
   })
-  declare serverId: string | null;
+  declare poolTypeId: string;
 
-  @BelongsTo(() => PhysicalServer, {
+  @BelongsTo(() => PoolType, {
     onDelete: 'RESTRICT',
     onUpdate: 'CASCADE',
   })
-  declare server: PhysicalServer | null;
+  declare poolType: PoolType;
 
-  @ForeignKey(() => VirtualServer)
-  @Column({
-    type: DataType.UUID,
-    allowNull: true, // Nullable: Only populated if the pool belongs to a virtualized guest VM/container
-    field: 'virtual_server_id',
-  })
-  declare virtualServerId: string | null;
-
-  @BelongsTo(() => VirtualServer, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
-  declare virtualServer: VirtualServer | null;
+  // Append-only IMPORT/EXPORT log. The pool's current host is derived from the
+  // latest event rather than stored on this row.
+  @HasMany(() => StoragePoolHost, { as: 'hosts' })
+  declare hosts: StoragePoolHost[];
 }

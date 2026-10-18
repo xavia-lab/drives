@@ -24,6 +24,8 @@ import { StoragePool } from './entities/storage-pool.entity';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
 import { QueryStoragePoolDto } from './dto/query-storage-pool.dto';
+import { ImportStoragePoolDto } from './dto/import-storage-pool.dto';
+import { ExportStoragePoolDto } from './dto/export-storage-pool.dto';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
@@ -51,6 +53,35 @@ export class StoragePoolController {
     @Query() query: QueryStoragePoolDto,
   ): Promise<PaginatedResponse<StoragePool>> {
     return await this.storagePoolService.findAll(query);
+  }
+
+  @Get('attached')
+  @Public()
+  @ApiOperation({
+    summary: 'Get storage pools currently attached to a host',
+  })
+  @ApiQuery({
+    name: 'physicalServerId',
+    required: false,
+    description: 'Filter by the physical server the pool is attached to',
+  })
+  @ApiQuery({
+    name: 'virtualServerId',
+    required: false,
+    description: 'Filter by the virtual server the pool is attached to',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Attached storage pools retrieved successfully',
+  })
+  async findAttached(
+    @Query('physicalServerId') physicalServerId?: string,
+    @Query('virtualServerId') virtualServerId?: string,
+  ): Promise<StoragePool[]> {
+    return await this.storagePoolService.findAttached({
+      physicalServerId,
+      virtualServerId,
+    });
   }
 
   @Get(':id')
@@ -109,11 +140,6 @@ export class StoragePoolController {
     description: 'Storage Pool updated successfully',
   })
   @ApiResponse({
-    status: 400,
-    description:
-      'Target exclusivity check validation failure (XOR constraint violated)',
-  })
-  @ApiResponse({
     status: 404,
     description: 'Storage Pool or related validation dependencies not found',
   })
@@ -126,6 +152,56 @@ export class StoragePoolController {
       throw new NotFoundException(`StoragePool with ID ${id} not found`);
     }
     return result;
+  }
+
+  @Post(':id/import')
+  @Public()
+  @ApiOperation({
+    summary: 'Attach a detached storage pool to a host (IMPORT event)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Storage Pool imported onto the host successfully',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Storage Pool is already attached to a host',
+  })
+  async importPool(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+    @Body() importDto: ImportStoragePoolDto,
+  ): Promise<StoragePool> {
+    return this.storagePoolService.importPool(id, importDto);
+  }
+
+  @Post(':id/export')
+  @Public()
+  @ApiOperation({
+    summary: 'Detach an attached storage pool from its host (EXPORT event)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier',
+    type: String,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Storage Pool exported from its host successfully',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Storage Pool is not attached to any host',
+  })
+  async exportPool(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+    @Body() exportDto: ExportStoragePoolDto,
+  ): Promise<StoragePool> {
+    return this.storagePoolService.exportPool(id, exportDto);
   }
 
   @Delete(':id')

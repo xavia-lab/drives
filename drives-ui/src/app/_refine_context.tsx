@@ -28,6 +28,7 @@ import {
   CloudServerOutlined,
   ClusterOutlined,
   CodeOutlined,
+  ContainerOutlined,
   DashboardOutlined,
   DashboardTwoTone,
   DatabaseOutlined,
@@ -40,9 +41,9 @@ import {
   MonitorOutlined,
   NumberOutlined,
   PoundOutlined,
-  ProductOutlined,
   SettingOutlined,
   ShopOutlined,
+  TagsOutlined,
   ThunderboltOutlined,
   ToolOutlined,
 } from "@ant-design/icons";
@@ -128,24 +129,36 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
-                  name: "inventory",
+                  name: "storage",
                   meta: {
-                    label: "Inventory",
+                    label: "Storage",
                     icon: <AppstoreOutlined />,
                   },
                 },
                 {
-                  name: "products",
-                  list: "/products",
-                  create: "/products/create",
-                  edit: "/products/edit/:id",
-                  show: "/products/show/:id",
+                  name: "storage-pools",
+                  list: "/storage-pools",
+                  create: "/storage-pools/create",
+                  edit: "/storage-pools/edit/:id",
+                  show: "/storage-pools/show/:id",
                   meta: {
                     canDelete: true,
-                    label: "Products",
-                    parent: "inventory",
-                    icon: <ProductOutlined />,
-                    publicShow: "/products/public-show/:id",
+                    label: "Storage Pools",
+                    parent: "storage",
+                    icon: <ContainerOutlined />,
+                  },
+                },
+                {
+                  name: "pool-types",
+                  list: "/pool-types",
+                  create: "/pool-types/create",
+                  edit: "/pool-types/edit/:id",
+                  show: "/pool-types/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Pool Types",
+                    parent: "storage",
+                    icon: <TagsOutlined />,
                   },
                 },
                 {
@@ -264,6 +277,21 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "reference",
+                  meta: {
+                    label: "Reference",
+                    icon: <BookOutlined />,
+                  },
+                },
+                {
+                  name: "reference-hardware",
+                  meta: {
+                    label: "Hardware",
+                    parent: "reference",
+                    icon: <ApartmentOutlined />,
+                  },
+                },
+                {
                   name: "cpu-models",
                   list: "/cpu-models",
                   create: "/cpu-models/create",
@@ -272,15 +300,16 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "CPU Models",
-                    parent: "hardware",
+                    parent: "reference-hardware",
                     icon: <ThunderboltOutlined />,
                   },
                 },
                 {
-                  name: "reference",
+                  name: "reference-storage",
                   meta: {
-                    label: "Reference",
-                    icon: <BookOutlined />,
+                    label: "Storage",
+                    parent: "reference",
+                    icon: <ApartmentOutlined />,
                   },
                 },
                 {
@@ -292,7 +321,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Models",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <GoldOutlined />,
                   },
                 },
@@ -304,7 +333,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/capacities/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <NumberOutlined />,
                   },
                 },
@@ -316,7 +345,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/interfaces/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <ApiOutlined />,
                   },
                 },
@@ -329,7 +358,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Form Factors",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <BorderOutlined />,
                   },
                 },
@@ -342,7 +371,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Bus Protocols",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <LinkOutlined />,
                   },
                 },
@@ -355,14 +384,15 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Storage Types",
-                    parent: "reference",
+                    parent: "reference-storage",
                     icon: <BoxPlotOutlined />,
                   },
                 },
                 {
-                  name: "general",
+                  name: "reference-general",
                   meta: {
                     label: "General",
+                    parent: "reference",
                     icon: <SettingOutlined />,
                   },
                 },
@@ -374,7 +404,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/vendors/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <ShopOutlined />,
                   },
                 },
@@ -387,7 +417,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     canDelete: true,
                     label: "Countries",
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <GlobalOutlined />,
                   },
                 },
@@ -399,7 +429,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/currencies/show/:id",
                   meta: {
                     canDelete: true,
-                    parent: "general",
+                    parent: "reference-general",
                     icon: <PoundOutlined />,
                   },
                 },
