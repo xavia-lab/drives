@@ -23,8 +23,8 @@ export default function PhysicalDriveList() {
     syncWithLocation: true,
   });
 
-  const { options: storageModelOptions, isLoading: storageModelLoading } =
-    useLookupOptions({ resource: "storage-models", optionLabel: "title" });
+  const { options: driveModelOptions, isLoading: driveModelLoading } =
+    useLookupOptions({ resource: "drive-models", optionLabel: "title" });
   const { options: retailerOptions, isLoading: retailerLoading } =
     useLookupOptions({ resource: "vendors" });
   const { options: currencyOptions, isLoading: currencyLoading } =
@@ -84,12 +84,12 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
-          dataIndex="storageModelId"
-          title={"Storage Model"}
+          dataIndex="driveModelId"
+          title={"Drive Model"}
           width={240}
           sorter={{ multiple: 1 }}
           filteredValue={
-            getDefaultFilter("storageModelId", filters, "in") || null
+            getDefaultFilter("driveModelId", filters, "in") || null
           }
           filterDropdown={(props) => (
             <FilterDropdown
@@ -102,21 +102,21 @@ export default function PhysicalDriveList() {
             >
               <Select
                 style={{ minWidth: 240 }}
-                placeholder="Search Storage Model"
+                placeholder="Search Drive Model"
                 mode="multiple"
                 showSearch
                 allowClear
                 optionLabelProp="label"
                 optionFilterProp="label"
-                options={storageModelOptions}
-                loading={storageModelLoading}
+                options={driveModelOptions}
+                loading={driveModelLoading}
               />
             </FilterDropdown>
           )}
           render={(value) => (
             <LinkedLabel
-              resource="storage-models"
-              options={storageModelOptions}
+              resource="drive-models"
+              options={driveModelOptions}
               value={value}
             />
           )}

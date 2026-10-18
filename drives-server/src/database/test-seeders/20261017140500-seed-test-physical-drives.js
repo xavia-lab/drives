@@ -12,7 +12,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f01-8f01-000000000041',
     storage_manufacturer: 'Samsung Electronics',
-    storage_model_number: 'MZQL21T9HCJR-00A07',
+    drive_model_number: 'MZQL21T9HCJR-00A07',
     retailer_vendor_name: 'CDW Logistics',
     label: 'SA-PM9A-01.9TB-20240212-001',
     serial_number: 'S6BZNA0T512345',
@@ -25,7 +25,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f02-8f02-000000000042',
     storage_manufacturer: 'Samsung Electronics',
-    storage_model_number: 'MZQL21T9HCJR-00A07',
+    drive_model_number: 'MZQL21T9HCJR-00A07',
     retailer_vendor_name: 'Amazon US',
     label: 'SA-PM9A-01.9TB-20240301-001',
     serial_number: 'S6BZNA0T512346',
@@ -38,7 +38,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f03-8f03-000000000043',
     storage_manufacturer: 'Samsung Electronics',
-    storage_model_number: 'MZ3LO3T8HBLA-00A07',
+    drive_model_number: 'MZ3LO3T8HBLA-00A07',
     retailer_vendor_name: 'CDW Logistics',
     label: 'SA-PM17-03.8TB-20240620-001',
     serial_number: 'S6XXN0T8BL001',
@@ -51,7 +51,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f04-8f04-000000000044',
     storage_manufacturer: 'Western Digital',
-    storage_model_number: 'WUS2ETBB48C2P2',
+    drive_model_number: 'WUS2ETBB48C2P2',
     retailer_vendor_name: 'CDW Logistics',
     label: 'WE-UL-0480GB-20231105-001',
     serial_number: 'WD-SN640-00480A',
@@ -64,7 +64,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f05-8f05-000000000045',
     storage_manufacturer: 'Seagate Technology',
-    storage_model_number: 'ST16000NM001G',
+    drive_model_number: 'ST16000NM001G',
     retailer_vendor_name: 'Amazon US',
     label: 'SE-EX-0016TB-20230518-001',
     serial_number: 'ST16000NM001G-2KK103',
@@ -77,7 +77,7 @@ const physicalDrives = [
   {
     id: '019f6a00-0000-7f06-8f06-000000000046',
     storage_manufacturer: 'Seagate Technology',
-    storage_model_number: 'ST20000NM007D',
+    drive_model_number: 'ST20000NM007D',
     retailer_vendor_name: 'CDW Logistics',
     label: 'SE-EX-0020TB-20240122-001',
     serial_number: 'ST20000NM007D-3TJ103',
@@ -96,10 +96,10 @@ module.exports = {
 
     const [modelRows] = await queryInterface.sequelize.query(
       `SELECT sm.id AS id, v.name AS manufacturer, sm.model_number AS model_number
-         FROM storage_models sm
+         FROM drive_models sm
          JOIN vendors v ON v.id = sm.manufacturer_id;`,
     );
-    const storageModels = modelRows.reduce((acc, row) => {
+    const driveModels = modelRows.reduce((acc, row) => {
       acc[`${row.manufacturer}/${row.model_number}`] = row.id;
       return acc;
     }, {});
@@ -109,16 +109,16 @@ module.exports = {
       physicalDrives.map(
         ({
           storage_manufacturer,
-          storage_model_number,
+          drive_model_number,
           retailer_vendor_name,
           currency_code,
           ...row
         }) => ({
           ...row,
-          storage_model_id: required(
-            storageModels,
-            `${storage_manufacturer}/${storage_model_number}`,
-            'storage_models',
+          drive_model_id: required(
+            driveModels,
+            `${storage_manufacturer}/${drive_model_number}`,
+            'drive_models',
           ),
           retailer_vendor_id: required(
             vendors,

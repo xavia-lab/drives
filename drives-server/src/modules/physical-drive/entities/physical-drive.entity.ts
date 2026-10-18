@@ -8,7 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { Op, Transaction } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { StorageModel } from '../../storage-model/entities/storage-model.entity';
+import { DriveModel } from '../../drive-model/entities/drive-model.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 import { Currency } from '../../currency/entities/currency.entity';
 import { Capacity } from '../../capacity/entities/capacity.entity';
@@ -30,8 +30,8 @@ interface HookValidationOptions {
       unique: true,
     },
     {
-      name: 'physical_drives_storage_model_idx',
-      fields: ['storage_model_id'],
+      name: 'physical_drives_drive_model_idx',
+      fields: ['drive_model_id'],
     },
     {
       name: 'physical_drives_financial_idx',
@@ -85,12 +85,12 @@ export class PhysicalDrive extends BaseModel {
   }
 
   // --- Associations ---
-  @ForeignKey(() => StorageModel)
+  @ForeignKey(() => DriveModel)
   @Column({ type: DataType.UUID, allowNull: false })
-  declare storageModelId: string;
+  declare driveModelId: string;
 
-  @BelongsTo(() => StorageModel, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
-  declare storageModel: StorageModel;
+  @BelongsTo(() => DriveModel, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  declare driveModel: DriveModel;
 
   @ForeignKey(() => Vendor)
   @Column({ type: DataType.UUID, allowNull: false })
@@ -118,7 +118,7 @@ export class PhysicalDrive extends BaseModel {
     const { transaction } = options;
 
     // 1. Fetch structural deep-lookup hierarchy required to map naming codes
-    const storageModel = await StorageModel.findByPk(instance.storageModelId, {
+    const driveModel = await DriveModel.findByPk(instance.driveModelId, {
       transaction,
       include: [
         { model: Vendor, as: 'manufacturer' },
@@ -126,18 +126,18 @@ export class PhysicalDrive extends BaseModel {
       ],
     });
 
-    if (!storageModel) {
+    if (!driveModel) {
       throw new Error(
-        `Label Generation Failed: Underlying StorageModel ID ${instance.storageModelId} does not exist.`,
+        `Label Generation Failed: Underlying DriveModel ID ${instance.driveModelId} does not exist.`,
       );
     }
 
     // 2. Extract constituent strings according to physical parameter rules
     const manufacturerName =
-      ((storageModel.manufacturer as unknown as Record<string, unknown>)
+      ((driveModel.manufacturer as unknown as Record<string, unknown>)
         ?.name as string) || 'XX';
-    const modelNameStr = storageModel.name || 'XX';
-    const capacityObj = storageModel.capacity as unknown as Record<
+    const modelNameStr = driveModel.name || 'XX';
+    const capacityObj = driveModel.capacity as unknown as Record<
       string,
       unknown
     > | null;

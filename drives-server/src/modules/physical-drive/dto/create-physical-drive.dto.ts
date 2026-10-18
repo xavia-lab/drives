@@ -82,7 +82,7 @@ export class CreatePhysicalDriveDto {
   })
   @IsNotEmpty()
   @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
-  storageModelId: string;
+  driveModelId: string;
 
   @ApiProperty({
     description:

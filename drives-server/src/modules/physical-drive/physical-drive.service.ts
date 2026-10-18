@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { PhysicalDrive } from './entities/physical-drive.entity';
-import { StorageModel } from '../storage-model/entities/storage-model.entity';
+import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
@@ -20,8 +20,8 @@ export class PhysicalDriveService implements OnModuleInit {
   constructor(
     @InjectModel(PhysicalDrive)
     private readonly physicalDriveModel: typeof PhysicalDrive,
-    @InjectModel(StorageModel)
-    private readonly storageModelModel: typeof StorageModel,
+    @InjectModel(DriveModel)
+    private readonly driveModelModel: typeof DriveModel,
     @InjectModel(Vendor)
     private readonly vendorModel: typeof Vendor,
     @InjectModel(Currency)
@@ -33,20 +33,18 @@ export class PhysicalDriveService implements OnModuleInit {
 
   // 🌟 Optimized private helper to check foreign key constraints concurrently and aggregate errors
   private async validateForeignKeys(ids: {
-    storageModelId?: string;
+    driveModelId?: string;
     retailerVendorId?: string;
     currencyId?: string;
   }): Promise<void> {
     const checkPromises: Promise<string | null>[] = [];
 
-    if (ids.storageModelId) {
+    if (ids.driveModelId) {
       checkPromises.push(
-        this.storageModelModel
-          .findByPk(ids.storageModelId)
+        this.driveModelModel
+          .findByPk(ids.driveModelId)
           .then((exists) =>
-            exists
-              ? null
-              : `StorageModel with ID ${ids.storageModelId} not found`,
+            exists ? null : `DriveModel with ID ${ids.driveModelId} not found`,
           ),
       );
     }
@@ -153,8 +151,8 @@ export class PhysicalDriveService implements OnModuleInit {
       updateData.purchaseDate = updatePhysicalDriveDto.purchaseDate;
     if (updatePhysicalDriveDto.warrantyExpiryDate !== undefined)
       updateData.warrantyExpiryDate = updatePhysicalDriveDto.warrantyExpiryDate;
-    if (updatePhysicalDriveDto.storageModelId !== undefined)
-      updateData.storageModelId = updatePhysicalDriveDto.storageModelId;
+    if (updatePhysicalDriveDto.driveModelId !== undefined)
+      updateData.driveModelId = updatePhysicalDriveDto.driveModelId;
     if (updatePhysicalDriveDto.retailerVendorId !== undefined)
       updateData.retailerVendorId = updatePhysicalDriveDto.retailerVendorId;
     if (updatePhysicalDriveDto.currencyId !== undefined)

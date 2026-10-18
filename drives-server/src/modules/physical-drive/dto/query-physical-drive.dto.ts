@@ -15,7 +15,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable inventory fields: id, displayKey, label, serialNumber, worldwideNameWwn, acquisitionCost, purchaseDate, warrantyExpiryDate, storageModelId, retailerVendorId, currencyId, createdAt, updatedAt',
+      'Sortable inventory fields: id, displayKey, label, serialNumber, worldwideNameWwn, acquisitionCost, purchaseDate, warrantyExpiryDate, driveModelId, retailerVendorId, currencyId, createdAt, updatedAt',
     default: 'id',
   })
   @IsOptional()
@@ -28,7 +28,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
     'acquisitionCost',
     'purchaseDate',
     'warrantyExpiryDate',
-    'storageModelId',
+    'driveModelId',
     'retailerVendorId',
     'currencyId',
     'createdAt',
@@ -50,7 +50,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, storageModelId, retailerVendorId, currencyId',
+      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, driveModelId, retailerVendorId, currencyId',
   })
   @IsOptional()
   @IsIn([
@@ -59,7 +59,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
     'label',
     'serialNumber',
     'worldwideNameWwn',
-    'storageModelId',
+    'driveModelId',
     'retailerVendorId',
     'currencyId',
   ])
@@ -73,7 +73,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
-  storageModelId?: string;
+  driveModelId?: string;
 
   @ApiPropertyOptional({
     description:
