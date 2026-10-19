@@ -23,14 +23,17 @@ module.exports = {
         allowNull: false,
         references: { model: 'server_slots', key: 'id' },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
+        // The ledger is an append-only event log: removing a slot (e.g. a
+        // server's backplane is reconfigured) must not be blocked by history.
+        onDelete: 'CASCADE',
       },
       physical_drive_id: {
         type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
         allowNull: false,
         references: { model: 'physical_drives', key: 'id' },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
+        // Deleting a drive is a normal admin action; its ledger rows follow.
+        onDelete: 'CASCADE',
       },
       action_type: {
         type: Sequelize.ENUM('MOUNT', 'UNMOUNT'),

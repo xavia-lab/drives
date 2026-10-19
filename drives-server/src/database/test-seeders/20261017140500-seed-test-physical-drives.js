@@ -2,13 +2,117 @@
 
 // TEST-ONLY fixture for the `physical_drives` table. Not part of production seeding.
 // Run via `pnpm --filter @drives/drives-server seed:test`.
-
-const { idMap, required } = require('./lib/lookups');
-
+//
+// Produces a 50-drive dataset: the six curated drives below (whose IDs/serials
+// are referenced by the locations and slot-allocation fixtures) plus 44
+// deterministically generated drives so list/show screens and the slot
+// assignment board have enough data to exercise paging, filtering and drag/drop.
+//
 // Labels follow the app's asset-label convention
 // (MFG-MODEL-CAPACITYUNIT-PURCHASEDATE-SEQ). They are supplied explicitly
 // because bulkInsert bypasses the PhysicalDrive @BeforeValidate label hook.
-const physicalDrives = [
+
+const { idMap, required } = require('./lib/lookups');
+
+// The reference drive models seeded by 20261017140200-seed-test-drive-models.js.
+// `mfg`/`model`/`capacity` only shape the generated label; the FK is resolved by
+// `storage_manufacturer` + `drive_model_number`.
+const DRIVE_MODEL_POOL = [
+  {
+    storage_manufacturer: 'Samsung Electronics',
+    drive_model_number: 'MZQL21T9HCJR-00A07',
+    mfg: 'SA',
+    model: 'PM9A',
+    capacity: '01.9TB',
+    base_cost: 219.0,
+    wwn_prefix: '5002538c81',
+  },
+  {
+    storage_manufacturer: 'Samsung Electronics',
+    drive_model_number: 'MZ3LO3T8HBLA-00A07',
+    mfg: 'SA',
+    model: 'PM17',
+    capacity: '03.8TB',
+    base_cost: 749.99,
+    wwn_prefix: '5002538c82',
+  },
+  {
+    storage_manufacturer: 'Western Digital',
+    drive_model_number: 'WUS2ETBB48C2P2',
+    mfg: 'WE',
+    model: 'UL',
+    capacity: '0480GB',
+    base_cost: 89.99,
+    wwn_prefix: '5000cca2a1',
+  },
+  {
+    storage_manufacturer: 'Seagate Technology',
+    drive_model_number: 'ST16000NM001G',
+    mfg: 'SE',
+    model: 'EX',
+    capacity: '0016TB',
+    base_cost: 289.0,
+    wwn_prefix: null,
+  },
+  {
+    storage_manufacturer: 'Seagate Technology',
+    drive_model_number: 'ST20000NM007D',
+    mfg: 'SE',
+    model: 'EX',
+    capacity: '0020TB',
+    base_cost: 349.0,
+    wwn_prefix: null,
+  },
+];
+
+const RETAILERS = ['CDW Logistics', 'Amazon US'];
+
+const pad = (value, length) => String(value).padStart(length, '0');
+const hex = (value, length) =>
+  value.toString(16).toUpperCase().padStart(length, '0');
+const formatDate = (date) => date.toISOString().slice(0, 10);
+
+// Builds the generated tail of the dataset. IDs continue the curated `7fxx`
+// sequence (`7f07`..`7f32`); purchase dates step forward so every generated
+// label is unique.
+function generateDrives(count, startIndex) {
+  const sequenceByPrefix = {};
+
+  return Array.from({ length: count }, (_, offset) => {
+    const index = startIndex + offset;
+    const model = DRIVE_MODEL_POOL[offset % DRIVE_MODEL_POOL.length];
+
+    const id = `019f6a00-0000-7f${hex(index, 2)}-8f${hex(index, 2)}-0000000000${hex(0x40 + index, 2)}`;
+
+    const purchase = new Date(
+      Date.UTC(2023, 0, 15) + offset * 11 * 24 * 60 * 60 * 1000,
+    );
+    const warranty = new Date(purchase);
+    warranty.setUTCFullYear(warranty.getUTCFullYear() + 5);
+    const purchaseDate = formatDate(purchase);
+
+    const prefix = `${model.mfg}-${model.model}-${model.capacity}-${purchaseDate.replace(/-/g, '')}`;
+    sequenceByPrefix[prefix] = (sequenceByPrefix[prefix] ?? 0) + 1;
+
+    return {
+      id,
+      storage_manufacturer: model.storage_manufacturer,
+      drive_model_number: model.drive_model_number,
+      retailer_vendor_name: RETAILERS[offset % RETAILERS.length],
+      label: `${prefix}-${pad(sequenceByPrefix[prefix], 3)}`,
+      serial_number: `TESTDRV-${pad(index, 4)}-${model.model}`,
+      worldwide_name_wwn: model.wwn_prefix
+        ? `${model.wwn_prefix}${hex(offset + 1, 6)}`
+        : null,
+      acquisition_cost: Number((model.base_cost + offset * 1.5).toFixed(2)),
+      currency_code: 'USD',
+      purchase_date: purchaseDate,
+      warranty_expiry_date: formatDate(warranty),
+    };
+  });
+}
+
+const curatedDrives = [
   {
     id: '019f6a00-0000-7f01-8f01-000000000041',
     storage_manufacturer: 'Samsung Electronics',
@@ -87,6 +191,15 @@ const physicalDrives = [
     purchase_date: '2024-01-22',
     warranty_expiry_date: '2029-01-22',
   },
+];
+
+const TOTAL_DRIVES = 50;
+const physicalDrives = [
+  ...curatedDrives,
+  ...generateDrives(
+    TOTAL_DRIVES - curatedDrives.length,
+    curatedDrives.length + 1,
+  ),
 ];
 
 module.exports = {

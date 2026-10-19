@@ -10,6 +10,7 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
+import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import {
@@ -34,6 +35,7 @@ describe('PhysicalDriveService', () => {
   let mockDatacenterRepo: Record<string, Mock>;
   let mockSequelize: { transaction: Mock };
   let mockPaginationService: Mocked<PaginationService>;
+  let mockAllocationService: { getCurrentAssignmentsForDrives: Mock };
 
   const mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
 
@@ -68,6 +70,10 @@ describe('PhysicalDriveService', () => {
       paginate: vi.fn(),
     };
 
+    mockAllocationService = {
+      getCurrentAssignmentsForDrives: vi.fn(() => Promise.resolve(new Map())),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhysicalDriveService,
@@ -88,6 +94,10 @@ describe('PhysicalDriveService', () => {
         { provide: getModelToken(Datacenter), useValue: mockDatacenterRepo },
         { provide: getConnectionToken(), useValue: mockSequelize },
         { provide: PaginationService, useValue: mockPaginationService },
+        {
+          provide: ServerSlotAllocationService,
+          useValue: mockAllocationService,
+        },
       ],
     }).compile();
 
@@ -214,6 +224,40 @@ describe('PhysicalDriveService', () => {
       const result = await service.findOne('missing');
 
       expect(result).toBeNull();
+    });
+
+    it('should attach the derived currentAssignment when the drive is seated', async () => {
+      const mockDrive = {
+        id: 'drive-1',
+        locations: [],
+        setDataValue: vi.fn(),
+      };
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(mockDrive);
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map([
+          [
+            'drive-1',
+            {
+              allocationId: 'alloc-1',
+              slotId: 'slot-1',
+              slotLabel: 'Bay 0',
+              serverId: 'server-1',
+              serverHostname: 'ash-compute-01',
+              assignedAt: new Date(),
+            },
+          ],
+        ]),
+      );
+
+      await service.findOne('drive-1');
+
+      expect(mockDrive.setDataValue).toHaveBeenCalledWith(
+        'currentAssignment',
+        expect.objectContaining({
+          serverId: 'server-1',
+          slotLabel: 'Bay 0',
+        }),
+      );
     });
   });
 

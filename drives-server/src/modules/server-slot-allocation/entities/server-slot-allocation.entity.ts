@@ -66,7 +66,7 @@ export class ServerSlotAllocation extends BaseModel {
   declare serverSlotId: string;
 
   @BelongsTo(() => ServerSlot, {
-    onDelete: 'RESTRICT',
+    onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
   declare serverSlot: ServerSlot;
@@ -80,7 +80,7 @@ export class ServerSlotAllocation extends BaseModel {
   declare physicalDriveId: string;
 
   @BelongsTo(() => PhysicalDrive, {
-    onDelete: 'RESTRICT',
+    onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
   declare physicalDrive: PhysicalDrive;

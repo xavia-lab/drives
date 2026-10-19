@@ -5,13 +5,18 @@
 // `pnpm --filter @drives/drives-server seed:test` (after physical-drives and
 // datacenters).
 //
-// A drive's current location is DERIVED from its latest event. `S6BZNA0T512346`
-// deliberately carries a full move (VA-ASH-1 -> GB-SLO-1) to exercise the
-// timeline; the drives without rows (`WD-SN640-00480A`, ...) are unassigned.
+// A drive's current location is DERIVED from its latest event. This fixture
+// assigns a datacenter to 46 of the 50 seeded drives (so the slot-assignment
+// board has free drives in both datacenters) and deliberately leaves 4 drives
+// without any location. The curated events below keep their anchors for the
+// downstream slot-allocation fixture; `S6BZNA0T512346` additionally carries a
+// full move (VA-ASH-1 -> GB-SLO-1) to exercise the timeline.
 
 const { idMap, required } = require('./lib/lookups');
 
-const driveLocations = [
+// Curated events, kept explicit so the slot-allocation fixture keeps its
+// anchors. S6BZNA0T512346 migrates from Ashburn to Slough.
+const curatedLocations = [
   // S6BZNA0T512345: located at Ashburn
   {
     id: '019f6a70-0000-7e70-8e70-000000000001',
@@ -35,7 +40,7 @@ const driveLocations = [
     located_at: new Date('2026-07-05T14:30:00.000Z'),
     notes: 'Transferred on capacity rebalance.',
   },
-  // S6XXN0T8BL001: located at Ashburn
+  // S6XXN0T8BL001: located at Ashburn (seated then removed in the allocation log)
   {
     id: '019f6a70-0000-7e70-8e70-000000000004',
     serial_number: 'S6XXN0T8BL001',
@@ -45,37 +50,84 @@ const driveLocations = [
   },
 ];
 
+// The four drives intentionally left without a location. These are the tail of
+// the `physical-drives` fixture (`TESTDRV-0047..0050`).
+const UNASSIGNED_SERIALS = [
+  'TESTDRV-0047-PM9A',
+  'TESTDRV-0048-PM17',
+  'TESTDRV-0049-UL',
+  'TESTDRV-0050-EX',
+];
+
+// Generated drives alternate between the two datacenters.
+const DATACENTERS = ['VA-ASH-1', 'GB-SLO-1'];
+
+// The generated events continue the drive fixture's `7fxx` id sequence, so each
+// event id is a stable transformation of the drive id (keeping `up`/`down` in
+// agreement without hardcoding 40+ literals).
+const eventIdForDrive = (driveId) =>
+  driveId.replace('019f6a00-0000-7f', '019f6a70-0000-7f');
+
+const loadDrives = async (queryInterface) => {
+  const [rows] = await queryInterface.sequelize.query(
+    'SELECT id, serial_number FROM physical_drives ORDER BY id;',
+  );
+  return rows;
+};
+
+const buildEvents = (driveRows) => {
+  const curatedSerials = new Set(
+    curatedLocations.map((event) => event.serial_number),
+  );
+  const unassignedSerials = new Set(UNASSIGNED_SERIALS);
+
+  const generated = driveRows
+    .filter(
+      (drive) =>
+        !curatedSerials.has(drive.serial_number) &&
+        !unassignedSerials.has(drive.serial_number),
+    )
+    .map((drive, index) => ({
+      id: eventIdForDrive(drive.id),
+      serial_number: drive.serial_number,
+      datacenter_code: DATACENTERS[index % DATACENTERS.length],
+      located_at: new Date(Date.UTC(2026, 6, 6, 9, 0, 0) + index * 3600000),
+      notes: 'Initial racking.',
+    }));
+
+  return [...curatedLocations, ...generated];
+};
+
 module.exports = {
   async up(queryInterface) {
-    const drives = await idMap(queryInterface, 'physical_drives', 'serial_number');
+    const drives = await idMap(
+      queryInterface,
+      'physical_drives',
+      'serial_number',
+    );
     const datacenters = await idMap(queryInterface, 'datacenters', 'code');
+    const events = buildEvents(await loadDrives(queryInterface));
 
     await queryInterface.bulkInsert(
       'physical_drive_locations',
-      driveLocations.map(
-        ({ serial_number, datacenter_code, located_at, ...row }) => ({
-          ...row,
-          physical_drive_id: required(
-            drives,
-            serial_number,
-            'physical_drives',
-          ),
-          datacenter_id: required(datacenters, datacenter_code, 'datacenters'),
-          located_at,
-          created_at: new Date(),
-          updated_at: new Date(),
-        }),
-      ),
+      events.map(({ serial_number, datacenter_code, ...row }) => ({
+        ...row,
+        physical_drive_id: required(drives, serial_number, 'physical_drives'),
+        datacenter_id: required(datacenters, datacenter_code, 'datacenters'),
+        created_at: new Date(),
+        updated_at: new Date(),
+      })),
       {},
     );
   },
 
   async down(queryInterface, Sequelize) {
     const { Op } = Sequelize;
+    const events = buildEvents(await loadDrives(queryInterface));
 
     await queryInterface.bulkDelete(
       'physical_drive_locations',
-      { id: { [Op.in]: driveLocations.map((item) => item.id) } },
+      { id: { [Op.in]: events.map((item) => item.id) } },
       {},
     );
   },

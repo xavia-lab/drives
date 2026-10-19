@@ -19,6 +19,7 @@ import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 
 interface CurrentDriveLocation {
   id: string;
@@ -50,6 +51,7 @@ export class PhysicalDriveService implements OnModuleInit {
     private readonly currencyModel: typeof Currency,
     @InjectModel(Datacenter)
     private readonly datacenterModel: typeof Datacenter,
+    private readonly allocationService: ServerSlotAllocationService,
     private readonly paginationService: PaginationService, // 🌟 Clean composition injection
     @InjectConnection()
     private readonly sequelize: Sequelize,
@@ -110,6 +112,17 @@ export class PhysicalDriveService implements OnModuleInit {
     return drive;
   }
 
+  // Stamps the derived `currentAssignment` (the server/slot the drive is
+  // currently seated in) from the slot allocation ledger.
+  private async attachCurrentAssignment(
+    drive: PhysicalDrive,
+  ): Promise<PhysicalDrive> {
+    const assignments =
+      await this.allocationService.getCurrentAssignmentsForDrives([drive.id]);
+    drive.setDataValue('currentAssignment', assignments.get(drive.id) ?? null);
+    return drive;
+  }
+
   // Loads a single drive with its full location timeline and a derived
   // `currentLocation`. Throws when the drive does not exist.
   private async loadWithLocations(
@@ -125,7 +138,7 @@ export class PhysicalDriveService implements OnModuleInit {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     }
 
-    return this.decorateLocations(drive);
+    return this.attachCurrentAssignment(this.decorateLocations(drive));
   }
 
   // Returns the latest location event for a single drive (or null when there is
@@ -301,7 +314,7 @@ export class PhysicalDriveService implements OnModuleInit {
       return null;
     }
 
-    return this.decorateLocations(drive);
+    return this.attachCurrentAssignment(this.decorateLocations(drive));
   }
 
   async create(
