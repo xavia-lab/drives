@@ -1,7 +1,12 @@
 import { Expose, Type } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { DriveModelResponseDto } from '../../../drive-model/dto/response/drive-model-response.dto';
 import { VendorResponseDto } from '../../../vendor/dto/response/vendor-response.dto';
 import { CurrencyResponseDto } from '../../../currency/dto/response/currency-response.dto';
+import {
+  CurrentPhysicalDriveLocationDto,
+  PhysicalDriveLocationResponseDto,
+} from './physical-drive-location-response.dto';
 
 export class PhysicalDriveResponseDto {
   @Expose()
@@ -59,6 +64,25 @@ export class PhysicalDriveResponseDto {
   @Expose()
   @Type(() => CurrencyResponseDto)
   currency?: CurrencyResponseDto;
+
+  @Expose()
+  @Type(() => CurrentPhysicalDriveLocationDto)
+  @ApiPropertyOptional({
+    type: CurrentPhysicalDriveLocationDto,
+    description:
+      'The datacenter the drive currently sits in, derived from the latest location event. Null when the drive has never been located.',
+  })
+  currentLocation?: CurrentPhysicalDriveLocationDto | null;
+
+  @Expose()
+  @Type(() => PhysicalDriveLocationResponseDto)
+  @ApiPropertyOptional({
+    type: PhysicalDriveLocationResponseDto,
+    isArray: true,
+    description:
+      'Ascending location history for this drive (present on single-record reads).',
+  })
+  locations?: PhysicalDriveLocationResponseDto[];
 
   constructor(partial: Partial<PhysicalDriveResponseDto>) {
     Object.assign(this, partial);

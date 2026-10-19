@@ -4,6 +4,7 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  HasMany,
   BeforeValidate,
 } from 'sequelize-typescript';
 import { Op, Transaction } from 'sequelize';
@@ -12,6 +13,7 @@ import { DriveModel } from '../../drive-model/entities/drive-model.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 import { Currency } from '../../currency/entities/currency.entity';
 import { Capacity } from '../../capacity/entities/capacity.entity';
+import { PhysicalDriveLocation } from './physical-drive-location.entity';
 
 // Define an explicit validation options interface to destroy the implicit any parameters check cascade
 interface HookValidationOptions {
@@ -81,7 +83,7 @@ export class PhysicalDrive extends BaseModel {
 
   @Column(DataType.VIRTUAL)
   get title(): string {
-    return `${this.getDataValue('serial_number') as string}`;
+    return `${this.serialNumber}`;
   }
 
   // --- Associations ---
@@ -105,6 +107,11 @@ export class PhysicalDrive extends BaseModel {
 
   @BelongsTo(() => Currency, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare currency: Currency;
+
+  // Append-only location log. The drive's current datacenter is derived from
+  // the latest row rather than stored on this record.
+  @HasMany(() => PhysicalDriveLocation, { as: 'locations' })
+  declare locations: PhysicalDriveLocation[];
 
   // --- Lifecycle Hook: Automated Enterprise Asset Label Generator ---
   @BeforeValidate

@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
+import { getModelToken, getConnectionToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
+import { PhysicalDriveLocation } from './entities/physical-drive-location.entity';
 import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
+import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
@@ -24,24 +27,43 @@ describe('PhysicalDriveService', () => {
 
   // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockPhysicalDriveRepo: Record<string, Mock>;
+  let mockLocationRepo: Record<string, Mock>;
   let mockDriveModelRepo: Record<string, Mock>;
   let mockVendorRepo: Record<string, Mock>;
   let mockCurrencyRepo: Record<string, Mock>;
+  let mockDatacenterRepo: Record<string, Mock>;
+  let mockSequelize: { transaction: Mock };
   let mockPaginationService: Mocked<PaginationService>;
 
+  const mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
+
   beforeEach(async () => {
-    // 1. Mock all 4 required Sequelize models using vi.fn()
+    // 1. Mock all required Sequelize models using vi.fn()
     mockPhysicalDriveRepo = {
       findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
       findByPk: vi.fn(),
+      findAll: vi.fn(),
       create: vi.fn(),
       destroy: vi.fn(),
+    };
+    mockLocationRepo = {
+      findOne: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
     };
     mockDriveModelRepo = { findByPk: vi.fn() };
     mockVendorRepo = { findByPk: vi.fn() };
     mockCurrencyRepo = { findByPk: vi.fn() };
+    mockDatacenterRepo = { findByPk: vi.fn() };
 
-    // 2. Mock the PaginationService using clear type boundaries
+    // 2. Transaction runner simply executes the callback with a fake tx object
+    mockSequelize = {
+      transaction: vi.fn((callback: (t: unknown) => unknown) =>
+        callback(mockTransaction),
+      ),
+    };
+
+    // 3. Mock the PaginationService using clear type boundaries
     mockPaginationService = {
       paginate: vi.fn(),
     };
@@ -54,11 +76,17 @@ describe('PhysicalDriveService', () => {
           useValue: mockPhysicalDriveRepo,
         },
         {
+          provide: getModelToken(PhysicalDriveLocation),
+          useValue: mockLocationRepo,
+        },
+        {
           provide: getModelToken(DriveModel),
           useValue: mockDriveModelRepo,
         },
         { provide: getModelToken(Vendor), useValue: mockVendorRepo },
         { provide: getModelToken(Currency), useValue: mockCurrencyRepo },
+        { provide: getModelToken(Datacenter), useValue: mockDatacenterRepo },
+        { provide: getConnectionToken(), useValue: mockSequelize },
         { provide: PaginationService, useValue: mockPaginationService },
       ],
     }).compile();
@@ -82,19 +110,110 @@ describe('PhysicalDriveService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockPhysicalDriveRepo as unknown,
         mockQuery,
+        { where: {} },
       );
+    });
+
+    it('should attach the derived currentLocation to each listed drive', async () => {
+      const drive = { id: 'drive-1', setDataValue: vi.fn() };
+      mockPaginationService.paginate.mockResolvedValue({
+        data: [drive],
+        meta: {},
+      });
+      mockLocationRepo.findAll.mockResolvedValue([
+        {
+          physicalDriveId: 'drive-1',
+          datacenterId: 'dc-1',
+          id: 'loc-1',
+          locatedAt: new Date('2026-07-01T09:00:00.000Z'),
+          notes: null,
+          datacenter: { code: 'VA-ASH-1', name: 'Ashburn Data Center 1' },
+        },
+      ]);
+
+      await service.findAll({ pageNumber: 1, pageSize: 10 });
+
+      expect(drive.setDataValue).toHaveBeenCalledWith(
+        'currentLocation',
+        expect.objectContaining({ datacenterId: 'dc-1', code: 'VA-ASH-1' }),
+      );
+    });
+
+    it('should translate a currentLocation filter into an id IN clause', async () => {
+      // 1st: candidate drives in the datacenter, 2nd: their derived current
+      // locations, then default [] for the post-pagination decoration lookup.
+      mockLocationRepo.findAll
+        .mockResolvedValueOnce([{ physicalDriveId: 'drive-1' }])
+        .mockResolvedValueOnce([
+          {
+            physicalDriveId: 'drive-1',
+            datacenterId: 'dc-1',
+            id: 'loc-1',
+            locatedAt: new Date('2026-07-01T09:00:00.000Z'),
+            notes: null,
+            datacenter: { code: 'VA-ASH-1', name: 'Ashburn Data Center 1' },
+          },
+        ])
+        .mockResolvedValue([]);
+      mockPaginationService.paginate.mockResolvedValue({
+        data: [],
+        meta: {},
+      });
+
+      await service.findAll({
+        pageNumber: 1,
+        pageSize: 10,
+        filterField: 'currentLocation',
+        filterOperator: 'in',
+        filterValue: 'dc-1',
+      });
+
+      expect(mockLocationRepo.findAll).toHaveBeenCalledWith({
+        where: { datacenterId: { [Op.in]: ['dc-1'] } },
+        attributes: ['physicalDriveId'],
+      });
+
+      const call = mockPaginationService.paginate.mock.calls[0];
+      expect(call[1]?.filterField).toBeUndefined();
+      expect(call[2]?.where?.id).toBeDefined();
     });
   });
 
   describe('findOne', () => {
     it('should successfully find and return a physical drive by ID', async () => {
-      const mockDrive = { id: 'drive-1', serialNumber: 'S3X0NX0A123456' };
+      const mockDrive = {
+        id: 'drive-1',
+        serialNumber: 'S3X0NX0A123456',
+        locations: [],
+        setDataValue: vi.fn(),
+      };
       mockPhysicalDriveRepo.findByPk.mockResolvedValue(mockDrive);
 
       const result = await service.findOne('drive-1');
 
       expect(result).toEqual(mockDrive);
-      expect(mockPhysicalDriveRepo.findByPk).toHaveBeenCalledWith('drive-1');
+      expect(mockPhysicalDriveRepo.findByPk).toHaveBeenCalledWith('drive-1', {
+        include: [
+          {
+            model: PhysicalDriveLocation,
+            as: 'locations',
+            include: [Datacenter],
+          },
+        ],
+      });
+      expect(mockDrive.setDataValue).toHaveBeenCalledWith('locations', []);
+      expect(mockDrive.setDataValue).toHaveBeenCalledWith(
+        'currentLocation',
+        null,
+      );
+    });
+
+    it('should return null when the drive does not exist', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(null);
+
+      const result = await service.findOne('missing');
+
+      expect(result).toBeNull();
     });
   });
 
@@ -191,6 +310,79 @@ describe('PhysicalDriveService', () => {
         new NotFoundException(
           'Retailer Vendor with ID missing-vendor-uuid not found',
         ),
+      );
+    });
+  });
+
+  describe('recordLocation', () => {
+    const locationDto = { datacenterId: 'dc-1' };
+
+    const driveWithLocations = () => ({
+      id: 'drive-1',
+      locations: [],
+      setDataValue: vi.fn(),
+    });
+
+    it('should append a location event and return the drive with its timeline', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(driveWithLocations());
+      mockDatacenterRepo.findByPk.mockResolvedValue({ id: 'dc-1' });
+      mockLocationRepo.findOne.mockResolvedValue(null);
+      mockLocationRepo.create.mockResolvedValue({ id: 'loc-1' });
+
+      await service.recordLocation('drive-1', locationDto);
+
+      expect(mockLocationRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          physicalDriveId: 'drive-1',
+          datacenterId: 'dc-1',
+        }),
+        { transaction: mockTransaction },
+      );
+    });
+
+    it('should throw NotFoundException when the drive does not exist', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.recordLocation('missing', locationDto),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when the datacenter does not exist', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(driveWithLocations());
+      mockDatacenterRepo.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.recordLocation('drive-1', locationDto),
+      ).rejects.toThrow(
+        new NotFoundException('Datacenter with ID dc-1 not found'),
+      );
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject re-recording the currently-assigned datacenter', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(driveWithLocations());
+      mockDatacenterRepo.findByPk.mockResolvedValue({ id: 'dc-1' });
+      mockLocationRepo.findOne.mockResolvedValue({ datacenterId: 'dc-1' });
+
+      await expect(
+        service.recordLocation('drive-1', locationDto),
+      ).rejects.toThrow(ConflictException);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('should append when moving to a different datacenter', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(driveWithLocations());
+      mockDatacenterRepo.findByPk.mockResolvedValue({ id: 'dc-2' });
+      mockLocationRepo.findOne.mockResolvedValue({ datacenterId: 'dc-1' });
+      mockLocationRepo.create.mockResolvedValue({ id: 'loc-2' });
+
+      await service.recordLocation('drive-1', { datacenterId: 'dc-2' });
+
+      expect(mockLocationRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ datacenterId: 'dc-2' }),
+        { transaction: mockTransaction },
       );
     });
   });

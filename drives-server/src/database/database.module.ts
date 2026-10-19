@@ -23,6 +23,7 @@ import { LogicalDisk } from '../modules/logical-disk/entities/logical-disk.entit
 import { LogicalVdev } from '../modules/logical-vdev/entities/logical-vdev.entity';
 import { OperatingSystem } from '../modules/operating-system/entities/operating-system.entity';
 import { PhysicalDrive } from '../modules/physical-drive/entities/physical-drive.entity';
+import { PhysicalDriveLocation } from '../modules/physical-drive/entities/physical-drive-location.entity';
 import { PhysicalCpu } from '../modules/physical-cpu/entities/physical-cpu.entity';
 import { PoolType } from '../modules/pool-type/entities/pool-type.entity';
 import { Rack } from '../modules/rack/entities/rack.entity';
@@ -69,6 +70,7 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             LogicalVdev,
             OperatingSystem,
             PhysicalDrive,
+            PhysicalDriveLocation,
             PhysicalCpu,
             PoolType,
             Rack,

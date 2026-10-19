@@ -23,6 +23,7 @@ import { PhysicalDrive } from './entities/physical-drive.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
+import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
@@ -90,6 +91,36 @@ export class PhysicalDriveController {
     @Body() createPhysicalDriveDto: CreatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
     return this.physicalDriveService.create(createPhysicalDriveDto);
+  }
+
+  @Post(':id/locations')
+  @Public()
+  @ApiOperation({
+    summary:
+      'Record a location event for a physical drive (append-only move history)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier of the physical drive',
+    type: String,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Location event recorded successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'PhysicalDrive or Datacenter not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Drive is already located in the requested datacenter',
+  })
+  async recordLocation(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+    @Body() createLocationDto: CreatePhysicalDriveLocationDto,
+  ): Promise<PhysicalDrive> {
+    return this.physicalDriveService.recordLocation(id, createLocationDto);
   }
 
   @Put(':id')

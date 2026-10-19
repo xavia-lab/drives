@@ -50,7 +50,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, driveModelId, retailerVendorId, currencyId',
+      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, driveModelId, retailerVendorId, currencyId, currentLocation (the derived datacenter the drive currently sits in)',
   })
   @IsOptional()
   @IsIn([
@@ -62,6 +62,7 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
     'driveModelId',
     'retailerVendorId',
     'currencyId',
+    'currentLocation', // 🌟 Derived location filter (datacenter id), translated to a subquery server-side
   ])
   declare filterField?: string;
 

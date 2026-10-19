@@ -5,7 +5,12 @@ import { useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CurrencyFormatter } from "@utils/currency-formatter";
-import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
+import { Card, Col, Descriptions, Row, Space, Tag, Typography } from "antd";
+import { PhysicalDriveLocationActions } from "@app/physical-drives/_components/physical-drive-location-actions";
+import {
+  PhysicalDriveLocationsTimeline,
+  type PhysicalDriveLocationEvent,
+} from "@app/physical-drives/_components/physical-drive-locations-timeline";
 
 const { Text } = Typography;
 const currencyFormatter = new CurrencyFormatter();
@@ -35,6 +40,14 @@ export default function PhysicalDriveShow() {
           withSymbol: true,
         })
       : "-";
+
+  const currentLocation = record?.currentLocation as
+    { datacenterId?: string; code?: string; name?: string } | undefined;
+  const locationLabel = currentLocation
+    ? [currentLocation.code, currentLocation.name].filter(Boolean).join(" - ")
+    : undefined;
+  const locations =
+    (record?.locations as PhysicalDriveLocationEvent[] | undefined) ?? [];
 
   return (
     <Show isLoading={isLoading}>
@@ -87,8 +100,35 @@ export default function PhysicalDriveShow() {
               <Descriptions.Item label="Warranty Expiry Date" span={2}>
                 {record?.warrantyExpiryDate ?? "-"}
               </Descriptions.Item>
+              <Descriptions.Item label="Current Location" span={2}>
+                {currentLocation ? (
+                  <LinkedLabel
+                    resource="datacenters"
+                    value={currentLocation.datacenterId}
+                    label={locationLabel}
+                    fallback="-"
+                  />
+                ) : (
+                  <Tag>Unassigned</Tag>
+                )}
+              </Descriptions.Item>
             </Descriptions>
           </Card>
+        </Card>
+
+        <Card
+          title={"Location History"}
+          extra={
+            <PhysicalDriveLocationActions
+              driveId={record?.id as string}
+              currentLocationLabel={locationLabel}
+              onDone={async () => {
+                await query.refetch();
+              }}
+            />
+          }
+        >
+          <PhysicalDriveLocationsTimeline events={locations} />
         </Card>
 
         <Row justify="center" gutter={32}>
