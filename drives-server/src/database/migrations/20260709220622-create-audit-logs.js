@@ -19,11 +19,10 @@ module.exports = {
         unique: true, // Automatically builds a unique index for sorting/filtering
       },
       user_id: {
-        type: Sequelize.UUID, // Preserved as UUID to match your Keycloak-federated users table
+        type: Sequelize.UUID, // Stores the Keycloak subject (sub) of the acting operator
         allowNull: true, // Nullable to support automated internal system/cron actions
-        references: { model: 'users', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
+        // Intentionally NOT a FK to `users`: audit entries are append-only and must
+        // never fail when the actor is unprovisioned or their user row is removed.
       },
       action: {
         type: Sequelize.STRING(32),

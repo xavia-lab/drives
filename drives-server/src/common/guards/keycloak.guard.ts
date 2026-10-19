@@ -123,7 +123,9 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
 
   private getMockUser(): AuthenticatedUser {
     return {
-      id: '1',
+      // Must be a valid UUID so it can be persisted into UUID-typed columns
+      // (e.g. audit_logs.user_id) while auth is disabled locally.
+      id: '00000000-0000-0000-0000-000000000000',
       username: 'admin',
       email: 'admin@example.com',
       name: 'Admin User',

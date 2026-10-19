@@ -1,16 +1,36 @@
 import { AccessControlProvider, CanParams } from "@refinedev/core";
 import { dataProvider } from "@providers/data-provider";
 
-// Define which resources have the 'managed' attribute logic
-const MANAGED_RESOURCES = [
-  "currencies",
-  "countries",
-  "storage-types",
-  "form-factors",
-  "bus-protocols",
-  "interfaces",
-  "capacities",
-];
+const API_URL = "/api/proxy";
+
+/**
+ * The set of resources that carry a `managed` attribute is owned by the backend
+ * (derived from the Sequelize models) and fetched once, instead of duplicating
+ * a hardcoded list here. `null` means "unavailable" — callers then fall back to
+ * treating the resource as managed so access decisions stay conservative.
+ */
+let managedResourcesCache: Promise<Set<string> | null> | null = null;
+
+const loadManagedResources = (): Promise<Set<string> | null> => {
+  if (!managedResourcesCache) {
+    managedResourcesCache = fetch(`${API_URL}/metadata/managed-resources`, {
+      headers: { "Content-Type": "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw response;
+        const json = (await response.json()) as { resources?: string[] };
+        return new Set<string>(json.resources ?? []);
+      })
+      .catch((error) => {
+        console.error("Failed to load managed resources", error);
+        // Reset so a later call can retry.
+        managedResourcesCache = null;
+        return null;
+      });
+  }
+
+  return managedResourcesCache;
+};
 
 export const createAccessControlProvider = (): AccessControlProvider => ({
   can: async ({ resource, action, params }: CanParams) => {
@@ -51,8 +71,14 @@ export const createAccessControlProvider = (): AccessControlProvider => ({
  * Separate helper to handle data fetching for specific resources
  */
 async function getResourceAttributes(resource: string, params: any) {
-  // If resource doesn't care about 'managed', return empty
-  if (!MANAGED_RESOURCES.includes(resource)) {
+  const managedResources = await loadManagedResources();
+
+  // If the list is unavailable, assume the resource is managed (fetch + pass the
+  // real flag) rather than silently skipping the check.
+  const isManaged =
+    managedResources === null ? true : managedResources.has(resource);
+
+  if (!isManaged) {
     return {};
   }
 
