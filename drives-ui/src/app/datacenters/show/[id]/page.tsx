@@ -1,10 +1,11 @@
 "use client";
 
 import { DateField, Show } from "@refinedev/antd";
-import { useShow } from "@refinedev/core";
+import { stringifyTableParams, useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
-import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
+import { Button, Card, Col, Descriptions, Row, Space, Typography } from "antd";
+import { UnorderedListOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -15,6 +16,21 @@ export default function DatacenterShow() {
   const { options: countryOptions } = useLookupOptions({
     resource: "countries",
   });
+
+  // Deep-link into the paged Physical Drives list with the location filter
+  // pre-applied, rather than loading every drive into this page.
+  const drivesHref = record?.id
+    ? `/physical-drives?${stringifyTableParams({
+        sorters: [],
+        filters: [
+          {
+            field: "currentLocation",
+            operator: "in",
+            value: [record.id as string],
+          },
+        ],
+      })}`
+    : "/physical-drives";
 
   return (
     <Show isLoading={isLoading}>
@@ -48,6 +64,21 @@ export default function DatacenterShow() {
               </Descriptions.Item>
             </Descriptions>
           </Card>
+        </Card>
+
+        <Card title={"Drives Located Here"}>
+          <Space direction="vertical" size={8}>
+            <Text type="secondary">
+              Browse all drives currently located in this datacenter.
+            </Text>
+            <Button
+              type="primary"
+              icon={<UnorderedListOutlined />}
+              href={drivesHref}
+            >
+              View Drives
+            </Button>
+          </Space>
         </Card>
 
         <Row justify="center" gutter={32}>

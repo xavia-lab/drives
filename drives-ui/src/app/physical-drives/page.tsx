@@ -11,7 +11,8 @@ import {
   getDefaultFilter,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Input, InputNumber, Select, Space, Table } from "antd";
+import { Button, Input, InputNumber, Select, Space, Table, Tag } from "antd";
+import { ClearOutlined } from "@ant-design/icons";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CurrencyFormatter } from "@utils/currency-formatter";
@@ -19,7 +20,7 @@ import { CurrencyFormatter } from "@utils/currency-formatter";
 const currencyFormatter = new CurrencyFormatter();
 
 export default function PhysicalDriveList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters, filters, setFilters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -34,9 +35,20 @@ export default function PhysicalDriveList() {
     resource: "currencies",
     optionLabel: "code",
   });
+  const { options: datacenterOptions, isLoading: datacenterLoading } =
+    useLookupOptions({ resource: "datacenters", optionLabel: "name" });
 
   return (
-    <List>
+    <List
+      headerButtons={
+        <Button
+          icon={<ClearOutlined />}
+          onClick={() => setFilters([], "replace")}
+        >
+          Clear Filters
+        </Button>
+      }
+    >
       <Table {...tableProps} rowKey="id">
         <Table.Column
           dataIndex="displayKey"
@@ -209,6 +221,50 @@ export default function PhysicalDriveList() {
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("warrantyExpiryDate", sorters)}
           render={(value) => value ?? "-"}
+        />
+        <Table.Column
+          dataIndex="currentLocation"
+          title={"Location"}
+          width={220}
+          filteredValue={
+            getDefaultFilter("currentLocation", filters, "in") || null
+          }
+          filterDropdown={(props) => (
+            <FilterDropdown
+              {...props}
+              mapValue={(selectedKeys) => selectedKeys}
+            >
+              <Select
+                style={{ minWidth: 220 }}
+                placeholder="Search Datacenter"
+                mode="multiple"
+                showSearch
+                allowClear
+                optionLabelProp="label"
+                optionFilterProp="label"
+                options={datacenterOptions}
+                loading={datacenterLoading}
+              />
+            </FilterDropdown>
+          )}
+          render={(_, record: BaseRecord) => {
+            const location = record.currentLocation as
+              | { datacenterId?: string; code?: string; name?: string }
+              | null
+              | undefined;
+            if (!location) return <Tag>Unassigned</Tag>;
+            const locationLabel = [location.code, location.name]
+              .filter(Boolean)
+              .join(" - ");
+            return (
+              <LinkedLabel
+                resource="datacenters"
+                value={location.datacenterId}
+                label={locationLabel}
+                fallback="-"
+              />
+            );
+          }}
         />
         <Table.Column
           title={"Actions"}
