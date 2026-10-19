@@ -21,6 +21,7 @@ import {
 import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
+import { CreateDriveAcquisitionDto } from './dto/create-drive-acquisition.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
@@ -31,6 +32,9 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
+import { RequestUser } from '../../common/decorators/request-user.decorator';
+import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
 @ApiTags('physical-drives')
 @Controller('physical-drives')
@@ -91,6 +95,38 @@ export class PhysicalDriveController {
     @Body() createPhysicalDriveDto: CreatePhysicalDriveDto,
   ): Promise<PhysicalDrive> {
     return this.physicalDriveService.create(createPhysicalDriveDto);
+  }
+
+  @Post('acquisitions')
+  @CheckPolicy('create', 'physical-drives')
+  @ApiOperation({
+    summary:
+      'Acquire a new drive: atomically create the physical drive, its initial location event and the ACQUIRE lifecycle event',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'PhysicalDrive acquired successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description:
+      'Drive model, retailer, currency, datacenter or user not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'A drive with the same serial number already exists',
+  })
+  async acquire(
+    @Body() createDriveAcquisitionDto: CreateDriveAcquisitionDto,
+    @RequestUser() user?: AuthenticatedUser,
+  ): Promise<PhysicalDrive> {
+    const performedByUserId = user?.dbUser?.id ?? user?.id ?? null;
+    const triggeredBy = user?.username ?? user?.email ?? null;
+
+    return this.physicalDriveService.acquireDrive(createDriveAcquisitionDto, {
+      performedByUserId,
+      triggeredBy,
+    });
   }
 
   @Post(':id/locations')

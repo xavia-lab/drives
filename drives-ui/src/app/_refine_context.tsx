@@ -31,7 +31,6 @@ import {
   CodeOutlined,
   ContainerOutlined,
   DashboardOutlined,
-  DashboardTwoTone,
   DatabaseOutlined,
   DesktopOutlined,
   GlobalOutlined,
@@ -117,17 +116,9 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
               resources={[
                 {
                   name: "dashboard",
+                  list: "/dashboard",
                   meta: {
                     label: "Dashboard",
-                    icon: <DashboardTwoTone />,
-                  },
-                },
-                {
-                  name: "dashboard-main",
-                  list: "/dashboard-main",
-                  meta: {
-                    label: "Main",
-                    parent: "dashboard",
                     icon: <DashboardOutlined />,
                   },
                 },

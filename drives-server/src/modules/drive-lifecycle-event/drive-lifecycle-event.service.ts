@@ -299,71 +299,80 @@ export class DriveLifecycleEventService {
     dto: CreateDriveLifecycleEventDto,
     actor: RecordLifecycleEventActor = {},
   ): Promise<DriveLifecycleTimeline> {
-    return this.sequelize.transaction(async (transaction) => {
-      const drive = await this.physicalDriveModel.findByPk(driveId, {
-        transaction,
-        lock: transaction.LOCK.UPDATE,
-      });
+    return this.sequelize.transaction((transaction) =>
+      this.recordEventInTransaction(driveId, dto, actor, transaction),
+    );
+  }
 
-      if (!drive) {
-        throw new NotFoundException(
-          `PhysicalDrive with ID ${driveId} not found`,
-        );
-      }
-
-      const performedByUserId =
-        actor.performedByUserId ?? dto.performedByUserId ?? null;
-      const triggeredBy =
-        actor.triggeredBy ?? dto.triggeredBy ?? performedByUserId ?? 'system';
-
-      await this.assertPerformedByUserExists(performedByUserId, transaction);
-
-      const [latestEvent, latestStateEvent] = await Promise.all([
-        this.getLatestEvent(driveId, transaction, false),
-        this.getLatestEvent(driveId, transaction, true),
-      ]);
-
-      const currentState = latestStateEvent
-        ? stateForEvent(latestStateEvent.eventType)
-        : DriveLifecycleState.UNRECEIVED;
-
-      if (!canTransition(currentState, dto.eventType)) {
-        throw new ConflictException(
-          `Cannot record ${dto.eventType} for a drive in state ${currentState}`,
-        );
-      }
-
-      const eventTimestamp = dto.eventTimestamp
-        ? new Date(dto.eventTimestamp)
-        : new Date();
-
-      if (
-        latestEvent &&
-        eventTimestamp.getTime() <
-          new Date(latestEvent.eventTimestamp).getTime()
-      ) {
-        throw new ConflictException(
-          'eventTimestamp must not precede the latest lifecycle event',
-        );
-      }
-
-      await this.assertReplacement(driveId, dto, transaction);
-
-      await this.driveLifecycleEventModel.create(
-        {
-          ...(dto.id ? { id: dto.id } : {}),
-          physicalDriveId: driveId,
-          eventType: dto.eventType,
-          eventTimestamp,
-          triggeredBy,
-          performedByUserId,
-          replacementPhysicalDriveId: dto.replacementPhysicalDriveId ?? null,
-          contextMetadata: dto.contextMetadata ?? null,
-        } as Partial<DriveLifecycleEvent>,
-        { transaction },
-      );
-
-      return this.loadTimeline(driveId, transaction);
+  // Same as `recordEvent`, but joins a caller-owned transaction. Used by
+  // multi-table workflows (e.g. drive acquisition) that must commit the drive,
+  // its location and its first lifecycle event atomically.
+  async recordEventInTransaction(
+    driveId: string,
+    dto: CreateDriveLifecycleEventDto,
+    actor: RecordLifecycleEventActor,
+    transaction: Transaction,
+  ): Promise<DriveLifecycleTimeline> {
+    const drive = await this.physicalDriveModel.findByPk(driveId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
+
+    if (!drive) {
+      throw new NotFoundException(`PhysicalDrive with ID ${driveId} not found`);
+    }
+
+    const performedByUserId =
+      actor.performedByUserId ?? dto.performedByUserId ?? null;
+    const triggeredBy =
+      actor.triggeredBy ?? dto.triggeredBy ?? performedByUserId ?? 'system';
+
+    await this.assertPerformedByUserExists(performedByUserId, transaction);
+
+    const [latestEvent, latestStateEvent] = await Promise.all([
+      this.getLatestEvent(driveId, transaction, false),
+      this.getLatestEvent(driveId, transaction, true),
+    ]);
+
+    const currentState = latestStateEvent
+      ? stateForEvent(latestStateEvent.eventType)
+      : DriveLifecycleState.UNRECEIVED;
+
+    if (!canTransition(currentState, dto.eventType)) {
+      throw new ConflictException(
+        `Cannot record ${dto.eventType} for a drive in state ${currentState}`,
+      );
+    }
+
+    const eventTimestamp = dto.eventTimestamp
+      ? new Date(dto.eventTimestamp)
+      : new Date();
+
+    if (
+      latestEvent &&
+      eventTimestamp.getTime() < new Date(latestEvent.eventTimestamp).getTime()
+    ) {
+      throw new ConflictException(
+        'eventTimestamp must not precede the latest lifecycle event',
+      );
+    }
+
+    await this.assertReplacement(driveId, dto, transaction);
+
+    await this.driveLifecycleEventModel.create(
+      {
+        ...(dto.id ? { id: dto.id } : {}),
+        physicalDriveId: driveId,
+        eventType: dto.eventType,
+        eventTimestamp,
+        triggeredBy,
+        performedByUserId,
+        replacementPhysicalDriveId: dto.replacementPhysicalDriveId ?? null,
+        contextMetadata: dto.contextMetadata ?? null,
+      } as Partial<DriveLifecycleEvent>,
+      { transaction },
+    );
+
+    return this.loadTimeline(driveId, transaction);
   }
 }
