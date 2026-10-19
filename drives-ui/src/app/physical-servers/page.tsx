@@ -11,7 +11,7 @@ import {
   getDefaultFilter,
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Input, InputNumber, Select, Space, Table } from "antd";
+import { Input, InputNumber, Select, Space, Table, Tooltip } from "antd";
 import type { TableProps } from "antd";
 import type { SorterResult } from "antd/es/table/interface";
 import { LinkedLabel } from "@components/linked-label";
@@ -44,8 +44,6 @@ export default function PhysicalServerList() {
     tableProps.onChange?.(pagination, filters, nextSorter, extra);
   };
 
-  const { options: cpuModelOptions, isLoading: cpuModelLoading } =
-    useLookupOptions({ resource: "cpu-models" });
   const { options: operatingSystemOptions, isLoading: operatingSystemLoading } =
     useLookupOptions({ resource: "operating-systems" });
   const { options: rackOptions, isLoading: rackLoading } = useLookupOptions({
@@ -91,50 +89,24 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
-          dataIndex="cpuModelId"
-          title={"CPU Model"}
-          width={200}
-          sorter={{ multiple: 1 }}
-          filteredValue={getDefaultFilter("cpuModelId", filters, "in") || null}
-          filterDropdown={(props) => (
-            <FilterDropdown {...props}>
-              <Select
-                style={{ minWidth: 200 }}
-                placeholder="Search CPU Model"
-                mode="multiple"
-                showSearch
-                allowClear
-                optionLabelProp="label"
-                optionFilterProp="label"
-                options={cpuModelOptions}
-                loading={cpuModelLoading}
-              />
-            </FilterDropdown>
-          )}
-          render={(value) => (
-            <LinkedLabel
-              resource="cpu-models"
-              options={cpuModelOptions}
-              value={value}
-            />
-          )}
-        />
-        <Table.Column
-          dataIndex="cpuCount"
-          title={"CPU Count"}
-          width={110}
+          dataIndex="cpus"
+          title={"CPUs"}
+          width={120}
           align={"right"}
-          sorter={true}
-          defaultSortOrder={getDefaultSortOrder("cpuCount", sorters)}
-          filterDropdown={(props) => (
-            <FilterDropdown {...props} mapValue={numberMapValue}>
-              <InputNumber
-                placeholder="CPU Count"
-                style={{ width: "100%" }}
-                controls={false}
-              />
-            </FilterDropdown>
-          )}
+          render={(_, record: BaseRecord) => {
+            const cpus = (record.cpus as { serialNumber?: string }[]) ?? [];
+            if (cpus.length === 0) return 0;
+            return (
+              <Tooltip
+                title={cpus
+                  .map((cpu) => cpu.serialNumber)
+                  .filter(Boolean)
+                  .join(", ")}
+              >
+                <span>{cpus.length}</span>
+              </Tooltip>
+            );
+          }}
         />
         <Table.Column
           dataIndex="memoryValue"

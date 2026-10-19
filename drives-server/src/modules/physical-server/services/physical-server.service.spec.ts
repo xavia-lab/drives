@@ -3,6 +3,7 @@ import { getModelToken, getConnectionToken } from '@nestjs/sequelize';
 import { NotFoundException } from '@nestjs/common';
 import { PhysicalServerService } from './physical-server.service';
 import { PhysicalServer } from '../entities/physical-server.entity';
+import { PhysicalCpu } from '../../physical-cpu/entities/physical-cpu.entity';
 import { CpuModel } from '../../cpu-model/entities/cpu-model.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
 import { Rack } from '../../rack/entities/rack.entity';
@@ -27,12 +28,17 @@ describe('PhysicalServerService', () => {
   let service: PhysicalServerService;
 
   let mockPhysicalServerModel: Record<string, Mock>;
-  let mockCpuModelModel: Record<string, Mock>;
+  let mockPhysicalCpuModel: Record<string, Mock>;
   let mockOsModel: Record<string, Mock>;
   let mockRackModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
   let mockServerSlotService: { syncForServer: Mock };
   let mockSequelize: { transaction: Mock };
+
+  const readIncludes = [
+    ServerSlot,
+    { model: PhysicalCpu, include: [CpuModel] },
+  ];
 
   beforeEach(async () => {
     mockPhysicalServerModel = {
@@ -41,7 +47,7 @@ describe('PhysicalServerService', () => {
       create: vi.fn(),
       destroy: vi.fn(),
     };
-    mockCpuModelModel = { findByPk: vi.fn() };
+    mockPhysicalCpuModel = { findAll: vi.fn(), update: vi.fn() };
     mockOsModel = { findByPk: vi.fn() };
     mockRackModel = { findByPk: vi.fn() };
 
@@ -64,7 +70,7 @@ describe('PhysicalServerService', () => {
           provide: getModelToken(PhysicalServer),
           useValue: mockPhysicalServerModel,
         },
-        { provide: getModelToken(CpuModel), useValue: mockCpuModelModel },
+        { provide: getModelToken(PhysicalCpu), useValue: mockPhysicalCpuModel },
         { provide: getModelToken(OperatingSystem), useValue: mockOsModel },
         { provide: getModelToken(Rack), useValue: mockRackModel },
         { provide: PaginationService, useValue: mockPaginationService },
@@ -78,7 +84,7 @@ describe('PhysicalServerService', () => {
   });
 
   describe('findAll', () => {
-    it('should cleanly delegate pagination logic to PaginationService with slots eager-loaded', async () => {
+    it('should cleanly delegate pagination logic to PaginationService with children eager-loaded', async () => {
       const mockQuery = { pageNumber: 1, pageSize: 10 };
       const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
         data: PhysicalServer[];
@@ -92,7 +98,7 @@ describe('PhysicalServerService', () => {
       expect(mockPaginationService.paginate).toHaveBeenCalledWith(
         mockPhysicalServerModel as unknown,
         mockQuery,
-        { include: [ServerSlot] },
+        { include: readIncludes },
       );
     });
   });
@@ -102,8 +108,6 @@ describe('PhysicalServerService', () => {
       hostname: 'us-east-compute-42.infra',
       memoryValue: 512,
       memoryUnit: MemoryUnit.GiB,
-      cpuModelId: 'cpu-uuid',
-      cpuCount: 2,
       operatingSystemId: 'os-uuid',
       rackId: 'rack-uuid',
       rackUnitPosition: 22,
@@ -111,17 +115,17 @@ describe('PhysicalServerService', () => {
 
     beforeEach(() => {
       mockPhysicalServerModel.findOne.mockResolvedValue(null);
-      mockCpuModelModel.findByPk.mockResolvedValue({ id: 'cpu-uuid' });
       mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
       mockRackModel.findByPk.mockResolvedValue({ id: 'rack-uuid' });
       mockPhysicalServerModel.create.mockResolvedValue({ id: 'srv-uuid' });
       mockPhysicalServerModel.findByPk.mockResolvedValue({
         id: 'srv-uuid',
+        cpus: [],
         slots: [],
       });
     });
 
-    it('should create a server inside a transaction and reload it with slots', async () => {
+    it('should create a server inside a transaction and reload it with children', async () => {
       const result = await service.create(createDto);
 
       expect(result).toBeDefined();
@@ -129,9 +133,10 @@ describe('PhysicalServerService', () => {
         transaction: 'test-transaction',
       });
       expect(mockServerSlotService.syncForServer).not.toHaveBeenCalled();
+      expect(mockPhysicalCpuModel.update).not.toHaveBeenCalled();
       expect(mockPhysicalServerModel.findByPk).toHaveBeenCalledWith(
         'srv-uuid',
-        { include: [ServerSlot], transaction: 'test-transaction' },
+        { include: readIncludes, transaction: 'test-transaction' },
       );
     });
 
@@ -156,13 +161,38 @@ describe('PhysicalServerService', () => {
       );
     });
 
+    it('should assign the provided physical CPUs within the same transaction', async () => {
+      mockPhysicalCpuModel.findAll.mockResolvedValue([
+        { id: 'cpu-1', physicalServerId: null },
+        { id: 'cpu-2', physicalServerId: null },
+      ]);
+      mockPhysicalCpuModel.update.mockResolvedValue([2]);
+
+      const dtoWithCpus: CreatePhysicalServerDto = {
+        ...createDto,
+        cpuIds: ['cpu-1', 'cpu-2'],
+      };
+
+      await service.create(dtoWithCpus);
+
+      expect(mockPhysicalServerModel.create).toHaveBeenCalledWith(createDto, {
+        transaction: 'test-transaction',
+      });
+      expect(mockPhysicalCpuModel.update).toHaveBeenCalledWith(
+        { physicalServerId: 'srv-uuid' },
+        {
+          where: { id: ['cpu-1', 'cpu-2'] },
+          transaction: 'test-transaction',
+        },
+      );
+    });
+
     it('should aggregate multiple concurrently missing foreign keys into a single multiline NotFoundException', async () => {
-      mockCpuModelModel.findByPk.mockResolvedValue(null);
-      mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
+      mockOsModel.findByPk.mockResolvedValue(null);
       mockRackModel.findByPk.mockResolvedValue(null);
 
       const expectedErrorMessage = [
-        'CpuModel with ID cpu-uuid not found',
+        'OperatingSystem with ID os-uuid not found',
         'Rack with ID rack-uuid not found',
       ].join('\n');
 
@@ -180,7 +210,7 @@ describe('PhysicalServerService', () => {
       ];
       mockPhysicalServerModel.findByPk
         .mockResolvedValueOnce({ id: 'srv-uuid', update: vi.fn() })
-        .mockResolvedValueOnce({ id: 'srv-uuid', slots });
+        .mockResolvedValueOnce({ id: 'srv-uuid', cpus: [], slots });
       mockPhysicalServerModel.findOne.mockResolvedValue(null);
 
       const updateDto = { hostname: 'renamed.infra', slots };
@@ -197,7 +227,7 @@ describe('PhysicalServerService', () => {
     it('should leave slots untouched when the update payload omits them', async () => {
       mockPhysicalServerModel.findByPk
         .mockResolvedValueOnce({ id: 'srv-uuid', update: vi.fn() })
-        .mockResolvedValueOnce({ id: 'srv-uuid', slots: [] });
+        .mockResolvedValueOnce({ id: 'srv-uuid', cpus: [], slots: [] });
       mockPhysicalServerModel.findOne.mockResolvedValue(null);
 
       await service.update('srv-uuid', { hostname: 'renamed.infra' });

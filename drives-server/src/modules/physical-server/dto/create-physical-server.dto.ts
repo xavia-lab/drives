@@ -43,15 +43,19 @@ export class CreatePhysicalServerDto {
   @Length(1, 128)
   hostname: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    type: [String],
     description:
-      'Target processing model configuration UUIDv7 lookup identifier linking',
-    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
-    required: true,
+      'Physical CPU chips (UUIDv7 ids) installed in this server. Replaces the full set of assigned CPUs on update.',
+    required: false,
   })
-  @IsUUID('7', { message: 'The cpuModelId must be a valid UUIDv7 string' })
-  @IsNotEmpty()
-  cpuModelId: string;
+  @IsOptional()
+  @IsArray()
+  @IsUUID('7', {
+    each: true,
+    message: 'Each cpuId must be a valid UUIDv7 string',
+  })
+  cpuIds?: string[];
 
   @ApiProperty({
     description:
@@ -92,17 +96,6 @@ export class CreatePhysicalServerDto {
   })
   @IsNotEmpty()
   memoryUnit: MemoryUnit;
-
-  @ApiPropertyOptional({
-    description:
-      'Total count of populated physical CPU socket layouts mounted on the hardware',
-    example: 2,
-    default: 1,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  cpuCount?: number;
 
   @ApiProperty({
     description:

@@ -4,9 +4,11 @@ import { DateField, Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
+import { CurrencyFormatter } from "@utils/currency-formatter";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
 const { Text } = Typography;
+const currencyFormatter = new CurrencyFormatter();
 
 export default function PhysicalDriveShow() {
   const { result: record, query } = useShow({});
@@ -21,7 +23,18 @@ export default function PhysicalDriveShow() {
   });
   const { options: currencyOptions } = useLookupOptions({
     resource: "currencies",
+    optionLabel: "code",
   });
+
+  const currencyCode = currencyOptions.find(
+    (option) => option.value === record?.currencyId,
+  )?.label;
+  const acquisitionCost =
+    record?.acquisitionCost !== undefined && record?.acquisitionCost !== null
+      ? currencyFormatter.format(Number(record.acquisitionCost), currencyCode, {
+          withSymbol: true,
+        })
+      : "-";
 
   return (
     <Show isLoading={isLoading}>
@@ -65,19 +78,8 @@ export default function PhysicalDriveShow() {
                   fallback="-"
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Currency">
-                <LinkedLabel
-                  resource="currencies"
-                  options={currencyOptions}
-                  value={record?.currencyId}
-                  fallback="-"
-                />
-              </Descriptions.Item>
               <Descriptions.Item label="Acquisition Cost">
-                {record?.acquisitionCost !== undefined &&
-                record?.acquisitionCost !== null
-                  ? Number(record.acquisitionCost).toFixed(2)
-                  : "-"}
+                {acquisitionCost}
               </Descriptions.Item>
               <Descriptions.Item label="Purchase Date">
                 {record?.purchaseDate ?? "-"}

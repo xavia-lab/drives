@@ -130,8 +130,8 @@ export const VirtualServerForm = ({
     [physicalServersQuery.data?.data],
   );
 
-  // CPU models provide the per-socket thread count; combined with a host's
-  // socket count this yields the host's total hardware threads.
+  // CPU models provide the per-chip thread count; summing the host's installed
+  // physical CPUs' threads yields the host's total hardware threads.
   const { query: cpuModelsQuery } = useList({
     resource: "cpu-models",
     pagination: { mode: "server", currentPage: 1, pageSize: 200 },
@@ -200,14 +200,16 @@ export const VirtualServerForm = ({
     (server: BaseRecord) => server.id === hostServerId,
   );
 
-  // vCPU ceiling: sockets × threads-per-socket for the selected host.
+  // vCPU ceiling: the sum of the selected host's installed physical CPUs'
+  // per-chip thread counts.
   const hostThreads = hostServer
-    ? threadsByCpuModelId.get(hostServer.cpuModelId as string)
-    : undefined;
-  const maxVcpus =
-    hostServer && hostThreads && Number(hostServer.cpuCount)
-      ? Number(hostServer.cpuCount) * hostThreads
-      : undefined;
+    ? ((hostServer.cpus as { cpuModelId?: string }[] | undefined) ?? []).reduce(
+        (sum, cpu) =>
+          sum + (threadsByCpuModelId.get(cpu.cpuModelId ?? "") ?? 0),
+        0,
+      )
+    : 0;
+  const maxVcpus = hostServer && hostThreads > 0 ? hostThreads : undefined;
 
   const slotColumns: ProColumns<PassthroughSlotRecord>[] = [
     {

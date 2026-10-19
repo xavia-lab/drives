@@ -255,12 +255,11 @@ describe('VirtualServerService', () => {
 
     it('should reject a guest with more vCPUs than the host has threads', async () => {
       mockVirtualServerModel.findOne.mockResolvedValue(null);
-      // 2 sockets × 32 threads = 64 hardware threads.
+      // Two 32-thread CPUs = 64 hardware threads.
       mockPhysicalServerModel.findByPk.mockResolvedValue({
         id: 'server-uuid',
         absoluteMemory: 32 * GIB,
-        cpuCount: 2,
-        cpuModel: { threads: 32 },
+        cpus: [{ cpuModel: { threads: 32 } }, { cpuModel: { threads: 32 } }],
       });
       mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
       mockVirtualServerModel.sum.mockResolvedValue(0);
@@ -276,8 +275,7 @@ describe('VirtualServerService', () => {
       mockPhysicalServerModel.findByPk.mockResolvedValue({
         id: 'server-uuid',
         absoluteMemory: 32 * GIB,
-        cpuCount: 2,
-        cpuModel: { threads: 32 },
+        cpus: [{ cpuModel: { threads: 32 } }, { cpuModel: { threads: 32 } }],
       });
       mockOsModel.findByPk.mockResolvedValue({ id: 'os-uuid' });
       mockVirtualServerModel.sum.mockResolvedValue(0);
@@ -358,12 +356,11 @@ describe('VirtualServerService', () => {
         ...existing,
         allocatedVcpus: 4,
       });
-      // 2 sockets × 32 threads = 64 hardware threads.
+      // Two 32-thread CPUs = 64 hardware threads.
       mockPhysicalServerModel.findByPk.mockResolvedValue({
         id: 'server-uuid',
         absoluteMemory: 32 * GIB,
-        cpuCount: 2,
-        cpuModel: { threads: 32 },
+        cpus: [{ cpuModel: { threads: 32 } }, { cpuModel: { threads: 32 } }],
       });
 
       await expect(

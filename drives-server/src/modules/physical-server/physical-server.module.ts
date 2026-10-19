@@ -5,7 +5,7 @@ import { PhysicalServerService } from './services/physical-server.service';
 import { ServerSlotService } from './services/server-slot.service';
 import { PhysicalServer } from './entities/physical-server.entity';
 import { ServerSlot } from './entities/server-slot.entity';
-import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
+import { PhysicalCpu } from '../physical-cpu/entities/physical-cpu.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { Rack } from '../rack/entities/rack.entity';
 import { Interface } from '../interface/entities/interface.entity';
@@ -15,7 +15,7 @@ import { Interface } from '../interface/entities/interface.entity';
     SequelizeModule.forFeature([
       PhysicalServer,
       ServerSlot,
-      CpuModel,
+      PhysicalCpu,
       OperatingSystem,
       Rack,
       Interface,
