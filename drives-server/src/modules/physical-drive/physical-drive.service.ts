@@ -19,8 +19,9 @@ import { RelocateDriveDto } from './dto/relocate-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { normalizeFilters } from '../pagination/builders/filter-normalizer';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 import {
   DriveLifecycleEventService,
@@ -304,20 +305,30 @@ export class PhysicalDriveService implements OnModuleInit {
           ),
         },
       };
-    } else if (query?.filterField === 'currentLocation' && query.filterValue) {
-      const datacenterIds = String(query.filterValue)
-        .split(',')
-        .map((id) => id.trim())
-        .filter(Boolean);
+    } else {
+      // `currentLocation` is a derived filter (latest location event), so it is
+      // resolved here and removed from the filters delegated to the paginator.
+      const filters = normalizeFilters(query ?? {});
+      const locationFilter = filters.find(
+        (filter) => filter.field === 'currentLocation',
+      );
 
-      const driveIds = await this.getDriveIdsByCurrentDatacenter(datacenterIds);
-      customWhere = { id: { [Op.in]: driveIds } };
-      effectiveQuery = {
-        ...query,
-        filterField: undefined,
-        filterOperator: undefined,
-        filterValue: undefined,
-      };
+      if (locationFilter) {
+        const datacenterIds = locationFilter.value
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean);
+
+        const driveIds =
+          await this.getDriveIdsByCurrentDatacenter(datacenterIds);
+        customWhere = { id: { [Op.in]: driveIds } };
+        effectiveQuery = {
+          ...query,
+          filters: filters.filter(
+            (filter) => filter.field !== 'currentLocation',
+          ),
+        };
+      }
     }
 
     const result = await this.paginationService.paginate<PhysicalDrive>(

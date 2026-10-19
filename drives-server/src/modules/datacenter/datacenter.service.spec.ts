@@ -4,7 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DatacenterService } from './datacenter.service';
 import { Datacenter } from './entities/datacenter.entity';
 import { Country } from '../country/entities/country.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateDatacenterDto } from './dto/create-datacenter.dto';
 import { UpdateDatacenterDto } from './dto/update-datacenter.dto';
 import {

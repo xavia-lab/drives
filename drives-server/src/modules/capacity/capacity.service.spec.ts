@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CapacityService } from './capacity.service';
 import { Capacity } from './entities/capacity.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateCapacityDto } from './dto/create-capacity.dto';
 import { UpdateCapacityDto } from './dto/update-capacity.dto';
 import {

@@ -9,8 +9,8 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { CreateCpuModelDto } from './dto/create-cpu-model.dto';
 import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
 import { QueryCpuModelDto } from './dto/query-cpu-model.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class CpuModelService {

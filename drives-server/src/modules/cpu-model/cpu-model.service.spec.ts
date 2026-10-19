@@ -4,7 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CpuModelService } from './cpu-model.service';
 import { CpuModel, CpuArchitecture } from './entities/cpu-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateCpuModelDto } from './dto/create-cpu-model.dto';
 import { UpdateCpuModelDto } from './dto/update-cpu-model.dto';
 import {

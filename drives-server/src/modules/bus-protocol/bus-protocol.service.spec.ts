@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { BusProtocolService } from './bus-protocol.service';
 import { BusProtocol } from './entities/bus-protocol.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateBusProtocolDto } from './dto/create-bus-protocol.dto';
 import { UpdateBusProtocolDto } from './dto/update-bus-protocol.dto';
 import {

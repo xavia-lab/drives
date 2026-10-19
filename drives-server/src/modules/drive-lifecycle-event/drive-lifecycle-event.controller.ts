@@ -21,7 +21,7 @@ import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { DriveLifecycleEventResponseDto } from './dto/response/drive-lifecycle-event-response.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 // Append-only ledger: events are created through the nested

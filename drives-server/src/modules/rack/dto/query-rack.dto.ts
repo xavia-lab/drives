@@ -1,6 +1,6 @@
 import { IsOptional, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryRackDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -19,19 +19,4 @@ export class QueryRackDto extends PaginationQueryDto {
     'updatedAt',
   ])
   declare sortField?: string;
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable fields: id, displayKey, name, datacenterId, totalRackUnits',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey', // 🌟 Added to allow high-performance numerical lookup filters in hardware grids
-    'name',
-    'datacenterId',
-    'totalRackUnits',
-  ])
-  declare filterField?: string;
 }

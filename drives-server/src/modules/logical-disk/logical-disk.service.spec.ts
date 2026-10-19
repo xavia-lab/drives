@@ -5,7 +5,7 @@ import { LogicalDiskService } from './logical-disk.service';
 import { LogicalDisk } from './entities/logical-disk.entity';
 import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto';
 import {
   describe,

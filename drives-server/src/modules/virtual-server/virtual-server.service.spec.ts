@@ -16,7 +16,7 @@ import { PassthroughSlot } from './entities/passthrough-slot.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
 import {
   describe,

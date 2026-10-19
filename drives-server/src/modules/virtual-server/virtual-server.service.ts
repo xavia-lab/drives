@@ -20,8 +20,8 @@ import { OperatingSystem } from '../operating-system/entities/operating-system.e
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
 import { UpdateVirtualServerDto } from './dto/update-virtual-server.dto';
 import { QueryVirtualServerDto } from './dto/query-virtual-server.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { PassthroughSlotService } from './passthrough-slot.service';
 import { toBytes } from '../../lib/utils/human.readable.bytes.converter';
 

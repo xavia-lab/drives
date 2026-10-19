@@ -9,8 +9,8 @@ import { StorageType } from './entities/storage-type.entity';
 import { CreateStorageTypeDto } from './dto/create-storage-type.dto';
 import { UpdateStorageTypeDto } from './dto/update-storage-type.dto';
 import { QueryStorageTypeDto } from './dto/query-storage-type.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class StorageTypeService implements OnModuleInit {

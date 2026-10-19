@@ -1,6 +1,6 @@
 import { IsOptional, IsIn, IsString, Length, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryDriveModelDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
@@ -38,25 +38,6 @@ export class QueryDriveModelDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable columns for advanced expressions: id, displayKey, name, modelNumber, manufacturerId, storageTypeId, formFactorId, interfaceId, capacityId',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey', // 🌟 Added to allow clean numerical equality lookups from grid search filters
-    'name',
-    'modelNumber',
-    'manufacturerId',
-    'storageTypeId',
-    'formFactorId',
-    'interfaceId',
-    'capacityId',
-  ])
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
 

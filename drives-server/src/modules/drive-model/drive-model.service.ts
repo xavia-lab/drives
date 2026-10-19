@@ -14,8 +14,8 @@ import { StorageType } from '../storage-type/entities/storage-type.entity';
 import { CreateDriveModelDto } from './dto/create-drive-model.dto';
 import { UpdateDriveModelDto } from './dto/update-drive-model.dto';
 import { QueryDriveModelDto } from './dto/query-drive-model.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class DriveModelService implements OnModuleInit {

@@ -135,20 +135,24 @@ export const dataProvider: DataProvider = {
     }
 
     if (filters && filters.length > 0) {
-      filters
+      // Send every filter as one structured JSON param so the backend can AND
+      // an arbitrary number of conditions (the legacy triple is still accepted
+      // for backwards compatibility).
+      const conditions = filters
         .filter(
           (filter): filter is any => "field" in filter && "operator" in filter,
         )
-        .forEach((filter) => {
-          // Use a constant and handle the array-to-comma logic inline
-          const value = Array.isArray(filter.value)
+        .map((filter) => ({
+          field: filter.field,
+          operator: filter.operator,
+          value: Array.isArray(filter.value)
             ? filter.value.join(",")
-            : String(filter.value);
+            : String(filter.value),
+        }));
 
-          params.append("filterField", filter.field);
-          params.append("filterOperator", filter.operator);
-          params.append("filterValue", value);
-        });
+      if (conditions.length > 0) {
+        params.append("filters", JSON.stringify(conditions));
+      }
     }
 
     const response = await authenticatedFetch(

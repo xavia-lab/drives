@@ -6,7 +6,7 @@ import { PhysicalCpu } from './entities/physical-cpu.entity';
 import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreatePhysicalCpuDto } from './dto/create-physical-cpu.dto';
 import { UpdatePhysicalCpuDto } from './dto/update-physical-cpu.dto';
 import {

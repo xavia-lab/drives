@@ -31,7 +31,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';

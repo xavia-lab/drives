@@ -11,7 +11,7 @@ import { WarrantyClaimEventType } from './entities/warranty-claim-event.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { DriveLifecycleEvent } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateWarrantyClaimDto } from './dto/create-warranty-claim.dto';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 

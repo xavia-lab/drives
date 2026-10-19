@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { PoolTypeService } from './pool-type.service';
 import { PoolType } from './entities/pool-type.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreatePoolTypeDto } from './dto/create-pool-type.dto';
 import { UpdatePoolTypeDto } from './dto/update-pool-type.dto';
 import {

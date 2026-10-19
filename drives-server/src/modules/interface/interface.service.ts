@@ -10,8 +10,8 @@ import { BusProtocol } from '../bus-protocol/entities/bus-protocol.entity'; // ð
 import { CreateInterfaceDto } from './dto/create-interface.dto';
 import { UpdateInterfaceDto } from './dto/update-interface.dto';
 import { QueryInterfaceDto } from './dto/query-interface.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class InterfaceService implements OnModuleInit {

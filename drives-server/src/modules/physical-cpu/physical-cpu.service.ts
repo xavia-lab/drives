@@ -12,8 +12,8 @@ import { Currency } from '../currency/entities/currency.entity';
 import { CreatePhysicalCpuDto } from './dto/create-physical-cpu.dto';
 import { UpdatePhysicalCpuDto } from './dto/update-physical-cpu.dto';
 import { QueryPhysicalCpuDto } from './dto/query-physical-cpu.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class PhysicalCpuService implements OnModuleInit {

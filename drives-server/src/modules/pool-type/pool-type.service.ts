@@ -8,8 +8,8 @@ import { PoolType } from './entities/pool-type.entity';
 import { CreatePoolTypeDto } from './dto/create-pool-type.dto';
 import { UpdatePoolTypeDto } from './dto/update-pool-type.dto';
 import { QueryPoolTypeDto } from './dto/query-pool-type.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class PoolTypeService {

@@ -28,7 +28,7 @@ import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PoolTypeResponseDto } from './dto/response/pool-type-response.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('pool-types')

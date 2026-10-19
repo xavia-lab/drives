@@ -8,7 +8,7 @@ import { FormFactor } from '../form-factor/entities/form-factor.entity';
 import { Interface } from '../interface/entities/interface.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { StorageType } from '../storage-type/entities/storage-type.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateDriveModelDto } from './dto/create-drive-model.dto';
 import {
   describe,

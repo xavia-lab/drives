@@ -9,7 +9,7 @@ import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
@@ -238,9 +238,7 @@ describe('PhysicalDriveService', () => {
       await service.findAll({
         pageNumber: 1,
         pageSize: 10,
-        filterField: 'currentLocation',
-        filterOperator: 'in',
-        filterValue: 'dc-1',
+        filters: [{ field: 'currentLocation', operator: 'in', value: 'dc-1' }],
       });
 
       expect(mockLocationRepo.findAll).toHaveBeenCalledWith({
@@ -249,7 +247,7 @@ describe('PhysicalDriveService', () => {
       });
 
       const call = mockPaginationService.paginate.mock.calls[0];
-      expect(call[1]?.filterField).toBeUndefined();
+      expect(call[1]?.filters).toEqual([]);
       expect(call[2]?.where?.id).toBeDefined();
     });
   });

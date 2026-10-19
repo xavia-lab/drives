@@ -1,6 +1,6 @@
 import { IsOptional, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryVirtualServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -27,25 +27,4 @@ export class QueryVirtualServerDto extends PaginationQueryDto {
     'updatedAt',
   ])
   declare sortField?: string;
-
-  @ApiPropertyOptional({
-    example: '105',
-    description:
-      'Filterable fields: id, displayKey, hostServerId, vmid, hostname, type, operatingSystemId, allocatedVcpus, allocatedMemoryValue, allocatedMemoryUnit, isActive',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey', // 🌟 Added to support direct integer numerical filtering matches
-    'hostServerId',
-    'vmid',
-    'hostname',
-    'type',
-    'operatingSystemId',
-    'allocatedVcpus',
-    'allocatedMemoryValue',
-    'allocatedMemoryUnit',
-    'isActive',
-  ])
-  declare filterField?: string;
 }

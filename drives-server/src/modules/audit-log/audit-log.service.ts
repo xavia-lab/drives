@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   Logger,
   InternalServerErrorException,
@@ -10,6 +11,7 @@ import { User } from '../user/entities/user.entity';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 import { QueryAuditLogDto } from './dto/query-audit-log.dto';
 import { AuditLogResponseDto } from './dto/response/audit-log-response.dto';
+import { PaginationService } from '../pagination/pagination.service';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,6 +25,7 @@ export class AuditLogService {
     private readonly auditLogModel: typeof AuditLog,
     @InjectModel(User)
     private readonly userModel: typeof User,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(
@@ -63,44 +66,26 @@ export class AuditLogService {
     queryDto: QueryAuditLogDto,
   ): Promise<{ data: AuditLogResponseDto[]; total: number }> {
     try {
+      // Dedicated fast-lookup filters. Generic `filters`/legacy filters are
+      // applied by PaginationService and ANDed with these via `Op.and`.
       const where: WhereOptions = {};
-
-      // 1. Map Explicit Fast Lookup Filters
       if (queryDto.resource) where.resource = queryDto.resource;
       if (queryDto.resourceId) where.resourceId = queryDto.resourceId;
       if (queryDto.action) where.action = queryDto.action;
       if (queryDto.userId) where.userId = queryDto.userId;
 
-      // 2. Map Parent Advanced Operator Fields (If Provided)
-      if (queryDto.filterField && queryDto.filterValue) {
-        where[queryDto.filterField] =
-          queryDto.filterOperator === 'like'
-            ? { [Op.iLike]: `%${queryDto.filterValue}%` }
-            : queryDto.filterValue;
-      }
+      const result = await this.paginationService.paginate<AuditLog>(
+        this.auditLogModel,
+        {
+          ...queryDto,
+          pageSize: queryDto.pageSize ?? 20,
+          sortField: queryDto.sortField ?? 'timestamp',
+          sortOrder: queryDto.sortOrder ?? 'desc',
+        },
+        { where },
+      );
 
-      // 3. Fallback to Common ID Array Cast Parsed by Parent DTO
-      if (queryDto.id) {
-        where.id = Array.isArray(queryDto.id)
-          ? { [Op.in]: queryDto.id }
-          : queryDto.id;
-      }
-
-      // 4. Calculate Offset Thresholds
-      const page = queryDto.pageNumber || 1;
-      const limit = queryDto.pageSize || 20;
-      const offset = (page - 1) * limit;
-
-      const orderField = queryDto.sortField || 'timestamp';
-      const orderDirection = queryDto.sortOrder || 'desc';
-
-      const { rows, count } = await this.auditLogModel.findAndCountAll({
-        where,
-        order: [[orderField, orderDirection.toUpperCase()]],
-        limit,
-        offset,
-        plain: false,
-      });
+      const rows = result.data;
 
       // Audit rows only carry the federated Keycloak subject (user_id). Resolve
       // the acting operator's display name in a single batched lookup so the UI
@@ -134,9 +119,13 @@ export class AuditLogService {
               : null,
           });
         }),
-        total: count,
+        total: result.meta.totalItems,
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       const err = error as Error;
       this.logger.error(
         `Error querying tracking logs: ${err.message}`,
