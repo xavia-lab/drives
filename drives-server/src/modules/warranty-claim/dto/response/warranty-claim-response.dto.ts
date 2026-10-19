@@ -1,6 +1,7 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WarrantyClaimStatus } from '../../entities/warranty-claim.entity';
+import { WarrantyClaimEventType } from '../../entities/warranty-claim-event.entity';
 
 // Shallow relationship serialization contexts
 class PhysicalDriveShallowDto {
@@ -22,6 +23,21 @@ class VendorShallowDto {
   @ApiProperty({ example: '019f4fa1-57db-77fa-8fc8-e792abc40f5a' })
   id: string;
   @Expose() @ApiProperty({ example: 'Samsung Electronics' }) name: string;
+}
+
+class CurrentEventShallowDto {
+  @Expose()
+  @ApiProperty({ example: '019f4fa1-57db-72d7-b037-2f35d54f2794' })
+  id: string;
+  @Expose()
+  @ApiProperty({
+    enum: WarrantyClaimEventType,
+    example: WarrantyClaimEventType.APPROVED,
+  })
+  eventType: WarrantyClaimEventType;
+  @Expose()
+  @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })
+  eventTimestamp: Date;
 }
 
 export class WarrantyClaimResponseDto {
@@ -69,31 +85,36 @@ export class WarrantyClaimResponseDto {
   rmaTrackingNumber: string | null;
 
   @Expose()
-  @ApiProperty({
-    enum: WarrantyClaimStatus,
-    example: WarrantyClaimStatus.SUBMITTED,
-    description: 'The lifecycle state status of the warranty claim',
-  })
-  claimStatus: WarrantyClaimStatus;
-
-  @Expose()
   @ApiPropertyOptional({
     example: 'Drive failed due to bad block sector growth.',
     description: 'Descriptive troubleshooting logs or notes',
   })
   notes: string | null;
 
+  // --- Derived fields (from the append-only warranty_claim_events log) ---
+
+  @Expose()
+  @ApiProperty({
+    enum: WarrantyClaimStatus,
+    example: WarrantyClaimStatus.SUBMITTED,
+    description:
+      'The derived lifecycle status of the claim (a claim with no events is SUBMITTED)',
+  })
+  currentStatus: WarrantyClaimStatus;
+
   @Expose()
   @ApiProperty({
     example: '2026-07-12T05:23:21.690Z',
-    description: 'The timestamp when the claim was sent out',
+    description: 'When the claim was opened (the claim record creation time)',
   })
-  submittedAt: Date;
+  openedAt: Date;
 
   @Expose()
   @ApiPropertyOptional({
     example: '2026-07-19T14:32:00.000Z',
-    description: 'The timestamp when the claim was completed',
+    description:
+      'When the claim was resolved/closed, derived from the terminal tracking event',
+    nullable: true,
   })
   resolvedAt: Date | null;
 
@@ -121,4 +142,13 @@ export class WarrantyClaimResponseDto {
   @Type(() => VendorShallowDto)
   @ApiProperty({ type: VendorShallowDto })
   handledByVendor: VendorShallowDto;
+
+  @Expose()
+  @Type(() => CurrentEventShallowDto)
+  @ApiPropertyOptional({
+    type: CurrentEventShallowDto,
+    description:
+      'The latest state-changing tracking event (null when none recorded yet)',
+  })
+  currentEvent?: CurrentEventShallowDto | null;
 }

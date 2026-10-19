@@ -11,6 +11,7 @@ import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import {
@@ -36,6 +37,10 @@ describe('PhysicalDriveService', () => {
   let mockSequelize: { transaction: Mock };
   let mockPaginationService: Mocked<PaginationService>;
   let mockAllocationService: { getCurrentAssignmentsForDrives: Mock };
+  let mockLifecycleService: {
+    getCurrentLifecycleMap: Mock;
+    recordEventInTransaction: Mock;
+  };
 
   const mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
 
@@ -74,6 +79,11 @@ describe('PhysicalDriveService', () => {
       getCurrentAssignmentsForDrives: vi.fn(() => Promise.resolve(new Map())),
     };
 
+    mockLifecycleService = {
+      getCurrentLifecycleMap: vi.fn(() => Promise.resolve(new Map())),
+      recordEventInTransaction: vi.fn(() => Promise.resolve({})),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhysicalDriveService,
@@ -97,6 +107,10 @@ describe('PhysicalDriveService', () => {
         {
           provide: ServerSlotAllocationService,
           useValue: mockAllocationService,
+        },
+        {
+          provide: DriveLifecycleEventService,
+          useValue: mockLifecycleService,
         },
       ],
     }).compile();
@@ -313,6 +327,91 @@ describe('PhysicalDriveService', () => {
 
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException(expectedErrorMessage),
+      );
+      expect(mockPhysicalDriveRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('acquireDrive', () => {
+    const acquisitionDto = {
+      serialNumber: 'S3X0NX0A123456',
+      worldwideNameWwn: 'wwn-12345',
+      acquisitionCost: 150.0,
+      purchaseDate: '2026-01-01',
+      warrantyExpiryDate: '2031-01-01',
+      driveModelId: 'sm-uuid',
+      retailerVendorId: 'vendor-uuid',
+      currencyId: 'currency-uuid',
+      datacenterId: 'dc-uuid',
+      locationNotes: 'Dock 3',
+    };
+
+    it('creates the drive, initial location and ACQUIRE event in one transaction', async () => {
+      mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
+      mockDriveModelRepo.findByPk.mockResolvedValue({ id: 'sm-uuid' });
+      mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
+      mockCurrencyRepo.findByPk.mockResolvedValue({ id: 'currency-uuid' });
+      mockDatacenterRepo.findByPk.mockResolvedValue({ id: 'dc-uuid' });
+      mockPhysicalDriveRepo.create.mockResolvedValue({ id: 'drive-1' });
+      mockLocationRepo.create.mockResolvedValue({ id: 'loc-1' });
+
+      const decorated = {
+        id: 'drive-1',
+        locations: [],
+        setDataValue: vi.fn(),
+      };
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(decorated);
+
+      const result = await service.acquireDrive(acquisitionDto, {
+        performedByUserId: 'user-1',
+        triggeredBy: 'operator',
+      });
+
+      expect(result).toBe(decorated);
+      expect(mockPhysicalDriveRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serialNumber: acquisitionDto.serialNumber,
+          driveModelId: acquisitionDto.driveModelId,
+        }),
+        { transaction: mockTransaction },
+      );
+      expect(mockLocationRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          physicalDriveId: 'drive-1',
+          datacenterId: 'dc-uuid',
+          notes: 'Dock 3',
+        }),
+        { transaction: mockTransaction },
+      );
+      expect(
+        mockLifecycleService.recordEventInTransaction,
+      ).toHaveBeenCalledWith(
+        'drive-1',
+        { eventType: 'ACQUIRE' },
+        expect.objectContaining({ performedByUserId: 'user-1' }),
+        mockTransaction,
+      );
+    });
+
+    it('rejects a duplicate serial number before creating anything', async () => {
+      mockPhysicalDriveRepo.findOne.mockResolvedValue({ id: 'existing' });
+
+      await expect(service.acquireDrive(acquisitionDto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockPhysicalDriveRepo.create).not.toHaveBeenCalled();
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown datacenter', async () => {
+      mockPhysicalDriveRepo.findOne.mockResolvedValue(null);
+      mockDriveModelRepo.findByPk.mockResolvedValue({ id: 'sm-uuid' });
+      mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
+      mockCurrencyRepo.findByPk.mockResolvedValue({ id: 'currency-uuid' });
+      mockDatacenterRepo.findByPk.mockResolvedValue(null);
+
+      await expect(service.acquireDrive(acquisitionDto)).rejects.toThrow(
+        NotFoundException,
       );
       expect(mockPhysicalDriveRepo.create).not.toHaveBeenCalled();
     });

@@ -6,42 +6,36 @@ export class QueryWarrantyClaimDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, physicalDriveId, triggeringEventId, handledByVendorId, rmaTrackingNumber, claimStatus, notes, submittedAt, resolvedAt, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, physicalDriveId, triggeringEventId, handledByVendorId, rmaTrackingNumber, notes, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
     'id',
-    'displayKey', // 🌟 Added to allow high-performance sequential numeric sorting
+    'displayKey',
     'physicalDriveId',
     'triggeringEventId',
     'handledByVendorId',
     'rmaTrackingNumber',
-    'claimStatus',
     'notes',
-    'submittedAt',
-    'resolvedAt',
     'createdAt',
     'updatedAt',
   ])
   declare sortField?: string;
 
   @ApiPropertyOptional({
-    example: '12',
+    example: 'physicalDriveId',
     description:
-      'Filterable fields: id, displayKey, physicalDriveId, triggeringEventId, handledByVendorId, rmaTrackingNumber, claimStatus, notes, submittedAt, resolvedAt',
+      'Filterable fields: id, displayKey, physicalDriveId, triggeringEventId, handledByVendorId, rmaTrackingNumber, notes',
   })
   @IsOptional()
   @IsIn([
     'id',
-    'displayKey', // 🌟 Added to allow strict numerical equality filtering from your UI fields
+    'displayKey',
     'physicalDriveId',
     'triggeringEventId',
     'handledByVendorId',
     'rmaTrackingNumber',
-    'claimStatus',
     'notes',
-    'submittedAt',
-    'resolvedAt',
   ])
   declare filterField?: string;
 }

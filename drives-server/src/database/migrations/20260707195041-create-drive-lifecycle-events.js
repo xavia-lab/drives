@@ -19,7 +19,7 @@ module.exports = {
         unique: true, // Automatically builds a unique index for sorting/filtering
       },
       physical_drive_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: 'physical_drives',
@@ -28,14 +28,37 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
+      // Only set on RMA_REPLACE: the successor drive shipped by the vendor.
+      replacement_physical_drive_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'physical_drives',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
+      // Discrete lifecycle action (state is derived from the latest one).
       event_type: {
         type: Sequelize.ENUM(
-          'RECEIVE', // Asset initially scanned into inventory
-          'PROVISION', // Mounted into server bay/slot
-          'DEGRADE', // Bad blocks or high temps detected
-          'FAIL', // Drive completely unresponsive/dropped off bus
-          'RMA_INITIATE', // Sent to warranty claims flow
+          'ACQUIRE', // Scanned into inventory (acquisition)
+          'PROVISION', // Installed / placed in service
+          'DEPROVISION', // Removed from service, returned to inventory
+          'DEGRADE', // Bad blocks, high temps or S.M.A.R.T warnings
+          'RECOVER', // Repaired / returned to a usable state
+          'FAIL', // Drive completely unresponsive / dropped off the bus
+          'RMA_INITIATE', // Warranty claim opened
+          'RMA_SHIP', // Dispatched to the vendor
+          'RMA_APPROVE', // Vendor approved the claim
+          'RMA_REJECT', // Vendor rejected the claim, drive comes back
+          'RMA_REPLACE', // Replacement drive received (links successor)
+          'RMA_CLOSE', // Claim closed without a replacement
+          'RETIRE', // Decommissioned, awaiting disposal
           'SCRAP_SHRED', // Physical high-security destruction completed
+          'LOST', // Missing / stolen
+          'INSPECT', // Informational: inspection recorded (no state change)
+          'NOTE', // Informational: free-form note (no state change)
         ),
         allowNull: false,
       },
@@ -47,6 +70,15 @@ module.exports = {
       triggered_by: {
         type: Sequelize.STRING(128),
         allowNull: false, // e.g., 'system_agent_node_42', 'operator_j_smith'
+      },
+      // The operator who recorded the event (Keycloak subject). Null for
+      // automation/agent entries, which rely on triggered_by.
+      performed_by_user_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: { model: 'users', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
       },
       context_metadata: {
         type: Sequelize.JSONB,
@@ -65,9 +97,27 @@ module.exports = {
     // 2. Performance Optimization Indexes for Linear Timelines
     await queryInterface.addIndex(
       'drive_lifecycle_events',
-      ['physical_drive_id', 'event_timestamp'],
+      ['physical_drive_id', 'event_timestamp', 'display_key'],
       {
         name: 'drive_lifecycle_history_idx',
+        using: 'btree',
+      },
+    );
+
+    await queryInterface.addIndex(
+      'drive_lifecycle_events',
+      ['performed_by_user_id'],
+      {
+        name: 'drive_lifecycle_performed_by_idx',
+        using: 'btree',
+      },
+    );
+
+    await queryInterface.addIndex(
+      'drive_lifecycle_events',
+      ['replacement_physical_drive_id'],
+      {
+        name: 'drive_lifecycle_replacement_drive_idx',
         using: 'btree',
       },
     );

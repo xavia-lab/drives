@@ -1,0 +1,18 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "warranty-claim-events"
+  rules:
+    # 1. Admin may read and append warranty claim tracking events. The ledger is
+    #    append-only, so there is deliberately no edit/delete action.
+    - actions: ["create", "show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin
+
+    # 2. Viewer is read-only
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - owner
+        - viewer

@@ -8,6 +8,7 @@ import {
   PhysicalDriveLocationResponseDto,
 } from './physical-drive-location-response.dto';
 import { CurrentPhysicalDriveAssignmentDto } from './physical-drive-assignment-response.dto';
+import { CurrentDriveLifecycleDto } from '../../../drive-lifecycle-event/dto/response/current-drive-lifecycle-response.dto';
 
 export class PhysicalDriveResponseDto {
   @Expose()
@@ -93,6 +94,15 @@ export class PhysicalDriveResponseDto {
       'The physical server and slot the drive is currently mounted in, derived from the latest slot allocation event. Null when the drive is not seated.',
   })
   currentAssignment?: CurrentPhysicalDriveAssignmentDto | null;
+
+  @Expose()
+  @Type(() => CurrentDriveLifecycleDto)
+  @ApiPropertyOptional({
+    type: () => CurrentDriveLifecycleDto,
+    description:
+      "The drive's derived lifecycle state and the latest state-changing event. UNRECEIVED when the drive has no lifecycle history.",
+  })
+  currentLifecycle?: CurrentDriveLifecycleDto;
 
   constructor(partial: Partial<PhysicalDriveResponseDto>) {
     Object.assign(this, partial);

@@ -14,12 +14,18 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
+import { CreateDriveAcquisitionDto } from './dto/create-drive-acquisition.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginatedResponse } from '../common/interfaces/paginated-response';
 import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
+import {
+  DriveLifecycleEventService,
+  type RecordLifecycleEventActor,
+} from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { DriveLifecycleEventType } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 
 interface CurrentDriveLocation {
   id: string;
@@ -52,6 +58,7 @@ export class PhysicalDriveService implements OnModuleInit {
     @InjectModel(Datacenter)
     private readonly datacenterModel: typeof Datacenter,
     private readonly allocationService: ServerSlotAllocationService,
+    private readonly lifecycleService: DriveLifecycleEventService,
     private readonly paginationService: PaginationService, // 🌟 Clean composition injection
     @InjectConnection()
     private readonly sequelize: Sequelize,
@@ -123,6 +130,18 @@ export class PhysicalDriveService implements OnModuleInit {
     return drive;
   }
 
+  // Stamps the derived `currentLifecycle` (state + latest state-changing event)
+  // from the append-only lifecycle ledger.
+  private async attachCurrentLifecycle(
+    drive: PhysicalDrive,
+  ): Promise<PhysicalDrive> {
+    const lifecycles = await this.lifecycleService.getCurrentLifecycleMap([
+      drive.id,
+    ]);
+    drive.setDataValue('currentLifecycle', lifecycles.get(drive.id) ?? null);
+    return drive;
+  }
+
   // Loads a single drive with its full location timeline and a derived
   // `currentLocation`. Throws when the drive does not exist.
   private async loadWithLocations(
@@ -138,7 +157,10 @@ export class PhysicalDriveService implements OnModuleInit {
       throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
     }
 
-    return this.attachCurrentAssignment(this.decorateLocations(drive));
+    const decorated = this.decorateLocations(drive);
+    await this.attachCurrentAssignment(decorated);
+    await this.attachCurrentLifecycle(decorated);
+    return decorated;
   }
 
   // Returns the latest location event for a single drive (or null when there is
@@ -295,10 +317,16 @@ export class PhysicalDriveService implements OnModuleInit {
 
     const driveIds = result.data.map((drive) => drive.id);
     const currentLocationMap = await this.getCurrentLocationMap(driveIds);
+    const lifecycleMap =
+      await this.lifecycleService.getCurrentLifecycleMap(driveIds);
     for (const drive of result.data) {
       drive.setDataValue(
         'currentLocation',
         currentLocationMap.get(drive.id) ?? null,
+      );
+      drive.setDataValue(
+        'currentLifecycle',
+        lifecycleMap.get(drive.id) ?? null,
       );
     }
 
@@ -314,7 +342,10 @@ export class PhysicalDriveService implements OnModuleInit {
       return null;
     }
 
-    return this.attachCurrentAssignment(this.decorateLocations(drive));
+    const decorated = this.decorateLocations(drive);
+    await this.attachCurrentAssignment(decorated);
+    await this.attachCurrentLifecycle(decorated);
+    return decorated;
   }
 
   async create(
@@ -338,6 +369,80 @@ export class PhysicalDriveService implements OnModuleInit {
     return this.physicalDriveModel.create(
       createPhysicalDriveDto as Partial<PhysicalDrive>,
     );
+  }
+
+  // Drive-acquisition workflow: atomically create the physical drive, record
+  // its initial datacenter location and append the ACQUIRE lifecycle event.
+  async acquireDrive(
+    dto: CreateDriveAcquisitionDto,
+    actor: RecordLifecycleEventActor = {},
+  ): Promise<PhysicalDrive> {
+    const driveId = await this.sequelize.transaction(async (transaction) => {
+      const existingBySerial = await this.physicalDriveModel.findOne({
+        where: { serialNumber: dto.serialNumber },
+        transaction,
+      });
+
+      if (existingBySerial) {
+        throw new ConflictException(
+          `PhysicalDrive with serial number "${dto.serialNumber}" already exists`,
+        );
+      }
+
+      await this.validateForeignKeys(dto);
+
+      const datacenter = await this.datacenterModel.findByPk(dto.datacenterId, {
+        transaction,
+      });
+      if (!datacenter) {
+        throw new NotFoundException(
+          `Datacenter with ID ${dto.datacenterId} not found`,
+        );
+      }
+
+      const drive = await this.physicalDriveModel.create(
+        {
+          ...(dto.id ? { id: dto.id } : {}),
+          serialNumber: dto.serialNumber,
+          worldwideNameWwn: dto.worldwideNameWwn ?? null,
+          acquisitionCost: dto.acquisitionCost,
+          purchaseDate: dto.purchaseDate,
+          warrantyExpiryDate: dto.warrantyExpiryDate,
+          driveModelId: dto.driveModelId,
+          retailerVendorId: dto.retailerVendorId,
+          currencyId: dto.currencyId,
+        } as Partial<PhysicalDrive>,
+        { transaction },
+      );
+
+      await this.physicalDriveLocationModel.create(
+        {
+          physicalDriveId: drive.id,
+          datacenterId: dto.datacenterId,
+          locatedAt: dto.locatedAt ? new Date(dto.locatedAt) : new Date(),
+          notes: dto.locationNotes ?? null,
+        } as Partial<PhysicalDriveLocation>,
+        { transaction },
+      );
+
+      await this.lifecycleService.recordEventInTransaction(
+        drive.id,
+        { eventType: DriveLifecycleEventType.ACQUIRE },
+        {
+          ...actor,
+          triggeredBy: actor.triggeredBy ?? 'acquisition-workflow',
+        },
+        transaction,
+      );
+
+      return drive.id;
+    });
+
+    const drive = await this.findOne(driveId);
+    if (!drive) {
+      throw new NotFoundException(`PhysicalDrive with ID ${driveId} not found`);
+    }
+    return drive;
   }
 
   async update(
