@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/physical-drives?pageNumber=1&pageSize=2&sortField=label&sortOrder=desc&filterField=label&filterValue=SA&filterOperator=like
+  url: http://localhost:5000/api/v1/physical-drives?pageNumber=1&pageSize=2&sortField=label&sortOrder=desc&filters=%5B%7B%22field%22%3A%22label%22%2C%22operator%22%3A%22like%22%2C%22value%22%3A%22SA%22%7D%5D
   body: none
   auth: none
 }
@@ -15,7 +15,5 @@ params:query {
   pageSize: 2
   sortField: label
   sortOrder: desc
-  filterField: label
-  filterValue: SA
-  filterOperator: like
+  filters: [{"field":"label","operator":"like","value":"SA"}]
 }

@@ -8,8 +8,8 @@ import { OperatingSystem } from './entities/operating-system.entity';
 import { CreateOperatingSystemDto } from './dto/create-operating-system.dto';
 import { UpdateOperatingSystemDto } from './dto/update-operating-system.dto';
 import { QueryOperatingSystemDto } from './dto/query-operating-system.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class OperatingSystemService {

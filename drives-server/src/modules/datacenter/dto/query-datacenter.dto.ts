@@ -1,6 +1,6 @@
 import { IsOptional, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryDatacenterDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -20,20 +20,4 @@ export class QueryDatacenterDto extends PaginationQueryDto {
     'updatedAt',
   ])
   declare sortField?: string;
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable fields: id, displayKey, code, name, city, countryId',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey', // 🌟 Added to support direct numerical lookups from your UI grid filters
-    'code',
-    'name',
-    'city',
-    'countryId',
-  ])
-  declare filterField?: string;
 }

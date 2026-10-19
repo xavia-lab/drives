@@ -7,7 +7,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryPhysicalCpuDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
@@ -45,23 +45,6 @@ export class QueryPhysicalCpuDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, cpuModelId, retailerVendorId, currencyId',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey',
-    'label',
-    'serialNumber',
-    'cpuModelId',
-    'retailerVendorId',
-    'currencyId',
-  ])
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
 

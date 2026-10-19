@@ -16,8 +16,8 @@ import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity'
 import { User } from '../user/entities/user.entity';
 import { CreateDriveLifecycleEventDto } from './dto/create-drive-lifecycle-event.dto';
 import { QueryDriveLifecycleEventDto } from './dto/query-drive-lifecycle-event.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import {
   canTransition,
   INFORMATIONAL_EVENT_TYPES,
@@ -131,7 +131,7 @@ export class DriveLifecycleEventService {
   ): Promise<PaginatedResponse<DriveLifecycleEvent>> {
     // Translate the dedicated lookups + timestamp window into a where clause,
     // then delegate the rest to the pagination service (which still applies
-    // the generic filterField/operator/value handling).
+    // the generic `filters` handling).
     const where: Record<string, unknown> = {};
 
     if (query?.physicalDriveId) where.physicalDriveId = query.physicalDriveId;

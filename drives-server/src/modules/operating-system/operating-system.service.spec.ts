@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException } from '@nestjs/common';
 import { OperatingSystemService } from './operating-system.service';
 import { OperatingSystem } from './entities/operating-system.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateOperatingSystemDto } from './dto/create-operating-system.dto';
 import {
   describe,

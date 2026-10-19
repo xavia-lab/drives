@@ -4,7 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { RackService } from './rack.service';
 import { Rack } from './entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateRackDto } from './dto/create-rack.dto';
 import {
   describe,

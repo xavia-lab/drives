@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/countries?pageNumber=1&pageSize=2&sortField=name&sortOrder=asc&filterField=code&filterValue=JP&filterOperator=in
+  url: http://localhost:5000/api/v1/countries?pageNumber=1&pageSize=2&sortField=name&sortOrder=asc&filters=%5B%7B%22field%22%3A%22code%22%2C%22operator%22%3A%22in%22%2C%22value%22%3A%22JP%22%7D%5D
   body: none
   auth: none
 }
@@ -15,7 +15,5 @@ params:query {
   pageSize: 2
   sortField: name
   sortOrder: asc
-  filterField: code
-  filterValue: JP
-  filterOperator: in
+  filters: [{"field":"code","operator":"in","value":"JP"}]
 }

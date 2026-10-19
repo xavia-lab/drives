@@ -12,7 +12,7 @@ import { StoragePoolHost } from './entities/storage-pool-host.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PoolType } from '../pool-type/entities/pool-type.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import {
   describe,

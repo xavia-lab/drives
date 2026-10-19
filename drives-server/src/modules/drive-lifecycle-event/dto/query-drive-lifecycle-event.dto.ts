@@ -7,7 +7,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 import { DriveLifecycleEventType } from '../entities/drive-lifecycle-event.entity';
 
 export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
@@ -44,25 +44,6 @@ export class QueryDriveLifecycleEventDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'eventType',
-    description:
-      'Filterable columns for advanced expressions: id, displayKey, physicalDriveId, eventType, eventTimestamp, triggeredBy, performedByUserId, replacementPhysicalDriveId, createdAt',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey',
-    'physicalDriveId',
-    'eventType',
-    'eventTimestamp',
-    'triggeredBy',
-    'performedByUserId',
-    'replacementPhysicalDriveId',
-    'createdAt',
-  ])
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
 

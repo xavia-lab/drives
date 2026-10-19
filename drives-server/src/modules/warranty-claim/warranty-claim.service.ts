@@ -11,8 +11,8 @@ import { Vendor } from '../vendor/entities/vendor.entity';
 import { CreateWarrantyClaimDto } from './dto/create-warranty-claim.dto';
 import { UpdateWarrantyClaimDto } from './dto/update-warranty-claim.dto';
 import { QueryWarrantyClaimDto } from './dto/query-warranty-claim.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class WarrantyClaimService {

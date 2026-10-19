@@ -9,8 +9,8 @@ import { BusProtocol } from './entities/bus-protocol.entity';
 import { CreateBusProtocolDto } from './dto/create-bus-protocol.dto';
 import { UpdateBusProtocolDto } from './dto/update-bus-protocol.dto';
 import { QueryBusProtocolDto } from './dto/query-bus-protocol.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class BusProtocolService implements OnModuleInit {

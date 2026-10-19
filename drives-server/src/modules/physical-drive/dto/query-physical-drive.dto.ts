@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryPhysicalDriveDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
@@ -48,25 +48,6 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable columns for advanced expressions: id, displayKey, label, serialNumber, worldwideNameWwn, driveModelId, retailerVendorId, currencyId, currentLocation (the derived datacenter the drive currently sits in)',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey', // 🌟 Added to allow clean integer lookups from table header numeric filters
-    'label',
-    'serialNumber',
-    'worldwideNameWwn',
-    'driveModelId',
-    'retailerVendorId',
-    'currencyId',
-    'currentLocation', // 🌟 Derived location filter (datacenter id), translated to a subquery server-side
-  ])
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
 

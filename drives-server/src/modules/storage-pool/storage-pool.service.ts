@@ -21,8 +21,8 @@ import { UpdateStoragePoolDto } from './dto/update-storage-pool.dto';
 import { QueryStoragePoolDto } from './dto/query-storage-pool.dto';
 import { ImportStoragePoolDto } from './dto/import-storage-pool.dto';
 import { ExportStoragePoolDto } from './dto/export-storage-pool.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 interface CurrentPoolHost {
   type: 'PHYSICAL' | 'VIRTUAL';

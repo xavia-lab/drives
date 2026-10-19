@@ -9,7 +9,7 @@ import { OperatingSystem } from '../../operating-system/entities/operating-syste
 import { Rack } from '../../rack/entities/rack.entity';
 import { ServerSlot } from '../entities/server-slot.entity';
 import { ServerSlotService } from './server-slot.service';
-import { PaginationService } from '../../common/pagination/pagination.service';
+import { PaginationService } from '../../pagination/pagination.service';
 import {
   CreatePhysicalServerDto,
   MemoryUnit,

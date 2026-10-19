@@ -1,6 +1,6 @@
 import { IsOptional, IsIn, IsString, Length, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 
 export class QueryAuditLogDto extends PaginationQueryDto {
   // --- Strict Whitelist Field Overrides ---
@@ -35,15 +35,6 @@ export class QueryAuditLogDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'displayKey',
-    description:
-      'Filterable columns for advanced expressions: id, displayKey, action, resource, resourceId, userId',
-  })
-  @IsOptional()
-  @IsIn(['id', 'displayKey', 'action', 'resource', 'resourceId', 'userId']) // 🌟 Added displayKey for direct index lookups
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters for Refine Workspace Views ---
 

@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/vendors?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=name&filterValue=Seagate&filterOperator=like
+  url: http://localhost:5000/api/v1/vendors?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filters=%5B%7B%22field%22%3A%22name%22%2C%22operator%22%3A%22like%22%2C%22value%22%3A%22Seagate%22%7D%5D
   body: none
   auth: none
 }
@@ -15,7 +15,5 @@ params:query {
   pageSize: 2
   sortField: name
   sortOrder: desc
-  filterField: name
-  filterValue: Seagate
-  filterOperator: like
+  filters: [{"field":"name","operator":"like","value":"Seagate"}]
 }

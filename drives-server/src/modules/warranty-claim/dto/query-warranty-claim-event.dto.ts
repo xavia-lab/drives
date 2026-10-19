@@ -1,6 +1,6 @@
 import { IsOptional, IsIn, IsDateString, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../pagination/dto/pagination-query.dto';
 import { WarrantyClaimEventType } from '../entities/warranty-claim-event.entity';
 
 export class QueryWarrantyClaimEventDto extends PaginationQueryDto {
@@ -35,24 +35,6 @@ export class QueryWarrantyClaimEventDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   declare sortOrder?: 'asc' | 'desc';
-
-  @ApiPropertyOptional({
-    example: 'eventType',
-    description:
-      'Filterable columns: id, displayKey, warrantyClaimId, eventType, eventTimestamp, performedByUserId, replacementPhysicalDriveId, createdAt',
-  })
-  @IsOptional()
-  @IsIn([
-    'id',
-    'displayKey',
-    'warrantyClaimId',
-    'eventType',
-    'eventTimestamp',
-    'performedByUserId',
-    'replacementPhysicalDriveId',
-    'createdAt',
-  ])
-  declare filterField?: string;
 
   // --- Dedicated Top-Level Fast Lookup Filters ---
 

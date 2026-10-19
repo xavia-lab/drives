@@ -7,7 +7,7 @@ import {
   VdevRedundancyProfile,
 } from './entities/logical-vdev.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import {
   describe,

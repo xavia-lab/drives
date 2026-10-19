@@ -110,9 +110,13 @@ export const RelocateDriveWorkflow = () => {
       query: isUnassignedSource
         ? { unassigned: true, pageSize: PAGE_SIZE }
         : {
-            filterField: "currentLocation",
-            filterOperator: "in",
-            filterValue: sourceDatacenterId,
+            filters: JSON.stringify([
+              {
+                field: "currentLocation",
+                operator: "in",
+                value: sourceDatacenterId,
+              },
+            ]),
             pageSize: PAGE_SIZE,
           },
     },

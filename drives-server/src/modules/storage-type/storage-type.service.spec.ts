@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { StorageTypeService } from './storage-type.service';
 import { StorageType } from './entities/storage-type.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateStorageTypeDto } from './dto/create-storage-type.dto';
 import { UpdateStorageTypeDto } from './dto/update-storage-type.dto';
 import {

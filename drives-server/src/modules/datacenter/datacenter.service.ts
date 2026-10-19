@@ -9,8 +9,8 @@ import { Country } from '../country/entities/country.entity';
 import { CreateDatacenterDto } from './dto/create-datacenter.dto';
 import { UpdateDatacenterDto } from './dto/update-datacenter.dto';
 import { QueryDatacenterDto } from './dto/query-datacenter.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class DatacenterService {

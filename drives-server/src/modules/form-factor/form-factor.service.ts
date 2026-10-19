@@ -9,8 +9,8 @@ import { FormFactor } from './entities/form-factor.entity';
 import { CreateFormFactorDto } from './dto/create-form-factor.dto';
 import { UpdateFormFactorDto } from './dto/update-form-factor.dto';
 import { QueryFormFactorDto } from './dto/query-form-factor.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class FormFactorService implements OnModuleInit {

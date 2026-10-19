@@ -11,8 +11,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Op } from 'sequelize';
 import { QueryUserDto } from './dto/query-user.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
 import { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
 @Injectable()

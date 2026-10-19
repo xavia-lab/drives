@@ -5,7 +5,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import keycloakConfig from './config/keycloak.config';
 import storageConfig from './config/storage.config';
-import { CommonModule } from './modules/common/common.module';
+import { PaginationModule } from './modules/pagination/pagination.module';
 import { DatabaseModule } from './database/database.module';
 import { KeycloakModule } from './modules/keycloak/keycloak.module';
 import { KeycloakAuthGuard } from './common/guards/keycloak.guard';
@@ -51,7 +51,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
       // Add '.env' to the end of the array as a fallback
       envFilePath: [`.env.${process.env.NODE_ENV}.local`, '.env.local', '.env'],
     }),
-    CommonModule,
+    PaginationModule,
     DatabaseModule,
     MetadataModule,
     KeycloakModule,

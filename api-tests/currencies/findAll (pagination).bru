@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:5000/api/v1/currencies?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filterField=code&filterValue=GBP&filterOperator=in
+  url: http://localhost:5000/api/v1/currencies?pageNumber=1&pageSize=2&sortField=name&sortOrder=desc&filters=%5B%7B%22field%22%3A%22code%22%2C%22operator%22%3A%22in%22%2C%22value%22%3A%22GBP%22%7D%5D
   body: none
   auth: none
 }
@@ -15,7 +15,5 @@ params:query {
   pageSize: 2
   sortField: name
   sortOrder: desc
-  filterField: code
-  filterValue: GBP
-  filterOperator: in
+  filters: [{"field":"code","operator":"in","value":"GBP"}]
 }

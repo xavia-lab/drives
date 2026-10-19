@@ -1,7 +1,9 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'sequelize-typescript'; // 🚀 Core model definition for formal signature casting
+import { Op } from 'sequelize';
 import { PaginationService } from './pagination.service';
-import { QueryBuilderService } from '../query-builder/query-builder.service';
+import { QueryBuilderService } from './query-builder.service';
 import {
   describe,
   it,
@@ -30,7 +32,7 @@ describe('PaginationService', () => {
     // 1. Initialize query builder mock using clear type boundaries
     mockQueryBuilder = {
       buildQueryOptions: vi.fn(),
-    } as unknown as Mocked<QueryBuilderService>;
+    };
 
     // 2. Initialize the model repository class mock with structured spys using vi.fn()
     mockModelClass = {
@@ -86,5 +88,54 @@ describe('PaginationService', () => {
     expect(result.data[0].id).toBe('019f4fa1-57db-72d7-b037-2f35d54f2794');
     expect(result.data[0].displayKey).toBe(1);
     expect(result.data[0].name).toBe('USD');
+  });
+
+  it('ANDs query filters with custom service filters', async () => {
+    mockQueryBuilder.buildQueryOptions.mockReturnValue({
+      where: { [Op.and]: [{ status: { [Op.eq]: 'active' } }] },
+      order: [],
+    });
+    mockModelClass.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
+
+    await service.paginate(
+      mockModelClass as unknown as typeof Model,
+      { pageNumber: 1, pageSize: 10 },
+      { where: { id: { [Op.in]: ['a'] } } },
+    );
+
+    const options = mockModelClass.findAndCountAll.mock.calls[0][0] as {
+      where: unknown;
+      order: unknown;
+    };
+    expect(options.where).toEqual({
+      [Op.and]: [
+        { [Op.and]: [{ status: { [Op.eq]: 'active' } }] },
+        { id: { [Op.in]: ['a'] } },
+      ],
+    });
+    // No explicit order from the builder -> default displayKey ordering.
+    expect(options.order).toEqual([['displayKey', 'ASC']]);
+  });
+
+  it('rethrows BadRequestException from the query builder', async () => {
+    mockQueryBuilder.buildQueryOptions.mockImplementation(() => {
+      throw new BadRequestException('bad filter');
+    });
+
+    await expect(
+      service.paginate(mockModelClass as unknown as typeof Model, {}),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('maps unknown-column database errors to BadRequestException', async () => {
+    mockQueryBuilder.buildQueryOptions.mockReturnValue({ order: [] });
+    mockModelClass.findAndCountAll.mockRejectedValue({
+      message: 'column "nope" does not exist',
+      original: { code: '42703' },
+    });
+
+    await expect(
+      service.paginate(mockModelClass as unknown as typeof Model, {}),
+    ).rejects.toThrow(BadRequestException);
   });
 });

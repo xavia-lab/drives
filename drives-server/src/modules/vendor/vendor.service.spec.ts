@@ -8,7 +8,7 @@ import {
 import { VendorService } from './vendor.service';
 import { Vendor } from './entities/vendor.entity';
 import { Country } from '../country/entities/country.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import {

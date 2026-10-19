@@ -17,8 +17,8 @@ import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity'
 import { PhysicalDriveLocation } from '../physical-drive/entities/physical-drive-location.entity';
 import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
 describe('ServerSlotAllocationService', () => {

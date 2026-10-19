@@ -17,8 +17,8 @@ import { ServerSlotService } from './server-slot.service';
 import { CreatePhysicalServerDto } from '../dto/create-physical-server.dto';
 import { UpdatePhysicalServerDto } from '../dto/update-physical-server.dto';
 import { QueryPhysicalServerDto } from '../dto/query-physical-server.dto';
-import { PaginationService } from '../../common/pagination/pagination.service';
-import { PaginatedResponse } from '../../common/interfaces/paginated-response';
+import { PaginationService } from '../../pagination/pagination.service';
+import { PaginatedResponse } from '../../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class PhysicalServerService {

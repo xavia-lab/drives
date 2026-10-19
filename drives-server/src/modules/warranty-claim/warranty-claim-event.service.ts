@@ -19,8 +19,8 @@ import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity'
 import { User } from '../user/entities/user.entity';
 import { CreateWarrantyClaimEventDto } from './dto/create-warranty-claim-event.dto';
 import { QueryWarrantyClaimEventDto } from './dto/query-warranty-claim-event.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import {
   canTransition,
   INFORMATIONAL_EVENT_TYPES,

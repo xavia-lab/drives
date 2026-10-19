@@ -20,8 +20,8 @@ import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { User } from '../user/entities/user.entity';
 import { QueryServerSlotAllocationDto } from './dto/query-server-slot-allocation.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 // Derived "where is this drive right now" projection. `null` means the drive's
 // latest ledger event is an UNMOUNT (or there are no events at all), i.e. it is

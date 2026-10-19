@@ -12,7 +12,7 @@ import {
 } from './entities/drive-lifecycle-event.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateDriveLifecycleEventDto } from './dto/create-drive-lifecycle-event.dto';
 
 const DRIVE_ID = '019f6a00-0000-7f01-8c00-000000000001';

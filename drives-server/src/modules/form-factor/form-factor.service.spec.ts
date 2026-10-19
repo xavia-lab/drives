@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { FormFactorService } from './form-factor.service';
 import { FormFactor } from './entities/form-factor.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateFormFactorDto } from './dto/create-form-factor.dto';
 import { UpdateFormFactorDto } from './dto/update-form-factor.dto';
 import {

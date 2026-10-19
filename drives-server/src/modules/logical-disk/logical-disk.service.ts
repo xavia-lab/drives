@@ -10,8 +10,8 @@ import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity'
 import { CreateLogicalDiskDto } from './dto/create-logical-disk.dto';
 import { UpdateLogicalDiskDto } from './dto/update-logical-disk.dto';
 import { QueryLogicalDiskDto } from './dto/query-logical-disk.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class LogicalDiskService {

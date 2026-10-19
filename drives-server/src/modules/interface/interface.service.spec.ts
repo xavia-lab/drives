@@ -4,7 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { InterfaceService } from './interface.service';
 import { Interface } from './entities/interface.entity';
 import { BusProtocol } from '../bus-protocol/entities/bus-protocol.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 import { CreateInterfaceDto } from './dto/create-interface.dto';
 import { UpdateInterfaceDto } from './dto/update-interface.dto';
 import {

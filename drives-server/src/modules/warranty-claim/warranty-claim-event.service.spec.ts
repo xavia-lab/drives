@@ -15,7 +15,7 @@ import {
 } from './entities/warranty-claim.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { User } from '../user/entities/user.entity';
-import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationService } from '../pagination/pagination.service';
 
 const CLAIM_ID = '019f6a90-0000-7d00-8d00-000000000001';
 const DRIVE_ID = '019f6a00-0000-7f01-8c00-000000000001';

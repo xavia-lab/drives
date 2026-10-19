@@ -9,8 +9,8 @@ import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
 import { QueryLogicalVdevDto } from './dto/query-logical-vdev.dto';
-import { PaginationService } from '../common/pagination/pagination.service';
-import { PaginatedResponse } from '../common/interfaces/paginated-response';
+import { PaginationService } from '../pagination/pagination.service';
+import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 @Injectable()
 export class LogicalVdevService {
