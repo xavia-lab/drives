@@ -22,6 +22,7 @@ import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { CreateDriveAcquisitionDto } from './dto/create-drive-acquisition.dto';
+import { RelocateDriveDto } from './dto/relocate-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
@@ -127,6 +128,37 @@ export class PhysicalDriveController {
       performedByUserId,
       triggeredBy,
     });
+  }
+
+  @Post(':id/relocations')
+  @CheckPolicy('locate', 'physical-drives')
+  @ApiOperation({
+    summary:
+      'Relocate an unmounted drive to another datacenter (append-only location event)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique UUIDv7 identifier of the physical drive',
+    type: String,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'PhysicalDrive relocated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'PhysicalDrive or Datacenter not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Drive is mounted in a server or is already located in the target datacenter',
+  })
+  async relocate(
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+    @Body() relocateDriveDto: RelocateDriveDto,
+  ): Promise<PhysicalDrive> {
+    return this.physicalDriveService.relocateDrive(id, relocateDriveDto);
   }
 
   @Post(':id/locations')

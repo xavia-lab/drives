@@ -163,6 +163,57 @@ describe('PhysicalDriveService', () => {
       );
     });
 
+    it('should attach the derived currentAssignment to each listed drive', async () => {
+      const drive = { id: 'drive-1', setDataValue: vi.fn() };
+      mockPaginationService.paginate.mockResolvedValue({
+        data: [drive],
+        meta: {},
+      });
+      mockLocationRepo.findAll.mockResolvedValue([]);
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map([
+          [
+            'drive-1',
+            {
+              allocationId: 'alloc-1',
+              slotId: 'slot-1',
+              slotLabel: 'S1',
+              serverId: 'srv-1',
+              serverHostname: 'host-1',
+              assignedAt: new Date(),
+            },
+          ],
+        ]),
+      );
+
+      await service.findAll({ pageNumber: 1, pageSize: 10 });
+
+      expect(drive.setDataValue).toHaveBeenCalledWith(
+        'currentAssignment',
+        expect.objectContaining({ slotId: 'slot-1', serverHostname: 'host-1' }),
+      );
+    });
+
+    it('should translate unassigned=true into a NOT IN subquery', async () => {
+      mockPaginationService.paginate.mockResolvedValue({
+        data: [],
+        meta: {},
+      });
+
+      await service.findAll({
+        pageNumber: 1,
+        pageSize: 10,
+        unassigned: true,
+      });
+
+      const options = mockPaginationService.paginate.mock
+        .calls[0][2] as unknown as {
+        where: { id?: Record<symbol, unknown> };
+      };
+      expect(options.where.id).toBeDefined();
+      expect(options.where.id?.[Op.notIn]).toBeDefined();
+    });
+
     it('should translate a currentLocation filter into an id IN clause', async () => {
       // 1st: candidate drives in the datacenter, 2nd: their derived current
       // locations, then default [] for the post-pagination decoration lookup.
@@ -457,6 +508,123 @@ describe('PhysicalDriveService', () => {
     });
   });
 
+  describe('relocateDrive', () => {
+    const relocateDto = { datacenterId: 'dc-2', notes: 'Rack transfer' };
+
+    it('relocates an unmounted drive by appending a location event', async () => {
+      const drive = { id: 'drive-1', locations: [], setDataValue: vi.fn() };
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(drive);
+      mockDatacenterRepo.findByPk.mockResolvedValue({
+        id: 'dc-2',
+        code: 'GB-SLO-1',
+      });
+      mockLocationRepo.findOne.mockResolvedValue({ datacenterId: 'dc-1' });
+      mockLocationRepo.create.mockResolvedValue({ id: 'loc-2' });
+
+      const result = await service.relocateDrive('drive-1', relocateDto);
+
+      expect(result).toBe(drive);
+      expect(mockLocationRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          physicalDriveId: 'drive-1',
+          datacenterId: 'dc-2',
+          notes: 'Rack transfer',
+        }),
+        { transaction: mockTransaction },
+      );
+    });
+
+    it('assigns an initial location to an unassigned drive', async () => {
+      const drive = { id: 'drive-1', locations: [], setDataValue: vi.fn() };
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(drive);
+      mockDatacenterRepo.findByPk.mockResolvedValue({
+        id: 'dc-2',
+        code: 'GB-SLO-1',
+      });
+      mockLocationRepo.findOne.mockResolvedValue(null);
+      mockLocationRepo.create.mockResolvedValue({ id: 'loc-1' });
+
+      await service.relocateDrive('drive-1', relocateDto);
+
+      expect(mockLocationRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ datacenterId: 'dc-2' }),
+        { transaction: mockTransaction },
+      );
+    });
+
+    it('rejects relocating a drive that is mounted in a server slot', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue({
+        id: 'drive-1',
+        locations: [],
+        setDataValue: vi.fn(),
+      });
+      mockDatacenterRepo.findByPk.mockResolvedValue({
+        id: 'dc-2',
+        code: 'GB-SLO-1',
+      });
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map([
+          [
+            'drive-1',
+            {
+              allocationId: 'alloc-1',
+              slotId: 'slot-1',
+              slotLabel: 'S1',
+              serverId: 'srv-1',
+              serverHostname: 'host-1',
+              assignedAt: new Date(),
+            },
+          ],
+        ]),
+      );
+
+      await expect(
+        service.relocateDrive('drive-1', relocateDto),
+      ).rejects.toThrow(/mounted in host-1 slot S1/);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects relocating to the datacenter the drive is already in', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue({
+        id: 'drive-1',
+        locations: [],
+        setDataValue: vi.fn(),
+      });
+      mockDatacenterRepo.findByPk.mockResolvedValue({
+        id: 'dc-2',
+        code: 'GB-SLO-1',
+      });
+      mockLocationRepo.findOne.mockResolvedValue({ datacenterId: 'dc-2' });
+
+      await expect(
+        service.relocateDrive('drive-1', relocateDto),
+      ).rejects.toThrow(ConflictException);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when the drive does not exist', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.relocateDrive('missing', relocateDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws NotFoundException when the target datacenter does not exist', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue({
+        id: 'drive-1',
+        locations: [],
+        setDataValue: vi.fn(),
+      });
+      mockDatacenterRepo.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.relocateDrive('drive-1', relocateDto),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
   describe('recordLocation', () => {
     const locationDto = { datacenterId: 'dc-1' };
 
@@ -527,6 +695,30 @@ describe('PhysicalDriveService', () => {
         expect.objectContaining({ datacenterId: 'dc-2' }),
         { transaction: mockTransaction },
       );
+    });
+
+    it('should reject moving a drive that is mounted in a server slot', async () => {
+      mockPhysicalDriveRepo.findByPk.mockResolvedValue(driveWithLocations());
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map([
+          [
+            'drive-1',
+            {
+              allocationId: 'alloc-1',
+              slotId: 'slot-1',
+              slotLabel: 'S1',
+              serverId: 'srv-1',
+              serverHostname: 'host-1',
+              assignedAt: new Date(),
+            },
+          ],
+        ]),
+      );
+
+      await expect(
+        service.recordLocation('drive-1', { datacenterId: 'dc-2' }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockLocationRepo.create).not.toHaveBeenCalled();
     });
   });
 

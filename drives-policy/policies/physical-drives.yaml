@@ -4,7 +4,7 @@ resourcePolicy:
   resource: "physical-drives"
   rules:
     # 1. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list", "edit", "delete"]
+    - actions: ["create", "show", "list", "edit", "delete", "locate"]
       effect: EFFECT_ALLOW
       roles:
         - admin

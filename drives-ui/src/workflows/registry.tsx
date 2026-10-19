@@ -1,4 +1,4 @@
-import { HddOutlined } from "@ant-design/icons";
+import { HddOutlined, SwapOutlined } from "@ant-design/icons";
 import type { WorkflowDefinition } from "@components/workflow";
 
 /**
@@ -13,6 +13,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
       "Register a newly purchased drive, its purchase details, receiving datacenter and ACQUIRE lifecycle event.",
     href: "/workflows/drive-acquisition",
     icon: <HddOutlined />,
+    category: "Inventory",
+  },
+  {
+    key: "drive-relocation",
+    title: "Relocate Drive",
+    description:
+      "Move an unseated drive to another datacenter location, or assign a location to an unassigned drive.",
+    href: "/workflows/drive-relocation",
+    icon: <SwapOutlined />,
     category: "Inventory",
   },
 ];
