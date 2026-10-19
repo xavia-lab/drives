@@ -81,27 +81,34 @@ export const WorkflowLauncher = ({
                     {workflow.icon}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <Space size={8} wrap>
-                      <Title level={5} style={{ margin: 0 }}>
-                        {workflow.title}
-                      </Title>
-                      {workflow.category ? (
-                        <Tag color="processing" style={{ marginInlineEnd: 0 }}>
-                          {workflow.category}
-                        </Tag>
-                      ) : null}
-                    </Space>
+                    <Title level={5} style={{ margin: 0 }}>
+                      {workflow.title}
+                    </Title>
                     <Text type="secondary" style={{ fontSize: 13 }}>
                       {workflow.description}
                     </Text>
                   </div>
                 </Space>
-                <Text
-                  strong
-                  style={{ color: token.colorPrimary, fontSize: 13 }}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                  }}
                 >
-                  Start workflow <ArrowRightOutlined />
-                </Text>
+                  <Text
+                    strong
+                    style={{ color: token.colorPrimary, fontSize: 13 }}
+                  >
+                    Start workflow <ArrowRightOutlined />
+                  </Text>
+                  {workflow.category ? (
+                    <Tag color="processing" style={{ marginInlineEnd: 0 }}>
+                      {workflow.category}
+                    </Tag>
+                  ) : null}
+                </div>
               </Space>
             </Card>
           </Col>

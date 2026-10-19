@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/sequelize';
-import { Op, Transaction, Order, Includeable } from 'sequelize';
+import { Op, Transaction, Order, Includeable, literal } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import { PhysicalDriveLocation } from './entities/physical-drive-location.entity';
@@ -15,6 +15,7 @@ import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { CreateDriveAcquisitionDto } from './dto/create-drive-acquisition.dto';
+import { RelocateDriveDto } from './dto/relocate-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import { QueryPhysicalDriveDto } from './dto/query-physical-drive.dto';
 import { CreatePhysicalDriveLocationDto } from './dto/create-physical-drive-location.dto';
@@ -293,7 +294,17 @@ export class PhysicalDriveService implements OnModuleInit {
     let customWhere: Record<string, unknown> = {};
     let effectiveQuery = query;
 
-    if (query?.filterField === 'currentLocation' && query.filterValue) {
+    if (query?.unassigned) {
+      // Drives that have never had a location event. Takes precedence over the
+      // generic `currentLocation` filter.
+      customWhere = {
+        id: {
+          [Op.notIn]: literal(
+            '(SELECT physical_drive_id FROM physical_drive_locations)',
+          ),
+        },
+      };
+    } else if (query?.filterField === 'currentLocation' && query.filterValue) {
       const datacenterIds = String(query.filterValue)
         .split(',')
         .map((id) => id.trim())
@@ -319,6 +330,8 @@ export class PhysicalDriveService implements OnModuleInit {
     const currentLocationMap = await this.getCurrentLocationMap(driveIds);
     const lifecycleMap =
       await this.lifecycleService.getCurrentLifecycleMap(driveIds);
+    const assignmentMap =
+      await this.allocationService.getCurrentAssignmentsForDrives(driveIds);
     for (const drive of result.data) {
       drive.setDataValue(
         'currentLocation',
@@ -327,6 +340,10 @@ export class PhysicalDriveService implements OnModuleInit {
       drive.setDataValue(
         'currentLifecycle',
         lifecycleMap.get(drive.id) ?? null,
+      );
+      drive.setDataValue(
+        'currentAssignment',
+        assignmentMap.get(drive.id) ?? null,
       );
     }
 
@@ -509,6 +526,20 @@ export class PhysicalDriveService implements OnModuleInit {
         throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
       }
 
+      // A mounted drive cannot change datacenter: it must be unmounted from the
+      // server's Assign Drives board first.
+      const assignment = (
+        await this.allocationService.getCurrentAssignmentsForDrives(
+          [id],
+          transaction,
+        )
+      ).get(id);
+      if (assignment) {
+        throw new ConflictException(
+          `PhysicalDrive with ID ${id} is mounted in ${assignment.serverHostname} slot ${assignment.slotLabel}; unmount it before changing its location`,
+        );
+      }
+
       const datacenter = await this.datacenterModel.findByPk(dto.datacenterId, {
         transaction,
       });
@@ -537,6 +568,68 @@ export class PhysicalDriveService implements OnModuleInit {
 
       return this.loadWithLocations(id, transaction);
     });
+  }
+
+  // Relocate an unmounted drive to another datacenter (or assign a location to
+  // a drive that has none). Mounted drives are rejected so a drive can never be
+  // seated in a server while its recorded location points at another site.
+  async relocateDrive(
+    id: string,
+    dto: RelocateDriveDto,
+  ): Promise<PhysicalDrive> {
+    await this.sequelize.transaction(async (transaction) => {
+      const drive = await this.physicalDriveModel.findByPk(id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!drive) {
+        throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
+      }
+
+      const datacenter = await this.datacenterModel.findByPk(dto.datacenterId, {
+        transaction,
+      });
+      if (!datacenter) {
+        throw new NotFoundException(
+          `Datacenter with ID ${dto.datacenterId} not found`,
+        );
+      }
+
+      const assignment = (
+        await this.allocationService.getCurrentAssignmentsForDrives(
+          [id],
+          transaction,
+        )
+      ).get(id);
+      if (assignment) {
+        throw new ConflictException(
+          `PhysicalDrive with ID ${id} is mounted in ${assignment.serverHostname} slot ${assignment.slotLabel}; unmount it from the server's Assign Drives page first`,
+        );
+      }
+
+      const latest = await this.getLatestLocation(id, transaction);
+      if (latest && latest.datacenterId === dto.datacenterId) {
+        throw new ConflictException(
+          `PhysicalDrive with ID ${id} is already located in datacenter ${datacenter.code}`,
+        );
+      }
+
+      await this.physicalDriveLocationModel.create(
+        {
+          physicalDriveId: id,
+          datacenterId: dto.datacenterId,
+          locatedAt: dto.locatedAt ? new Date(dto.locatedAt) : new Date(),
+          notes: dto.notes ?? null,
+        } as Partial<PhysicalDriveLocation>,
+        { transaction },
+      );
+    });
+
+    const drive = await this.findOne(id);
+    if (!drive) {
+      throw new NotFoundException(`PhysicalDrive with ID ${id} not found`);
+    }
+    return drive;
   }
 
   async delete(id: string): Promise<boolean> {

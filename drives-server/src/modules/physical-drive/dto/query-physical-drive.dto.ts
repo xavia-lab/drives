@@ -2,10 +2,12 @@ import {
   IsOptional,
   IsIn,
   IsString,
+  IsBoolean,
   Length,
   IsDateString,
   IsUUID,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
@@ -123,4 +125,16 @@ export class QueryPhysicalDriveDto extends PaginationQueryDto {
   @IsString()
   @Length(1, 64)
   search?: string;
+
+  // --- Derived State Filters ---
+
+  @ApiPropertyOptional({
+    description:
+      'Only return drives with no recorded location (never received into a datacenter). Takes precedence over the generic filter fields.',
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  unassigned?: boolean;
 }
