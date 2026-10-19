@@ -1,22 +1,15 @@
 import { WarrantyClaimStatus } from './entities/warranty-claim.entity';
 import { WarrantyClaimEventType } from './entities/warranty-claim-event.entity';
+import { createEventStateMachine } from '../../lib/state-machine/create-event-state-machine';
 
-// Events that only annotate the tracking log without changing the claim status.
-export const INFORMATIONAL_EVENT_TYPES: readonly WarrantyClaimEventType[] = [
-  WarrantyClaimEventType.NOTE,
-];
+// Events that only annotate the tracking log without changing the status.
+export type WarrantyClaimInformationalEvent = WarrantyClaimEventType.NOTE;
 
-const INFORMATIONAL_SET = new Set<WarrantyClaimEventType>(
-  INFORMATIONAL_EVENT_TYPES,
-);
-
-// A brand new claim (header created, no events yet) is at least SUBMITTED.
-const INITIAL_STATUS = WarrantyClaimStatus.SUBMITTED;
-
-// The status an event moves a claim into. Informational events keep the current
-// status (handled by the caller).
-const STATUS_BY_EVENT: Partial<
-  Record<WarrantyClaimEventType, WarrantyClaimStatus>
+// The status an event moves a claim into. Informational events are handled by
+// the machine (they keep the current status).
+const STATUS_BY_EVENT: Record<
+  Exclude<WarrantyClaimEventType, WarrantyClaimInformationalEvent>,
+  WarrantyClaimStatus
 > = {
   [WarrantyClaimEventType.SHIPPED_TO_VENDOR]:
     WarrantyClaimStatus.SHIPPED_TO_VENDOR,
@@ -27,87 +20,47 @@ const STATUS_BY_EVENT: Partial<
   [WarrantyClaimEventType.CLOSED]: WarrantyClaimStatus.CLOSED,
 };
 
-const ALLOWED_TRANSITIONS: Record<
+const machine = createEventStateMachine<
   WarrantyClaimStatus,
-  WarrantyClaimEventType[]
-> = {
-  [WarrantyClaimStatus.SUBMITTED]: [
-    WarrantyClaimEventType.SHIPPED_TO_VENDOR,
-    WarrantyClaimEventType.REJECTED,
-    WarrantyClaimEventType.CLOSED,
-  ],
-  [WarrantyClaimStatus.SHIPPED_TO_VENDOR]: [
-    WarrantyClaimEventType.APPROVED,
-    WarrantyClaimEventType.REJECTED,
-    WarrantyClaimEventType.CLOSED,
-  ],
-  [WarrantyClaimStatus.APPROVED]: [
-    WarrantyClaimEventType.REPLACEMENT_RECEIVED,
-    WarrantyClaimEventType.CLOSED,
-  ],
-  [WarrantyClaimStatus.REJECTED]: [WarrantyClaimEventType.CLOSED],
-  [WarrantyClaimStatus.REPLACEMENT_RECEIVED]: [WarrantyClaimEventType.CLOSED],
-  [WarrantyClaimStatus.CLOSED]: [],
-};
+  WarrantyClaimEventType,
+  WarrantyClaimInformationalEvent
+>({
+  // A brand new claim (header created, no events yet) is at least SUBMITTED.
+  initialState: WarrantyClaimStatus.SUBMITTED,
+  informationalEvents: [WarrantyClaimEventType.NOTE],
+  stateByEvent: STATUS_BY_EVENT,
+  transitions: {
+    [WarrantyClaimStatus.SUBMITTED]: [
+      WarrantyClaimEventType.SHIPPED_TO_VENDOR,
+      WarrantyClaimEventType.REJECTED,
+      WarrantyClaimEventType.CLOSED,
+    ],
+    [WarrantyClaimStatus.SHIPPED_TO_VENDOR]: [
+      WarrantyClaimEventType.APPROVED,
+      WarrantyClaimEventType.REJECTED,
+      WarrantyClaimEventType.CLOSED,
+    ],
+    [WarrantyClaimStatus.APPROVED]: [
+      WarrantyClaimEventType.REPLACEMENT_RECEIVED,
+      WarrantyClaimEventType.CLOSED,
+    ],
+    [WarrantyClaimStatus.REJECTED]: [WarrantyClaimEventType.CLOSED],
+    [WarrantyClaimStatus.REPLACEMENT_RECEIVED]: [WarrantyClaimEventType.CLOSED],
+    [WarrantyClaimStatus.CLOSED]: [],
+  },
+  terminalStates: [WarrantyClaimStatus.CLOSED],
+});
 
-const TERMINAL_STATUSES = new Set<WarrantyClaimStatus>([
-  WarrantyClaimStatus.CLOSED,
-]);
+export const INFORMATIONAL_EVENT_TYPES = machine.informationalEvents;
 
-export function isInformationalEvent(
-  eventType: WarrantyClaimEventType,
-): boolean {
-  return INFORMATIONAL_SET.has(eventType);
-}
+export const {
+  isInformationalEvent,
+  isStateChangingEvent,
+  allowedEventsFor,
+  canTransition,
+} = machine;
 
-export function isStateChangingEvent(
-  eventType: WarrantyClaimEventType,
-): boolean {
-  return !isInformationalEvent(eventType);
-}
-
-export function isTerminalStatus(status: WarrantyClaimStatus): boolean {
-  return TERMINAL_STATUSES.has(status);
-}
-
-// Maps an event to the resulting status. Informational events keep the current
-// status.
-export function statusForEvent(
-  eventType: WarrantyClaimEventType,
-  currentStatus: WarrantyClaimStatus = INITIAL_STATUS,
-): WarrantyClaimStatus {
-  if (isInformationalEvent(eventType)) {
-    return currentStatus;
-  }
-
-  return STATUS_BY_EVENT[eventType] ?? currentStatus;
-}
-
-// Derives the status from an ordered (oldest first) list of events.
-export function deriveStatusFromEvents(
-  events: { eventType: WarrantyClaimEventType }[],
-): WarrantyClaimStatus {
-  return events.reduce(
-    (status, event) => statusForEvent(event.eventType, status),
-    INITIAL_STATUS,
-  );
-}
-
-export function allowedEventsFor(
-  status: WarrantyClaimStatus,
-): WarrantyClaimEventType[] {
-  return ALLOWED_TRANSITIONS[status] ?? [];
-}
-
-// Informational events are always allowed (even on closed claims) so audit
-// notes can still be appended. State-changing events must be a legal transition.
-export function canTransition(
-  currentStatus: WarrantyClaimStatus,
-  eventType: WarrantyClaimEventType,
-): boolean {
-  if (isInformationalEvent(eventType)) {
-    return true;
-  }
-
-  return allowedEventsFor(currentStatus).includes(eventType);
-}
+// Domain-named aliases for the generic factory helpers.
+export const isTerminalStatus = machine.isTerminalState;
+export const statusForEvent = machine.stateForEvent;
+export const deriveStatusFromEvents = machine.deriveStateFromEvents;
