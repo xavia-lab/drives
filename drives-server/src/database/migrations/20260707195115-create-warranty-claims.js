@@ -3,7 +3,10 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
+    // Warranty claim HEADER: immutable identity/details captured when the RMA
+    // is opened. Status and lifecycle timestamps are DERIVED from the
+    // append-only `warranty_claim_events` log (created in the next migration),
+    // never stored here.
     await queryInterface.createTable('warranty_claims', {
       id: {
         type: Sequelize.UUID,
@@ -43,28 +46,8 @@ module.exports = {
         type: Sequelize.STRING(64),
         allowNull: true,
       },
-      claim_status: {
-        type: Sequelize.ENUM(
-          'SUBMITTED',
-          'SHIPPED_TO_VENDOR',
-          'APPROVED',
-          'REJECTED',
-          'REPLACEMENT_RECEIVED',
-        ),
-        defaultValue: 'SUBMITTED',
-        allowNull: false,
-      },
       notes: {
         type: Sequelize.TEXT,
-        allowNull: true,
-      },
-      submitted_at: {
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-        allowNull: false,
-      },
-      resolved_at: {
-        type: Sequelize.DATE,
         allowNull: true,
       },
       created_at: {
@@ -77,7 +60,7 @@ module.exports = {
       },
     });
 
-    // 2. Performance Optimization Indexes
+    // Performance Optimization Indexes for the header
     await queryInterface.addIndex('warranty_claims', ['triggering_event_id'], {
       name: 'warranty_claims_trigger_event_idx',
       using: 'btree',
@@ -90,12 +73,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies (Postgres handles internal sequence cleanup automatically)
+    // Drop the claim header cleanly to remove structural dependencies
     await queryInterface.dropTable('warranty_claims');
-
-    // Drop the specialized enum schema mapping type safely
-    await queryInterface.sequelize.query(
-      `DROP TYPE IF EXISTS "enum_warranty_claims_claim_status";`,
-    );
   },
 };

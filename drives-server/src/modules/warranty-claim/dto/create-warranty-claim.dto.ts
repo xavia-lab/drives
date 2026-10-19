@@ -4,11 +4,8 @@ import {
   Length,
   IsOptional,
   IsUUID,
-  IsEnum,
-  IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { WarrantyClaimStatus } from '../entities/warranty-claim.entity';
 
 export class CreateWarrantyClaimDto {
   @ApiPropertyOptional({
@@ -55,7 +52,7 @@ export class CreateWarrantyClaimDto {
 
   @ApiPropertyOptional({
     description:
-      'The manufacturer issued RMA tracking number identifier string',
+      'The manufacturer issued RMA tracking number identifier string (may be assigned after submission)',
     maxLength: 64,
     example: 'RMA-990PRO-12345',
     required: false,
@@ -66,20 +63,8 @@ export class CreateWarrantyClaimDto {
   rmaTrackingNumber?: string;
 
   @ApiPropertyOptional({
-    description: 'The processing lifecycle state status of the warranty claim',
-    enum: WarrantyClaimStatus,
-    example: WarrantyClaimStatus.SUBMITTED,
-    default: WarrantyClaimStatus.SUBMITTED,
-  })
-  @IsOptional()
-  @IsEnum(WarrantyClaimStatus, {
-    message: 'The claimStatus must match valid enum parameters',
-  })
-  claimStatus?: WarrantyClaimStatus;
-
-  @ApiPropertyOptional({
     description:
-      'Optional descriptive engineer troubleshooting log notes or comments',
+      'Optional descriptive engineer troubleshooting log notes or comments captured at opening time',
     example:
       'Drive returned due to excessive reallocated sectors matching S.M.A.R.T telemetry data failure markers.',
     required: false,
@@ -87,24 +72,4 @@ export class CreateWarrantyClaimDto {
   @IsOptional()
   @IsString()
   notes?: string;
-
-  @ApiPropertyOptional({
-    description:
-      'The explicit date stamp indicating when the warranty paperwork was dispatched to vendor',
-    example: '2026-07-12T05:23:21.690Z',
-    required: false,
-  })
-  @IsOptional()
-  @IsDateString()
-  submittedAt?: Date;
-
-  @ApiPropertyOptional({
-    description:
-      'The resolution timestamp matching the closure or replacement delivery confirmation window',
-    example: '2026-07-19T14:32:00.000Z',
-    required: false,
-  })
-  @IsOptional()
-  @IsDateString()
-  resolvedAt?: Date;
 }

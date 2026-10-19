@@ -1,88 +1,115 @@
 import { Expose, Transform, Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DriveLifecycleEventType } from '../../entities/drive-lifecycle-event.entity';
 import { PhysicalDriveResponseDto } from '../../../physical-drive/dto/response/physical-drive-response.dto';
 
 export class DriveLifecycleEventResponseDto {
-  @ApiProperty({
-    description: 'The unique numerical identifier of the event record',
-    example: 1042,
-  })
   @Expose()
+  @ApiProperty({
+    description: 'The unique UUIDv7 identifier of the event record',
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+  })
   id: string;
 
+  @Expose()
+  @ApiProperty({
+    description: 'The consistent global sequential index number',
+    example: 1042,
+  })
+  displayKey: number;
+
+  @Expose()
   @ApiProperty({
     description:
-      'The unique numerical foreign key identifier linking back to the asset record',
+      'The foreign key identifier linking back to the physical drive asset',
     type: String,
   })
-  @Expose()
   physicalDriveId: string;
 
-  @ApiProperty({
-    description: 'The distinct operational categorization milestone type',
-    enum: DriveLifecycleEventType,
-    example: 'PROVISION',
-  })
   @Expose()
+  @ApiProperty({
+    description: 'The distinct operational milestone action type',
+    enum: DriveLifecycleEventType,
+    example: DriveLifecycleEventType.PROVISION,
+  })
   eventType: DriveLifecycleEventType;
 
+  @Expose()
   @ApiProperty({
     description:
       'The absolute execution time timestamp when the telemetry event occurred',
     example: '2026-07-09T15:26:00.000Z',
   })
-  @Expose()
   eventTimestamp: Date;
 
+  @Expose()
   @ApiProperty({
     description:
       'The automation runner name or operator tag who recorded the event',
     example: 'system_agent_node_42',
   })
-  @Expose()
   triggeredBy: string;
 
-  @ApiProperty({
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'The database user id of the operator who recorded the event',
+    nullable: true,
+  })
+  performedByUserId: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
     description:
-      'Flexible key-value storage block holding raw metric telemetry logs, S.M.A.R.T snapshots, or stack dumps',
+      'The successor drive shipped for an RMA_REPLACE event (null otherwise)',
+    nullable: true,
+  })
+  replacementPhysicalDriveId: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description:
+      'Flexible key-value block holding diagnostic metrics, failure codes or notes',
     example: {
-      firmware_version: 'HP04',
-      bad_block_count: 0,
-      raw_temperature_celsius: 34,
+      failure_code: 'SMART_REALLOCATED_SECTOR_COUNT',
+      rma_tracking_number: 'RMA-990PRO-12345',
     },
     nullable: true,
   })
-  @Expose()
   // `contextMetadata` is arbitrary JSON, so it must be passed through verbatim:
   // with `excludeExtraneousValues` class-transformer otherwise collapses an
   // `Object`-typed value into `{}` (see SerializeInterceptor).
   @Transform(({ obj, key }) => (obj as Record<string, unknown>)[key])
-  contextMetadata: Record<string, any> | null;
+  contextMetadata: Record<string, unknown> | null;
 
+  @Expose()
   @ApiProperty({
     description: 'The initial data capture database insertion timestamp',
   })
-  @Expose()
   createdAt: Date;
 
+  @Expose()
   @ApiProperty({
     description: 'The last database modification update timestamp',
   })
-  @Expose()
   updatedAt: Date;
 
   // --- Optional Shallow Associations ---
 
-  @ApiProperty({
-    description:
-      'The nested detailed footprint of the targeted physical asset record',
-    type: () => PhysicalDriveResponseDto,
-    required: false,
-  })
   @Expose()
   @Type(() => PhysicalDriveResponseDto)
+  @ApiPropertyOptional({
+    type: () => PhysicalDriveResponseDto,
+    description: 'The targeted physical drive asset',
+  })
   physicalDrive?: PhysicalDriveResponseDto;
+
+  @Expose()
+  @Type(() => PhysicalDriveResponseDto)
+  @ApiPropertyOptional({
+    type: () => PhysicalDriveResponseDto,
+    description: 'The linked replacement drive (RMA_REPLACE events only)',
+  })
+  replacementDrive?: PhysicalDriveResponseDto | null;
 
   constructor(partial: Partial<DriveLifecycleEventResponseDto>) {
     Object.assign(this, partial);

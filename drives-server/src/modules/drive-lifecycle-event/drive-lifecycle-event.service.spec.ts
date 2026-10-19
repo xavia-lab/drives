@@ -1,49 +1,53 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
-import { NotFoundException } from '@nestjs/common';
+import { getModelToken, getConnectionToken } from '@nestjs/sequelize';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Op } from 'sequelize';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+
 import { DriveLifecycleEventService } from './drive-lifecycle-event.service';
 import {
   DriveLifecycleEvent,
   DriveLifecycleEventType,
+  DriveLifecycleState,
 } from './entities/drive-lifecycle-event.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
+import { User } from '../user/entities/user.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { CreateDriveLifecycleEventDto } from './dto/create-drive-lifecycle-event.dto';
-import { UpdateDriveLifecycleEventDto } from './dto/update-drive-lifecycle-event.dto';
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  vi,
-  type Mock,
-  type Mocked,
-} from 'vitest'; // 🚀 Pure ESM imports from Vitest
+
+const DRIVE_ID = '019f6a00-0000-7f01-8c00-000000000001';
+const REPLACEMENT_ID = '019f6a00-0000-7f02-8c00-000000000002';
+const USER_ID = '00000000-0000-0000-0000-000000000000';
+const EVENT_ID = '019f6a80-0000-7c00-8c00-000000000001';
 
 describe('DriveLifecycleEventService', () => {
   let service: DriveLifecycleEventService;
 
-  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
   let mockEventModel: Record<string, Mock>;
-  let mockPhysicalDriveModel: Record<string, Mock>;
-  let mockPaginationService: Mocked<PaginationService>;
+  let mockDriveModel: Record<string, Mock>;
+  let mockUserModel: Record<string, Mock>;
+  let mockPaginationService: { paginate: Mock };
+  let mockTransaction: Record<string, unknown>;
+  let mockSequelize: { transaction: Mock };
 
   beforeEach(async () => {
-    // 1. Mock both Sequelize models using vi.fn()
     mockEventModel = {
-      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+      findAll: vi.fn(),
+      findOne: vi.fn(),
       findByPk: vi.fn(),
       create: vi.fn(),
-      destroy: vi.fn(),
     };
+    mockDriveModel = { findByPk: vi.fn() };
+    mockUserModel = { findByPk: vi.fn() };
+    mockPaginationService = { paginate: vi.fn() };
 
-    mockPhysicalDriveModel = {
-      findByPk: vi.fn(),
+    mockTransaction = {
+      LOCK: { UPDATE: 'UPDATE' },
+      commit: vi.fn(),
+      rollback: vi.fn(),
     };
-
-    // 2. Mock the PaginationService using clear type boundaries
-    mockPaginationService = {
-      paginate: vi.fn(),
+    mockSequelize = {
+      transaction: vi.fn((cb: (t: unknown) => unknown) => cb(mockTransaction)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -53,169 +57,263 @@ describe('DriveLifecycleEventService', () => {
           provide: getModelToken(DriveLifecycleEvent),
           useValue: mockEventModel,
         },
-        {
-          provide: getModelToken(PhysicalDrive),
-          useValue: mockPhysicalDriveModel,
-        },
-        {
-          provide: PaginationService,
-          useValue: mockPaginationService,
-        },
+        { provide: getModelToken(PhysicalDrive), useValue: mockDriveModel },
+        { provide: getModelToken(User), useValue: mockUserModel },
+        { provide: PaginationService, useValue: mockPaginationService },
+        { provide: getConnectionToken(), useValue: mockSequelize },
       ],
     }).compile();
 
-    service = module.get<DriveLifecycleEventService>(
-      DriveLifecycleEventService,
-    );
-    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
+    service = module.get(DriveLifecycleEventService);
+    vi.clearAllMocks();
   });
 
   describe('findAll', () => {
-    it('should cleanly delegate pagination logic to PaginationService', async () => {
-      const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: DriveLifecycleEvent[];
-        meta: Record<string, unknown>;
+    it('translates dedicated filters into a where clause and delegates to pagination', async () => {
+      const expected = { data: [], meta: {} };
+      mockPaginationService.paginate.mockResolvedValue(expected);
+
+      const query = {
+        pageNumber: 1,
+        pageSize: 10,
+        physicalDriveId: DRIVE_ID,
+        eventType: DriveLifecycleEventType.FAIL,
+        eventTimestampFrom: '2026-01-01T00:00:00.000Z',
       };
-      mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
 
-      const result = await service.findAll(mockQuery);
+      const result = await service.findAll(query);
 
-      expect(result).toEqual(expectedPaginatedOutput);
-      expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockEventModel as unknown,
-        mockQuery,
+      expect(result).toBe(expected);
+      const [[model, passedQuery, options]] = mockPaginationService.paginate
+        .mock.calls as [
+        [
+          unknown,
+          unknown,
+          { where: Record<string, unknown>; include: unknown[] },
+        ],
+      ];
+      expect(model).toBe(mockEventModel);
+      expect(passedQuery).toBe(query);
+      expect(options.where.physicalDriveId).toBe(DRIVE_ID);
+      expect(options.where.eventType).toBe(DriveLifecycleEventType.FAIL);
+      expect(options.where.eventTimestamp[Op.gte]).toEqual(
+        new Date('2026-01-01T00:00:00.000Z'),
       );
+      expect(options.include).toHaveLength(2);
     });
   });
 
   describe('findOne', () => {
-    it('should successfully find and return an event by ID', async () => {
-      const mockEvent = {
-        id: 'event-uuid',
-        eventType: DriveLifecycleEventType.PROVISION,
-      };
-      mockEventModel.findByPk.mockResolvedValue(mockEvent);
+    it('returns the event with its drive associations', async () => {
+      const event = { id: EVENT_ID };
+      mockEventModel.findByPk.mockResolvedValue(event);
 
-      const result = await service.findOne('event-uuid');
-
-      expect(result).toEqual(mockEvent);
-      expect(mockEventModel.findByPk).toHaveBeenCalledWith('event-uuid', {
-        include: [PhysicalDrive],
+      await expect(service.findOne(EVENT_ID)).resolves.toBe(event);
+      expect(mockEventModel.findByPk).toHaveBeenCalledWith(EVENT_ID, {
+        include: expect.any(Array) as unknown[],
       });
     });
 
-    it('should throw NotFoundException if event is not found', async () => {
+    it('throws NotFoundException when missing', async () => {
       mockEventModel.findByPk.mockResolvedValue(null);
-
-      await expect(service.findOne('invalid-id')).rejects.toThrow(
+      await expect(service.findOne(EVENT_ID)).rejects.toThrow(
         NotFoundException,
       );
     });
   });
 
-  describe('create', () => {
-    const createDto: CreateDriveLifecycleEventDto = {
-      eventType: DriveLifecycleEventType.RECEIVE,
-      eventTimestamp: new Date(),
-      triggeredBy: 'system-agent',
-      contextMetadata: { smartStatus: 'OK' },
-      physicalDriveId: 'drive-uuid',
-    };
+  describe('getCurrentLifecycleMap', () => {
+    it('derives the latest state-changing event per drive and defaults the rest to UNRECEIVED', async () => {
+      mockEventModel.findAll.mockResolvedValue([
+        {
+          physicalDriveId: DRIVE_ID,
+          eventType: DriveLifecycleEventType.PROVISION,
+          id: 'e2',
+        },
+        {
+          physicalDriveId: DRIVE_ID,
+          eventType: DriveLifecycleEventType.NOTE,
+          id: 'e3',
+        },
+        {
+          physicalDriveId: REPLACEMENT_ID,
+          eventType: DriveLifecycleEventType.ACQUIRE,
+          id: 'e1',
+        },
+      ]);
 
-    it('should successfully create and reload an event if foreign key exists', async () => {
-      const mockReload = vi
-        .fn()
-        .mockResolvedValue({ id: 'event-uuid', ...createDto });
-      mockPhysicalDriveModel.findByPk.mockResolvedValue({ id: 'drive-uuid' });
-      mockEventModel.create.mockResolvedValue({
-        id: 'event-uuid',
-        reload: mockReload,
-      });
+      const map = await service.getCurrentLifecycleMap([
+        DRIVE_ID,
+        REPLACEMENT_ID,
+        'missing-drive',
+      ]);
 
-      const result = await service.create(createDto);
-
-      expect(result).toBeDefined();
-      expect(mockEventModel.create).toHaveBeenCalledWith({ ...createDto });
-      expect(mockPhysicalDriveModel.findByPk).toHaveBeenCalledWith(
-        'drive-uuid',
+      expect(map.get(DRIVE_ID)?.state).toBe(DriveLifecycleState.IN_SERVICE);
+      expect(map.get(REPLACEMENT_ID)?.state).toBe(DriveLifecycleState.RECEIVED);
+      expect(map.get('missing-drive')?.state).toBe(
+        DriveLifecycleState.UNRECEIVED,
       );
-      expect(mockReload).toHaveBeenCalledWith({ include: [PhysicalDrive] });
+      expect(map.get('missing-drive')?.eventId).toBeNull();
     });
 
-    it('should throw NotFoundException if the provided physicalDriveId does not exist', async () => {
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
+    it('returns an empty map without querying when given no drive ids', async () => {
+      const map = await service.getCurrentLifecycleMap([]);
+      expect(map.size).toBe(0);
+      expect(mockEventModel.findAll).not.toHaveBeenCalled();
+    });
+  });
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        new NotFoundException('PhysicalDrive with ID drive-uuid not found'),
+  describe('getTimeline', () => {
+    it('throws NotFoundException when the drive does not exist', async () => {
+      mockDriveModel.findByPk.mockResolvedValue(null);
+      await expect(service.getTimeline(DRIVE_ID)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('returns events oldest-first with the derived state', async () => {
+      mockDriveModel.findByPk.mockResolvedValue({ id: DRIVE_ID });
+      const events = [
+        { id: 'e1', eventType: DriveLifecycleEventType.ACQUIRE },
+        { id: 'e2', eventType: DriveLifecycleEventType.PROVISION },
+      ];
+      mockEventModel.findAll.mockResolvedValue(events);
+
+      const timeline = await service.getTimeline(DRIVE_ID);
+
+      expect(timeline.physicalDriveId).toBe(DRIVE_ID);
+      expect(timeline.currentState).toBe(DriveLifecycleState.IN_SERVICE);
+      expect(timeline.currentEvent).toBe(events[1]);
+      expect(timeline.events).toBe(events);
+    });
+  });
+
+  describe('recordEvent', () => {
+    const baseDto: CreateDriveLifecycleEventDto = {
+      eventType: DriveLifecycleEventType.PROVISION,
+    };
+
+    // The service loads the latest *any* event and the latest *state-changing*
+    // event in parallel; the latter is the only query with an eventType filter.
+    const stubLatestEvents = (latestState: unknown, latestAny?: unknown) => {
+      mockEventModel.findOne.mockImplementation(
+        (options: { where?: Record<string, unknown> }) =>
+          Promise.resolve(
+            options.where?.eventType ? latestState : (latestAny ?? latestState),
+          ),
+      );
+    };
+
+    it('appends the event and returns the refreshed timeline', async () => {
+      mockDriveModel.findByPk.mockResolvedValue({ id: DRIVE_ID });
+      mockUserModel.findByPk.mockResolvedValue({ id: USER_ID });
+      stubLatestEvents({
+        id: 'e1',
+        eventType: DriveLifecycleEventType.ACQUIRE,
+        eventTimestamp: new Date('2026-01-01T00:00:00.000Z'),
+      });
+      mockEventModel.create.mockResolvedValue({ id: EVENT_ID });
+      mockEventModel.findAll.mockResolvedValue([
+        { id: 'e1', eventType: DriveLifecycleEventType.ACQUIRE },
+        { id: EVENT_ID, eventType: DriveLifecycleEventType.PROVISION },
+      ]);
+
+      const timeline = await service.recordEvent(DRIVE_ID, baseDto, {
+        performedByUserId: USER_ID,
+        triggeredBy: 'operator',
+      });
+
+      expect(mockDriveModel.findByPk).toHaveBeenCalledWith(DRIVE_ID, {
+        transaction: mockTransaction,
+        lock: 'UPDATE',
+      });
+      expect(mockUserModel.findByPk).toHaveBeenCalledWith(USER_ID, {
+        transaction: mockTransaction,
+      });
+      expect(mockEventModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          physicalDriveId: DRIVE_ID,
+          eventType: DriveLifecycleEventType.PROVISION,
+          performedByUserId: USER_ID,
+          triggeredBy: 'operator',
+        }),
+        { transaction: mockTransaction },
+      );
+      expect(timeline.currentState).toBe(DriveLifecycleState.IN_SERVICE);
+    });
+
+    it('rejects an illegal transition for the derived state', async () => {
+      mockDriveModel.findByPk.mockResolvedValue({ id: DRIVE_ID });
+      stubLatestEvents({
+        id: 'e1',
+        eventType: DriveLifecycleEventType.SCRAP_SHRED,
+        eventTimestamp: new Date('2026-01-01T00:00:00.000Z'),
+      });
+
+      await expect(service.recordEvent(DRIVE_ID, baseDto)).rejects.toThrow(
+        ConflictException,
       );
       expect(mockEventModel.create).not.toHaveBeenCalled();
     });
-  });
 
-  describe('update', () => {
-    const updateDto: UpdateDriveLifecycleEventDto = {
-      eventType: DriveLifecycleEventType.FAIL,
-      physicalDriveId: 'new-drive-uuid',
-    };
-
-    it('should successfully update an event when target items exist', async () => {
-      const mockReload = vi.fn().mockResolvedValue({
-        id: 'event-uuid',
-        eventType: DriveLifecycleEventType.FAIL,
-      });
-      const mockInstance = {
-        id: 'event-uuid',
-        update: vi.fn().mockResolvedValue(true),
-        reload: mockReload,
-      };
-      mockEventModel.findByPk.mockResolvedValue(mockInstance);
-      mockPhysicalDriveModel.findByPk.mockResolvedValue({
-        id: 'new-drive-uuid',
+    it('rejects a timestamp that precedes the latest event', async () => {
+      mockDriveModel.findByPk.mockResolvedValue({ id: DRIVE_ID });
+      stubLatestEvents({
+        id: 'e1',
+        eventType: DriveLifecycleEventType.ACQUIRE,
+        eventTimestamp: new Date('2026-06-01T00:00:00.000Z'),
       });
 
-      await service.update('event-uuid', updateDto);
-
-      expect(mockInstance.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          eventType: DriveLifecycleEventType.FAIL,
-          physicalDriveId: 'new-drive-uuid',
+      await expect(
+        service.recordEvent(DRIVE_ID, {
+          eventType: DriveLifecycleEventType.PROVISION,
+          eventTimestamp: '2026-01-01T00:00:00.000Z',
         }),
-      );
-      expect(mockReload).toHaveBeenCalledWith({ include: [PhysicalDrive] });
+      ).rejects.toThrow(ConflictException);
     });
 
-    it('should throw NotFoundException if the updated physicalDriveId does not exist', async () => {
-      const mockInstance = { id: 'event-uuid' };
-      mockEventModel.findByPk.mockResolvedValue(mockInstance);
-      mockPhysicalDriveModel.findByPk.mockResolvedValue(null);
-
-      await expect(service.update('event-uuid', updateDto)).rejects.toThrow(
-        new NotFoundException('PhysicalDrive with ID new-drive-uuid not found'),
-      );
-    });
-  });
-
-  describe('delete', () => {
-    it('should successfully delete an event if it is found', async () => {
-      const mockInstance = { id: 'event-uuid' };
-      mockEventModel.findByPk.mockResolvedValue(mockInstance);
-      mockEventModel.destroy.mockResolvedValue(1);
-
-      const result = await service.delete('event-uuid');
-
-      expect(result).toBe(true);
-      expect(mockEventModel.destroy).toHaveBeenCalledWith({
-        where: { id: 'event-uuid' },
+    it('requires a replacement drive for RMA_REPLACE', async () => {
+      mockDriveModel.findByPk.mockResolvedValue({ id: DRIVE_ID });
+      stubLatestEvents({
+        id: 'e1',
+        eventType: DriveLifecycleEventType.RMA_INITIATE,
+        eventTimestamp: new Date('2026-01-01T00:00:00.000Z'),
       });
+
+      await expect(
+        service.recordEvent(DRIVE_ID, {
+          eventType: DriveLifecycleEventType.RMA_REPLACE,
+        }),
+      ).rejects.toThrow(/replacementPhysicalDriveId is required/);
     });
 
-    it('should throw NotFoundException if event to delete does not exist', async () => {
-      mockEventModel.findByPk.mockResolvedValue(null);
-
-      await expect(service.delete('invalid-id')).rejects.toThrow(
-        NotFoundException,
+    it('rejects a replacement that is already linked to another RMA', async () => {
+      mockDriveModel.findByPk.mockImplementation((id: string) =>
+        Promise.resolve(id === DRIVE_ID ? { id: DRIVE_ID } : null),
       );
+      mockDriveModel.findByPk
+        .mockResolvedValueOnce({ id: DRIVE_ID })
+        .mockResolvedValueOnce({ id: REPLACEMENT_ID });
+      mockEventModel.findOne.mockImplementation(
+        (options: { where?: Record<string, unknown> }) => {
+          const where = options.where ?? {};
+          if (where.eventType === DriveLifecycleEventType.RMA_REPLACE) {
+            return Promise.resolve({ id: 'existing' });
+          }
+          return Promise.resolve({
+            id: 'e1',
+            eventType: DriveLifecycleEventType.RMA_INITIATE,
+            eventTimestamp: new Date('2026-01-01T00:00:00.000Z'),
+          });
+        },
+      );
+
+      await expect(
+        service.recordEvent(DRIVE_ID, {
+          eventType: DriveLifecycleEventType.RMA_REPLACE,
+          replacementPhysicalDriveId: REPLACEMENT_ID,
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

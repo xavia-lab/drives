@@ -11,6 +11,7 @@ import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
 import { CreatePhysicalDriveDto } from './dto/create-physical-drive.dto';
 import { UpdatePhysicalDriveDto } from './dto/update-physical-drive.dto';
 import {
@@ -36,6 +37,7 @@ describe('PhysicalDriveService', () => {
   let mockSequelize: { transaction: Mock };
   let mockPaginationService: Mocked<PaginationService>;
   let mockAllocationService: { getCurrentAssignmentsForDrives: Mock };
+  let mockLifecycleService: { getCurrentLifecycleMap: Mock };
 
   const mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
 
@@ -74,6 +76,10 @@ describe('PhysicalDriveService', () => {
       getCurrentAssignmentsForDrives: vi.fn(() => Promise.resolve(new Map())),
     };
 
+    mockLifecycleService = {
+      getCurrentLifecycleMap: vi.fn(() => Promise.resolve(new Map())),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhysicalDriveService,
@@ -97,6 +103,10 @@ describe('PhysicalDriveService', () => {
         {
           provide: ServerSlotAllocationService,
           useValue: mockAllocationService,
+        },
+        {
+          provide: DriveLifecycleEventService,
+          useValue: mockLifecycleService,
         },
       ],
     }).compile();

@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { WarrantyClaim } from './entities/warranty-claim.entity';
+import {
+  WarrantyClaim,
+  WarrantyClaimStatus,
+} from './entities/warranty-claim.entity';
+import { WarrantyClaimEventService } from './warranty-claim-event.service';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { DriveLifecycleEvent } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
@@ -21,6 +25,7 @@ export class WarrantyClaimService {
     private readonly driveLifecycleEventModel: typeof DriveLifecycleEvent,
     @InjectModel(Vendor)
     private readonly vendorModel: typeof Vendor,
+    private readonly warrantyClaimEventService: WarrantyClaimEventService,
     private readonly paginationService: PaginationService,
   ) {}
 
@@ -72,13 +77,57 @@ export class WarrantyClaimService {
     }
   }
 
+  // Stamps the derived status snapshot + lifecycle timestamps onto a set of
+  // claims from the append-only warranty_claim_events log.
+  private async decorateStatuses(claims: WarrantyClaim[]): Promise<void> {
+    if (claims.length === 0) {
+      return;
+    }
+
+    const statusMap = await this.warrantyClaimEventService.getStatusMap(
+      claims.map((claim) => claim.id),
+    );
+
+    for (const claim of claims) {
+      const current = statusMap.get(claim.id);
+      const status = current?.status ?? WarrantyClaimStatus.SUBMITTED;
+
+      claim.setDataValue('currentStatus', status);
+      claim.setDataValue(
+        'currentEvent',
+        current?.eventType
+          ? {
+              id: current.eventId,
+              eventType: current.eventType,
+              eventTimestamp: current.eventTimestamp,
+            }
+          : null,
+      );
+      claim.setDataValue('openedAt', claim.createdAt);
+      claim.setDataValue(
+        'resolvedAt',
+        status === WarrantyClaimStatus.CLOSED
+          ? (current?.eventTimestamp ?? null)
+          : null,
+      );
+    }
+  }
+
+  private async decorateStatus(claim: WarrantyClaim): Promise<WarrantyClaim> {
+    await this.decorateStatuses([claim]);
+    return claim;
+  }
+
   async findAll(
     query?: QueryWarrantyClaimDto,
   ): Promise<PaginatedResponse<WarrantyClaim>> {
-    return this.paginationService.paginate<WarrantyClaim>(
+    const result = await this.paginationService.paginate<WarrantyClaim>(
       this.warrantyClaimModel,
       query,
     );
+
+    await this.decorateStatuses(result.data);
+    return result;
   }
 
   async findOne(id: string): Promise<WarrantyClaim | null> {
@@ -90,7 +139,7 @@ export class WarrantyClaimService {
       throw new NotFoundException(`WarrantyClaim with ID ${id} not found`);
     }
 
-    return claim;
+    return this.decorateStatus(claim);
   }
 
   async create(
@@ -99,13 +148,14 @@ export class WarrantyClaimService {
     // Validate all incoming foreign keys concurrently before creation
     await this.validateForeignKeys(createWarrantyClaimDto);
 
-    // Fixed: Cast input payload structure safely into a Partial entity instead of 'any'
     const claim = await this.warrantyClaimModel.create(
       createWarrantyClaimDto as Partial<WarrantyClaim>,
     );
-    return claim.reload({
+
+    const reloaded = await claim.reload({
       include: [PhysicalDrive, DriveLifecycleEvent, Vendor],
     });
+    return this.decorateStatus(reloaded);
   }
 
   async update(
@@ -124,14 +174,8 @@ export class WarrantyClaimService {
     const updateData: Partial<WarrantyClaim> = {};
     if (updateWarrantyClaimDto.rmaTrackingNumber !== undefined)
       updateData.rmaTrackingNumber = updateWarrantyClaimDto.rmaTrackingNumber;
-    if (updateWarrantyClaimDto.claimStatus !== undefined)
-      updateData.claimStatus = updateWarrantyClaimDto.claimStatus;
     if (updateWarrantyClaimDto.notes !== undefined)
       updateData.notes = updateWarrantyClaimDto.notes;
-    if (updateWarrantyClaimDto.submittedAt !== undefined)
-      updateData.submittedAt = updateWarrantyClaimDto.submittedAt;
-    if (updateWarrantyClaimDto.resolvedAt !== undefined)
-      updateData.resolvedAt = updateWarrantyClaimDto.resolvedAt;
     if (updateWarrantyClaimDto.physicalDriveId !== undefined)
       updateData.physicalDriveId = updateWarrantyClaimDto.physicalDriveId;
     if (updateWarrantyClaimDto.triggeringEventId !== undefined)
@@ -140,9 +184,11 @@ export class WarrantyClaimService {
       updateData.handledByVendorId = updateWarrantyClaimDto.handledByVendorId;
 
     await claimObject.update(updateData);
-    return claimObject.reload({
+
+    const reloaded = await claimObject.reload({
       include: [PhysicalDrive, DriveLifecycleEvent, Vendor],
     });
+    return this.decorateStatus(reloaded);
   }
 
   async delete(id: string): Promise<boolean> {

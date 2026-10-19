@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsObject,
+  IsDateString,
   Length,
   IsUUID,
 } from 'class-validator';
@@ -17,55 +18,76 @@ export class CreateDriveLifecycleEventDto {
     type: String,
   })
   @IsOptional()
-  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
+  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' })
   id?: string;
 
   @ApiProperty({
-    description:
-      'The primary key numerical index matching the targeted physical drive asset',
-    type: String,
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
-  physicalDriveId: string;
-
-  @ApiProperty({
-    description:
-      'The specific operational milestone status category to append to the drive history timeline',
+    description: 'The lifecycle action to append to the drive history timeline',
     enum: DriveLifecycleEventType,
     example: DriveLifecycleEventType.PROVISION,
     required: true,
   })
   @IsNotEmpty()
   @IsEnum(DriveLifecycleEventType, {
-    message: `eventType must be a valid value: ${Object.values(DriveLifecycleEventType).join(', ')}`,
+    message: `eventType must be a valid value: ${Object.values(
+      DriveLifecycleEventType,
+    ).join(', ')}`,
   })
   eventType: DriveLifecycleEventType;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'The identification moniker of the automation daemon, service node, or human worker committing this entry',
+      'The automation daemon, service node or human operator label that recorded this entry. Defaults to the authenticated operator when omitted',
     example: 'system_agent_node_42',
-    required: true,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Length(1, 128)
-  triggeredBy: string;
+  triggeredBy?: string;
 
   @ApiPropertyOptional({
     description:
-      'Flexible key-value payload to store structural diagnostic metrics, runtime telemetry, or failure codes',
+      'The database user id of the operator who recorded the entry. The authenticated principal is used when omitted',
+    example: '00000000-0000-0000-0000-000000000000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID(undefined, { message: 'performedByUserId must be a valid UUID' })
+  performedByUserId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The successor physical drive that replaces this one. Required for RMA_REPLACE and rejected for any other event type',
+    example: '019089f2-23f5-7f9e-8c35-be02bfdf0ca8',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('7', {
+    message: 'The replacementPhysicalDriveId must be a valid UUIDv7 string',
+  })
+  replacementPhysicalDriveId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The moment the event occurred. Defaults to now and must not precede the latest existing lifecycle event',
+    example: '2026-07-09T15:26:00.000Z',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  eventTimestamp?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Flexible key-value payload for diagnostic metrics, failure codes, RMA details or free-form notes',
     example: {
-      firmware_version: 'HP04',
-      bad_block_count: 0,
-      raw_temperature_celsius: 34,
+      failure_code: 'SMART_REALLOCATED_SECTOR_COUNT',
+      rma_tracking_number: 'RMA-990PRO-12345',
     },
-    // type: 'object',
     required: false,
   })
   @IsOptional()
   @IsObject()
-  contextMetadata?: Record<string, any>;
+  contextMetadata?: Record<string, unknown>;
 }

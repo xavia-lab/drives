@@ -38,6 +38,7 @@ import { Vendor } from '../modules/vendor/entities/vendor.entity';
 import { VirtualServer } from '../modules/virtual-server/entities/virtual-server.entity';
 import { PassthroughSlot } from '../modules/virtual-server/entities/passthrough-slot.entity';
 import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim.entity';
+import { WarrantyClaimEvent } from '../modules/warranty-claim/entities/warranty-claim-event.entity';
 
 @Global()
 @Module({
@@ -85,6 +86,7 @@ import { WarrantyClaim } from '../modules/warranty-claim/entities/warranty-claim
             VirtualServer,
             PassthroughSlot,
             WarrantyClaim,
+            WarrantyClaimEvent,
           ],
           autoLoadModels: true,
         };
