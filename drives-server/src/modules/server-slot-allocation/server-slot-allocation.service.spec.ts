@@ -19,6 +19,8 @@ import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { DriveLifecycleEventType } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
 describe('ServerSlotAllocationService', () => {
@@ -29,6 +31,10 @@ describe('ServerSlotAllocationService', () => {
   let mockPhysicalServerModel: Record<string, Mock>;
   let mockPhysicalDriveModel: Record<string, Mock>;
   let mockLocationModel: Record<string, Mock>;
+  let mockLifecycleService: {
+    recordEventInTransaction: Mock;
+    getCurrentLifecycleMap: Mock;
+  };
   let mockPaginationService: { paginate: Mock };
   let mockTransaction: { LOCK: { UPDATE: string } };
   let mockSequelize: { transaction: Mock };
@@ -55,9 +61,13 @@ describe('ServerSlotAllocationService', () => {
       create: vi.fn(),
     };
     mockServerSlotModel = { findAll: vi.fn(), findByPk: vi.fn() };
-    mockPhysicalServerModel = { findByPk: vi.fn() };
+    mockPhysicalServerModel = { findByPk: vi.fn(), findAll: vi.fn() };
     mockPhysicalDriveModel = { findAll: vi.fn(), findByPk: vi.fn() };
     mockLocationModel = { findAll: vi.fn() };
+    mockLifecycleService = {
+      recordEventInTransaction: vi.fn().mockResolvedValue({}),
+      getCurrentLifecycleMap: vi.fn().mockResolvedValue(new Map()),
+    };
     mockPaginationService = { paginate: vi.fn() };
 
     mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
@@ -89,6 +99,10 @@ describe('ServerSlotAllocationService', () => {
         },
         { provide: getModelToken(Rack), useValue: {} },
         { provide: getModelToken(Datacenter), useValue: {} },
+        {
+          provide: DriveLifecycleEventService,
+          useValue: mockLifecycleService,
+        },
         { provide: PaginationService, useValue: mockPaginationService },
         { provide: getConnectionToken(), useValue: mockSequelize },
       ],
@@ -507,6 +521,301 @@ describe('ServerSlotAllocationService', () => {
       );
 
       expect(mockAllocationModel.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('allocateDrives', () => {
+    const sourceServer = { id: 'server-1', hostname: 'host-1' };
+    const targetServer = { id: 'server-2', hostname: 'host-2' };
+    const datacenter = { id: 'dc-1', code: 'VA-ASH-1', name: 'Ashburn' };
+
+    const resolvedServer = (server: { id: string; hostname: string }) => ({
+      ...server,
+      rack: { datacenter },
+    });
+
+    const setupServers = () => {
+      mockPhysicalServerModel.findAll.mockResolvedValue([
+        sourceServer,
+        targetServer,
+      ]);
+      mockPhysicalServerModel.findByPk.mockImplementation((id: string) =>
+        Promise.resolve(
+          resolvedServer(id === 'server-2' ? targetServer : sourceServer),
+        ),
+      );
+    };
+
+    const setupTargetSlots = (slots: { id: string; serverId: string }[]) => {
+      mockServerSlotModel.findAll.mockImplementation(
+        ({ where }: { where: Record<string, unknown> }) => {
+          if (where.serverId === 'server-2') {
+            return Promise.resolve(slots);
+          }
+          if (where.id) {
+            return Promise.resolve([
+              {
+                id: 'slot-source',
+                slotLabel: 'Source Slot',
+                serverId: 'server-1',
+                server: { hostname: 'host-1' },
+              },
+            ]);
+          }
+          return Promise.resolve([]);
+        },
+      );
+    };
+
+    const setupDriveEvents = (events: unknown[]) => {
+      mockAllocationModel.findAll.mockImplementation(
+        ({ where }: { where: Record<string, unknown> }) =>
+          Promise.resolve(where.serverSlotId ? [] : events),
+      );
+    };
+
+    it('detaches from source and mounts to target in one transaction', async () => {
+      setupServers();
+      setupTargetSlots([
+        { id: 'slot-2', serverId: 'server-2' },
+        { id: 'slot-3', serverId: 'server-2' },
+      ]);
+      setupDriveEvents([
+        {
+          id: 'a1',
+          physicalDriveId: 'drive-1',
+          actionType: 'MOUNT',
+          serverSlotId: 'slot-source',
+        },
+      ]);
+      mockPhysicalDriveModel.findAll.mockResolvedValue([
+        { id: 'drive-1' },
+        { id: 'drive-2' },
+      ]);
+      mockLocationModel.findAll.mockResolvedValue([
+        { physicalDriveId: 'drive-1', datacenterId: 'dc-1' },
+        { physicalDriveId: 'drive-2', datacenterId: 'dc-1' },
+      ]);
+      mockAllocationModel.create.mockResolvedValue({});
+      vi.spyOn(service, 'getBoard').mockResolvedValue(
+        {} as SlotAssignmentBoard,
+      );
+
+      const result = await service.allocateDrives(
+        {
+          datacenterId: 'dc-1',
+          sourceServerId: 'server-1',
+          detachDriveIds: ['drive-1'],
+          targetServerId: 'server-2',
+          assignments: [
+            { slotId: 'slot-2', physicalDriveId: 'drive-1' },
+            { slotId: 'slot-3', physicalDriveId: 'drive-2' },
+          ],
+        },
+        'user-1',
+      );
+
+      expect(result.unmountedDriveIds).toEqual(['drive-1']);
+      expect(result.mountedDriveIds).toEqual(['drive-1', 'drive-2']);
+      expect(
+        (mockAllocationModel.create.mock.calls as unknown[][]).map(
+          (call) => call[0],
+        ),
+      ).toEqual([
+        expect.objectContaining({
+          actionType: 'UNMOUNT',
+          serverSlotId: 'slot-source',
+          physicalDriveId: 'drive-1',
+        }),
+        expect.objectContaining({
+          actionType: 'MOUNT',
+          serverSlotId: 'slot-2',
+          physicalDriveId: 'drive-1',
+        }),
+        expect.objectContaining({
+          actionType: 'MOUNT',
+          serverSlotId: 'slot-3',
+          physicalDriveId: 'drive-2',
+        }),
+      ]);
+
+      // Detached and re-seated -> DEPROVISION + PROVISION. Unseated and seated
+      // -> PROVISION.
+      expect(
+        (
+          mockLifecycleService.recordEventInTransaction.mock
+            .calls as unknown[][]
+        ).map((call) => [
+          call[0],
+          (call[1] as { eventType: DriveLifecycleEventType }).eventType,
+        ]),
+      ).toEqual([
+        ['drive-1', DriveLifecycleEventType.DEPROVISION],
+        ['drive-1', DriveLifecycleEventType.PROVISION],
+        ['drive-2', DriveLifecycleEventType.PROVISION],
+      ]);
+    });
+
+    it('records UNMOUNT + the selected lifecycle state for a drive left unseated', async () => {
+      mockPhysicalServerModel.findAll.mockResolvedValue([sourceServer]);
+      mockPhysicalServerModel.findByPk.mockResolvedValue(
+        resolvedServer(sourceServer),
+      );
+      setupTargetSlots([]);
+      mockAllocationModel.findAll.mockResolvedValue([
+        {
+          id: 'a1',
+          physicalDriveId: 'drive-1',
+          actionType: 'MOUNT',
+          serverSlotId: 'slot-source',
+        },
+      ]);
+      mockPhysicalDriveModel.findAll.mockResolvedValue([{ id: 'drive-1' }]);
+      mockAllocationModel.create.mockResolvedValue({});
+      vi.spyOn(service, 'getBoard').mockResolvedValue(
+        {} as SlotAssignmentBoard,
+      );
+
+      const result = await service.allocateDrives(
+        {
+          datacenterId: 'dc-1',
+          sourceServerId: 'server-1',
+          detachDriveIds: ['drive-1'],
+          unseatedDriveStates: [
+            {
+              physicalDriveId: 'drive-1',
+              eventType: DriveLifecycleEventType.DEPROVISION,
+              explanation: 'Returned to inventory',
+            },
+          ],
+        },
+        'user-1',
+      );
+
+      expect(result.target).toBeNull();
+      expect(mockAllocationModel.create).toHaveBeenCalledTimes(1);
+      expect(mockAllocationModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'UNMOUNT',
+          serverSlotId: 'slot-source',
+        }),
+        { transaction: mockTransaction },
+      );
+      const lifecycleCall = (
+        mockLifecycleService.recordEventInTransaction.mock.calls as unknown[][]
+      )[0];
+      expect(lifecycleCall[0]).toBe('drive-1');
+      const lifecycleDto = lifecycleCall[1] as {
+        eventType: DriveLifecycleEventType;
+        contextMetadata: {
+          reason: string;
+          source: { slotId: string };
+        };
+      };
+      expect(lifecycleDto.eventType).toBe(DriveLifecycleEventType.DEPROVISION);
+      expect(lifecycleDto.contextMetadata.reason).toBe('Returned to inventory');
+      expect(lifecycleDto.contextMetadata.source.slotId).toBe('slot-source');
+      expect(lifecycleCall[2]).toEqual({
+        performedByUserId: 'user-1',
+        triggeredBy: 'drive-allocation',
+      });
+      expect(lifecycleCall[3]).toBe(mockTransaction);
+    });
+
+    it('rejects seating a drive that is mounted on a non-detached server', async () => {
+      setupServers();
+      setupTargetSlots([{ id: 'slot-2', serverId: 'server-2' }]);
+      setupDriveEvents([
+        {
+          id: 'a1',
+          physicalDriveId: 'drive-1',
+          actionType: 'MOUNT',
+          serverSlotId: 'slot-source',
+        },
+      ]);
+      mockPhysicalDriveModel.findAll.mockResolvedValue([{ id: 'drive-1' }]);
+      mockLocationModel.findAll.mockResolvedValue([
+        { physicalDriveId: 'drive-1', datacenterId: 'dc-1' },
+      ]);
+
+      await expect(
+        service.allocateDrives(
+          {
+            datacenterId: 'dc-1',
+            targetServerId: 'server-2',
+            assignments: [{ slotId: 'slot-2', physicalDriveId: 'drive-1' }],
+          },
+          'user-1',
+        ),
+      ).rejects.toThrow(ConflictException);
+      expect(mockAllocationModel.create).not.toHaveBeenCalled();
+    });
+
+    it('requires a lifecycle state for every detached-unseated drive', async () => {
+      await expect(
+        service.allocateDrives(
+          {
+            datacenterId: 'dc-1',
+            sourceServerId: 'server-1',
+            detachDriveIds: ['drive-1'],
+          },
+          'user-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSequelize.transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects a lifecycle state for a drive seated on the target', async () => {
+      await expect(
+        service.allocateDrives(
+          {
+            datacenterId: 'dc-1',
+            sourceServerId: 'server-1',
+            detachDriveIds: ['drive-1'],
+            targetServerId: 'server-2',
+            assignments: [{ slotId: 'slot-2', physicalDriveId: 'drive-1' }],
+            unseatedDriveStates: [
+              {
+                physicalDriveId: 'drive-1',
+                eventType: DriveLifecycleEventType.DEPROVISION,
+              },
+            ],
+          },
+          'user-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSequelize.transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects duplicate lifecycle states', async () => {
+      await expect(
+        service.allocateDrives(
+          {
+            datacenterId: 'dc-1',
+            sourceServerId: 'server-1',
+            detachDriveIds: ['drive-1'],
+            unseatedDriveStates: [
+              {
+                physicalDriveId: 'drive-1',
+                eventType: DriveLifecycleEventType.DEPROVISION,
+              },
+              {
+                physicalDriveId: 'drive-1',
+                eventType: DriveLifecycleEventType.FAIL,
+              },
+            ],
+          },
+          'user-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSequelize.transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects an empty allocation before opening a transaction', async () => {
+      await expect(
+        service.allocateDrives({ datacenterId: 'dc-1' }, 'user-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSequelize.transaction).not.toHaveBeenCalled();
     });
   });
 });

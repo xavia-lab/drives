@@ -19,6 +19,7 @@ import { QueryDriveLifecycleEventDto } from './dto/query-drive-lifecycle-event.d
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import {
+  allowedEventsFor,
   canTransition,
   INFORMATIONAL_EVENT_TYPES,
   isStateChangingEvent,
@@ -28,6 +29,8 @@ import {
 // Derived snapshot of a drive's current lifecycle position.
 export interface CurrentDriveLifecycle {
   state: DriveLifecycleState;
+  /** State-changing events that are legal from the current state. */
+  allowedEvents: readonly DriveLifecycleEventType[];
   eventId: string | null;
   eventType: DriveLifecycleEventType | null;
   eventTimestamp: Date | null;
@@ -80,10 +83,13 @@ export class DriveLifecycleEventService {
   ) {}
 
   private mapCurrent(event: DriveLifecycleEvent | null): CurrentDriveLifecycle {
+    const state = event
+      ? stateForEvent(event.eventType)
+      : DriveLifecycleState.UNRECEIVED;
+
     return {
-      state: event
-        ? stateForEvent(event.eventType)
-        : DriveLifecycleState.UNRECEIVED,
+      state,
+      allowedEvents: allowedEventsFor(state),
       eventId: event?.id ?? null,
       eventType: event?.eventType ?? null,
       eventTimestamp: event?.eventTimestamp ?? null,
@@ -97,6 +103,7 @@ export class DriveLifecycleEventService {
   // entry for every requested id (UNRECEIVED when the drive has no history).
   async getCurrentLifecycleMap(
     driveIds: string[],
+    transaction?: Transaction,
   ): Promise<Map<string, CurrentDriveLifecycle>> {
     const map = new Map<string, CurrentDriveLifecycle>();
     if (driveIds.length === 0) {
@@ -106,6 +113,7 @@ export class DriveLifecycleEventService {
     const events = await this.driveLifecycleEventModel.findAll({
       where: { physicalDriveId: { [Op.in]: driveIds } },
       order: [['physicalDriveId', 'ASC'], ...LATEST_FIRST],
+      transaction,
     });
 
     for (const event of events) {

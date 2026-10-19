@@ -1,4 +1,8 @@
-import { HddOutlined, SwapOutlined } from "@ant-design/icons";
+import {
+  ApartmentOutlined,
+  HddOutlined,
+  SwapOutlined,
+} from "@ant-design/icons";
 import type { WorkflowDefinition } from "@components/workflow";
 
 /**
@@ -22,6 +26,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
       "Move an unseated drive to another datacenter location, or assign a location to an unassigned drive.",
     href: "/workflows/drive-relocation",
     icon: <SwapOutlined />,
+    category: "Inventory",
+  },
+  {
+    key: "drive-allocation",
+    title: "Drive Allocation",
+    description:
+      "Detach drives from a source server and seat them into another server's slots in a single transaction.",
+    href: "/workflows/drive-allocation",
+    icon: <ApartmentOutlined />,
     category: "Inventory",
   },
 ];

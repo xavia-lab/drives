@@ -20,6 +20,8 @@ export interface WorkflowStep {
    * The paths are passed to antd's `form.validateFields`.
    */
   fields: (string | number)[][];
+  /** Optional extra validation run after the form fields pass. */
+  validate?: (context: WorkflowStepContext) => boolean | Promise<boolean>;
   content: (context: WorkflowStepContext) => ReactNode;
 }
 

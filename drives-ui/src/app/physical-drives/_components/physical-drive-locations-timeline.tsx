@@ -1,12 +1,13 @@
 "use client";
 
-import { Empty, Timeline, Typography } from "antd";
+import { Empty, Tag, Timeline, Typography } from "antd";
 import { EnvironmentOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
 export type PhysicalDriveLocationEvent = {
   id: string;
+  displayKey?: number;
   datacenterId: string;
   locatedAt: string | Date;
   notes?: string | null;
@@ -15,11 +16,14 @@ export type PhysicalDriveLocationEvent = {
 
 interface PhysicalDriveLocationsTimelineProps {
   events: PhysicalDriveLocationEvent[];
+  /** The id of the derived current location, marked as "Current". */
+  currentLocationId?: string;
 }
 
-/** Renders the immutable location history of a physical drive. */
+/** Renders the immutable location history of a physical drive, newest first. */
 export const PhysicalDriveLocationsTimeline = ({
   events,
+  currentLocationId,
 }: PhysicalDriveLocationsTimelineProps) => {
   if (!events || events.length === 0) {
     return (
@@ -30,22 +34,43 @@ export const PhysicalDriveLocationsTimeline = ({
     );
   }
 
+  const ordered = [...events].sort(
+    (a, b) =>
+      new Date(b.locatedAt).getTime() - new Date(a.locatedAt).getTime() ||
+      (b.displayKey ?? 0) - (a.displayKey ?? 0),
+  );
+
   return (
     <Timeline
-      items={events.map((event) => {
+      items={ordered.map((event) => {
         const datacenterLabel =
           [event.datacenter?.code, event.datacenter?.name]
             .filter(Boolean)
             .join(" - ") || "Unknown datacenter";
+        const isCurrent = event.id === currentLocationId;
 
         return {
           key: event.id,
-          color: "blue",
+          color: isCurrent ? "green" : "blue",
           dot: <EnvironmentOutlined />,
           children: (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text strong>{datacenterLabel}</Text>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Text strong>
+                  {datacenterLabel}
+                  {isCurrent ? (
+                    <Tag color="green" style={{ marginInlineStart: 8 }}>
+                      Current
+                    </Tag>
+                  ) : null}
+                </Text>
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   {new Date(event.locatedAt).toLocaleString()}
                 </Text>

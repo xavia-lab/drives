@@ -1,16 +1,29 @@
 "use client";
 
 import { DateField, Show } from "@refinedev/antd";
-import { useShow } from "@refinedev/core";
+import { useApiUrl, useCustom, useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CurrencyFormatter } from "@utils/currency-formatter";
-import { Card, Col, Descriptions, Row, Space, Tag, Typography } from "antd";
+import {
+  Card,
+  Col,
+  Descriptions,
+  Row,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+} from "antd";
 import { PhysicalDriveLocationActions } from "@app/physical-drives/_components/physical-drive-location-actions";
 import {
   PhysicalDriveLocationsTimeline,
   type PhysicalDriveLocationEvent,
 } from "@app/physical-drives/_components/physical-drive-locations-timeline";
+import {
+  PhysicalDriveLifecycleTimeline,
+  type DriveLifecycleTimeline,
+} from "@app/physical-drives/_components/physical-drive-lifecycle-timeline";
 
 const { Text } = Typography;
 const currencyFormatter = new CurrencyFormatter();
@@ -18,6 +31,14 @@ const currencyFormatter = new CurrencyFormatter();
 export default function PhysicalDriveShow() {
   const { result: record, query } = useShow({});
   const { isLoading } = query;
+  const apiUrl = useApiUrl();
+
+  const { query: lifecycleQuery, result: lifecycleResult } = useCustom({
+    url: `${apiUrl}/physical-drives/${record?.id}/lifecycle`,
+    method: "get",
+    queryOptions: { enabled: Boolean(record?.id) },
+  });
+  const lifecycle = lifecycleResult?.data as DriveLifecycleTimeline | undefined;
 
   const { options: driveModelOptions } = useLookupOptions({
     resource: "drive-models",
@@ -42,7 +63,8 @@ export default function PhysicalDriveShow() {
       : "-";
 
   const currentLocation = record?.currentLocation as
-    { datacenterId?: string; code?: string; name?: string } | undefined;
+    | { id?: string; datacenterId?: string; code?: string; name?: string }
+    | undefined;
   const locationLabel = currentLocation
     ? [currentLocation.code, currentLocation.name].filter(Boolean).join(" - ")
     : undefined;
@@ -137,20 +159,48 @@ export default function PhysicalDriveShow() {
           </Card>
         </Card>
 
-        <Card
-          title={"Location History"}
-          extra={
-            <PhysicalDriveLocationActions
-              driveId={record?.id as string}
-              currentLocationLabel={locationLabel}
-              onDone={async () => {
-                await query.refetch();
-              }}
-            />
-          }
-        >
-          <PhysicalDriveLocationsTimeline events={locations} />
-        </Card>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} xl={12}>
+            <Card
+              title={"Location History"}
+              style={{ height: "100%" }}
+              extra={
+                <PhysicalDriveLocationActions
+                  driveId={record?.id as string}
+                  currentLocationLabel={locationLabel}
+                  onDone={async () => {
+                    await query.refetch();
+                  }}
+                />
+              }
+            >
+              <PhysicalDriveLocationsTimeline
+                events={locations}
+                currentLocationId={currentLocation?.id}
+              />
+            </Card>
+          </Col>
+
+          <Col xs={24} xl={12}>
+            <Card
+              title={"Lifecycle History"}
+              style={{ height: "100%" }}
+              extra={
+                lifecycle?.currentState ? (
+                  <Tag color="blue">{lifecycle.currentState}</Tag>
+                ) : undefined
+              }
+            >
+              {lifecycleQuery.isLoading ? (
+                <Spin />
+              ) : (
+                <PhysicalDriveLifecycleTimeline
+                  events={lifecycle?.events ?? []}
+                />
+              )}
+            </Card>
+          </Col>
+        </Row>
 
         <Row justify="center" gutter={32}>
           <Col style={{ textAlign: "center" }}>

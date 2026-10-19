@@ -20,6 +20,19 @@ import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { User } from '../user/entities/user.entity';
 import { QueryServerSlotAllocationDto } from './dto/query-server-slot-allocation.dto';
+import {
+  AllocateDrivesDto,
+  DetachedDriveStateDto,
+  UNSEATED_DRIVE_LIFECYCLE_EVENTS,
+} from './dto/allocate-drives.dto';
+import {
+  DriveLifecycleEventService,
+  type CurrentDriveLifecycle,
+} from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import {
+  DriveLifecycleEventType,
+  DriveLifecycleState,
+} from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
@@ -82,6 +95,15 @@ export interface SlotAssignmentBoard {
   };
 }
 
+// Result of the Drive Allocation workflow: refreshed boards plus the exact
+// drives that were unseated/seated by the transaction.
+export interface DriveAllocationResult {
+  source: SlotAssignmentBoard | null;
+  target: SlotAssignmentBoard | null;
+  unmountedDriveIds: string[];
+  mountedDriveIds: string[];
+}
+
 // Derived "which server/slot is this drive seated in right now" projection.
 export interface DriveCurrentAssignment {
   allocationId: string;
@@ -105,6 +127,7 @@ export class ServerSlotAllocationService {
     private readonly physicalDriveModel: typeof PhysicalDrive,
     @InjectModel(PhysicalDriveLocation)
     private readonly physicalDriveLocationModel: typeof PhysicalDriveLocation,
+    private readonly lifecycleService: DriveLifecycleEventService,
     private readonly paginationService: PaginationService,
     @InjectConnection()
     private readonly sequelize: Sequelize,
@@ -827,5 +850,400 @@ export class ServerSlotAllocationService {
     });
 
     return this.getBoard(serverId);
+  }
+
+  /**
+   * Drive Allocation workflow: detach drives from an optional source server
+   * and/or seat drives into an optional target server, all in one transaction.
+   *
+   * Rules:
+   *  - both servers (when provided) must belong to the selected datacenter;
+   *  - detached drives must currently be seated in the source server;
+   *  - a drive may only be seated if it is unseated or is being detached from
+   *    the selected source (a drive mounted on any other server is rejected);
+   *  - target slots must be empty or already hold the same drive;
+   *  - every seated drive must have a location in the selected datacenter;
+   *  - UNMOUNT events are appended before MOUNT events.
+   *
+   * Lock order matches the other write paths: servers -> slots -> drives.
+   */
+  async allocateDrives(
+    dto: AllocateDrivesDto,
+    actorId: string,
+  ): Promise<DriveAllocationResult> {
+    const detachDriveIds = [...new Set(dto.detachDriveIds ?? [])];
+    const assignments = dto.assignments ?? [];
+
+    if (!dto.sourceServerId && !dto.targetServerId) {
+      throw new BadRequestException(
+        'Select at least one source or target physical server',
+      );
+    }
+    if (detachDriveIds.length > 0 && !dto.sourceServerId) {
+      throw new BadRequestException('detachDriveIds require a sourceServerId');
+    }
+    if (assignments.length > 0 && !dto.targetServerId) {
+      throw new BadRequestException('assignments require a targetServerId');
+    }
+    if (detachDriveIds.length === 0 && assignments.length === 0) {
+      throw new BadRequestException('Nothing to allocate');
+    }
+
+    // Every detached drive that is not seated on the target needs an explicit
+    // lifecycle state; drives that are re-seated keep IN_SERVICE via
+    // DEPROVISION + PROVISION.
+    const assignedDriveIds = new Set(
+      assignments.map((assignment) => assignment.physicalDriveId),
+    );
+    const unseatedDetachedIds = detachDriveIds.filter(
+      (driveId) => !assignedDriveIds.has(driveId),
+    );
+    const unseatedDetachedSet = new Set(unseatedDetachedIds);
+
+    const stateByDrive = new Map<string, DetachedDriveStateDto>();
+    for (const state of dto.unseatedDriveStates ?? []) {
+      if (stateByDrive.has(state.physicalDriveId)) {
+        throw new BadRequestException(
+          `A lifecycle state for physical drive ${state.physicalDriveId} is listed more than once`,
+        );
+      }
+      if (!UNSEATED_DRIVE_LIFECYCLE_EVENTS.includes(state.eventType)) {
+        throw new BadRequestException(
+          `Lifecycle event ${state.eventType} is not allowed for an unseated drive`,
+        );
+      }
+      stateByDrive.set(state.physicalDriveId, state);
+    }
+    for (const driveId of unseatedDetachedSet) {
+      if (!stateByDrive.has(driveId)) {
+        throw new BadRequestException(
+          `A lifecycle state is required for detached drive ${driveId} because it is not seated on the target`,
+        );
+      }
+    }
+    for (const driveId of stateByDrive.keys()) {
+      if (!unseatedDetachedSet.has(driveId)) {
+        throw new BadRequestException(
+          `Physical drive ${driveId} is not a detached-unseated drive and cannot carry a lifecycle state`,
+        );
+      }
+    }
+
+    const mountedDriveIds: string[] = [];
+
+    await this.sequelize.transaction(async (transaction) => {
+      const uniqueServerIds = [
+        ...new Set(
+          [dto.sourceServerId, dto.targetServerId].filter((id): id is string =>
+            Boolean(id),
+          ),
+        ),
+      ].sort();
+
+      // 1. Lock the servers first (deterministic order).
+      const servers = await this.physicalServerModel.findAll({
+        where: { id: { [Op.in]: uniqueServerIds } },
+        order: [['id', 'ASC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      const serverById = new Map(servers.map((server) => [server.id, server]));
+      for (const serverId of uniqueServerIds) {
+        if (!serverById.has(serverId)) {
+          throw new NotFoundException(
+            `PhysicalServer with ID ${serverId} not found`,
+          );
+        }
+      }
+
+      for (const server of servers) {
+        const resolved = await this.resolveServerDatacenter(
+          server.id,
+          transaction,
+        );
+        if (!resolved || resolved.datacenter.id !== dto.datacenterId) {
+          throw new ConflictException(
+            `PhysicalServer ${server.hostname} is not in the selected datacenter`,
+          );
+        }
+      }
+
+      // 2. Lock the target slots (if any) and validate slot ownership.
+      const targetSlots = dto.targetServerId
+        ? await this.serverSlotModel.findAll({
+            where: { serverId: dto.targetServerId },
+            order: [['id', 'ASC']],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+          })
+        : [];
+      const slotById = new Map(targetSlots.map((slot) => [slot.id, slot]));
+
+      const seenSlots = new Set<string>();
+      const seenDrives = new Set<string>();
+      for (const { slotId, physicalDriveId } of assignments) {
+        if (!slotById.has(slotId)) {
+          throw new BadRequestException(
+            `ServerSlot ${slotId} does not belong to physical server ${dto.targetServerId}`,
+          );
+        }
+        if (seenSlots.has(slotId)) {
+          throw new BadRequestException(
+            `ServerSlot ${slotId} is listed more than once`,
+          );
+        }
+        if (seenDrives.has(physicalDriveId)) {
+          throw new BadRequestException(
+            `PhysicalDrive ${physicalDriveId} is listed more than once`,
+          );
+        }
+        seenSlots.add(slotId);
+        seenDrives.add(physicalDriveId);
+      }
+
+      // 3. Lock the involved drives.
+      const involvedDriveIds = [
+        ...new Set([
+          ...detachDriveIds,
+          ...assignments.map((assignment) => assignment.physicalDriveId),
+        ]),
+      ].sort();
+      const drives = await this.physicalDriveModel.findAll({
+        where: { id: { [Op.in]: involvedDriveIds } },
+        order: [['id', 'ASC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      const driveById = new Map(drives.map((drive) => [drive.id, drive]));
+      for (const driveId of involvedDriveIds) {
+        if (!driveById.has(driveId)) {
+          throw new NotFoundException(
+            `PhysicalDrive with ID ${driveId} not found`,
+          );
+        }
+      }
+
+      // 4. Derive the current seating/location under the locks.
+      const currentAssignments = await this.getCurrentAssignmentsForDrives(
+        involvedDriveIds,
+        transaction,
+      );
+
+      const detachSet = new Set(detachDriveIds);
+      for (const driveId of detachDriveIds) {
+        const current = currentAssignments.get(driveId);
+        if (!current || current.serverId !== dto.sourceServerId) {
+          throw new ConflictException(
+            `PhysicalDrive ${driveId} is not currently seated in the selected source server`,
+          );
+        }
+      }
+
+      const mountDriveIds = [
+        ...new Set(assignments.map((a) => a.physicalDriveId)),
+      ];
+      const locations = await this.getLatestLocationPerDrive(
+        mountDriveIds,
+        transaction,
+      );
+      for (const driveId of mountDriveIds) {
+        const location = locations.get(driveId);
+        if (!location) {
+          throw new ConflictException(
+            `PhysicalDrive ${driveId} has no recorded location and cannot be seated`,
+          );
+        }
+        if (location.datacenterId !== dto.datacenterId) {
+          throw new ConflictException(
+            `PhysicalDrive ${driveId} is located in a different datacenter than the target server`,
+          );
+        }
+      }
+
+      for (const { slotId, physicalDriveId } of assignments) {
+        const current = currentAssignments.get(physicalDriveId);
+        if (!current) {
+          continue; // unseated drive -> eligible
+        }
+        const alreadyHere =
+          current.serverId === dto.targetServerId && current.slotId === slotId;
+        const detachedFromSource =
+          current.serverId === dto.sourceServerId &&
+          detachSet.has(physicalDriveId);
+        if (!alreadyHere && !detachedFromSource) {
+          throw new ConflictException(
+            `PhysicalDrive ${physicalDriveId} is seated in ${current.serverHostname} slot ${current.slotLabel} and must be detached from the selected source first`,
+          );
+        }
+      }
+
+      const occupancy = await this.getSlotOccupancyMap(
+        targetSlots.map((slot) => slot.id),
+        transaction,
+      );
+      for (const { slotId, physicalDriveId } of assignments) {
+        const occupant = occupancy.get(slotId);
+        if (occupant && occupant.physicalDriveId !== physicalDriveId) {
+          throw new ConflictException(
+            `ServerSlot ${slotId} is already occupied by another drive`,
+          );
+        }
+      }
+
+      // 5. Apply UNMOUNTs first, then MOUNTs.
+      for (const driveId of [...detachDriveIds].sort()) {
+        const current = currentAssignments.get(driveId);
+        if (!current) {
+          continue;
+        }
+        await this.appendEvent(
+          {
+            actionType: ServerSlotActionType.UNMOUNT,
+            serverSlotId: current.slotId,
+            physicalDriveId: driveId,
+            userId: actorId,
+          },
+          transaction,
+        );
+      }
+
+      for (const { slotId, physicalDriveId } of assignments) {
+        const current = currentAssignments.get(physicalDriveId);
+        if (
+          current &&
+          current.serverId === dto.targetServerId &&
+          current.slotId === slotId
+        ) {
+          continue; // already seated exactly there
+        }
+        await this.appendEvent(
+          {
+            actionType: ServerSlotActionType.MOUNT,
+            serverSlotId: slotId,
+            physicalDriveId,
+            userId: actorId,
+          },
+          transaction,
+        );
+        mountedDriveIds.push(physicalDriveId);
+      }
+
+      // 6. Keep the lifecycle ledger consistent with the seating changes.
+      //    - detached -> mounted: DEPROVISION then PROVISION
+      //    - detached -> unseated: the operator-selected state
+      //    - unseated -> mounted: PROVISION
+      const mountedSet = new Set(mountedDriveIds);
+      const targetSlotByDrive = new Map(
+        assignments.map((assignment) => [
+          assignment.physicalDriveId,
+          assignment.slotId,
+        ]),
+      );
+
+      for (const driveId of [...detachDriveIds].sort()) {
+        const current = currentAssignments.get(driveId);
+        const source = current
+          ? {
+              serverId: current.serverId,
+              serverHostname: current.serverHostname,
+              slotId: current.slotId,
+              slotLabel: current.slotLabel,
+            }
+          : null;
+
+        if (mountedSet.has(driveId)) {
+          const contextMetadata = {
+            source,
+            target: {
+              serverId: dto.targetServerId ?? null,
+              slotId: targetSlotByDrive.get(driveId) ?? null,
+            },
+          };
+          await this.lifecycleService.recordEventInTransaction(
+            driveId,
+            {
+              eventType: DriveLifecycleEventType.DEPROVISION,
+              contextMetadata,
+            },
+            { performedByUserId: actorId, triggeredBy: 'drive-allocation' },
+            transaction,
+          );
+          await this.lifecycleService.recordEventInTransaction(
+            driveId,
+            {
+              eventType: DriveLifecycleEventType.PROVISION,
+              contextMetadata,
+            },
+            { performedByUserId: actorId, triggeredBy: 'drive-allocation' },
+            transaction,
+          );
+        } else {
+          const state = stateByDrive.get(driveId);
+          if (!state) {
+            continue;
+          }
+          await this.lifecycleService.recordEventInTransaction(
+            driveId,
+            {
+              eventType: state.eventType,
+              contextMetadata: {
+                reason: state.explanation?.trim() || null,
+                source,
+                targetServerId: null,
+              },
+            },
+            { performedByUserId: actorId, triggeredBy: 'drive-allocation' },
+            transaction,
+          );
+        }
+      }
+
+      const unseatedMountedIds = [...mountedSet].filter(
+        (driveId) => !detachSet.has(driveId),
+      );
+      const unseatedLifecycles: Map<string, CurrentDriveLifecycle> =
+        unseatedMountedIds.length > 0
+          ? await this.lifecycleService.getCurrentLifecycleMap(
+              unseatedMountedIds,
+              transaction,
+            )
+          : new Map<string, CurrentDriveLifecycle>();
+
+      for (const driveId of unseatedMountedIds) {
+        // A provisioned drive can be seated without a lifecycle change; only
+        // received/inventory drives need PROVISION.
+        if (
+          unseatedLifecycles.get(driveId)?.state ===
+          DriveLifecycleState.IN_SERVICE
+        ) {
+          continue;
+        }
+        await this.lifecycleService.recordEventInTransaction(
+          driveId,
+          {
+            eventType: DriveLifecycleEventType.PROVISION,
+            contextMetadata: {
+              allocation: {
+                targetServerId: dto.targetServerId ?? null,
+                slotId: targetSlotByDrive.get(driveId) ?? null,
+              },
+            },
+          },
+          { performedByUserId: actorId, triggeredBy: 'drive-allocation' },
+          transaction,
+        );
+      }
+    });
+
+    return {
+      source: dto.sourceServerId
+        ? await this.getBoard(dto.sourceServerId)
+        : null,
+      target: dto.targetServerId
+        ? await this.getBoard(dto.targetServerId)
+        : null,
+      unmountedDriveIds: detachDriveIds,
+      mountedDriveIds,
+    };
   }
 }
