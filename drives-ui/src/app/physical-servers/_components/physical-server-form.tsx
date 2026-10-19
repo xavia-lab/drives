@@ -38,12 +38,6 @@ const HOSTNAME_RULES = [
   { max: 128, message: "Hostname cannot exceed 128 characters" },
 ];
 
-const CPU_MODEL_RULES = [{ required: true, message: "CPU Model is required" }];
-
-const CPU_COUNT_RULES = [
-  { type: "number" as const, min: 1, message: "Must be at least 1" },
-];
-
 const MEMORY_VALUE_RULES = [
   { required: true, message: "Memory value is required" },
   {
@@ -101,6 +95,10 @@ export const PhysicalServerForm = ({ formProps }: { formProps: FormProps }) => {
   const [slotEditableKeys, setSlotEditableKeys] = useState<Key[]>([]);
   const { options: interfaceOptions, isLoading: interfaceLoading } =
     useLookupOptions({ resource: "interfaces" });
+  const { options: cpuOptions, isLoading: cpuLoading } = useLookupOptions({
+    resource: "physical-cpus",
+    optionLabel: "label",
+  });
 
   const slotColumns: ProColumns<ServerSlotRecord>[] = [
     {
@@ -183,26 +181,18 @@ export const PhysicalServerForm = ({ formProps }: { formProps: FormProps }) => {
                 />
               </Form.Item>
               <Form.Item
-                label={"CPU Model"}
-                name={["cpuModelId"]}
-                rules={CPU_MODEL_RULES}
+                label={"Physical CPUs"}
+                name={["cpuIds"]}
+                extra="Installed CPU chips. Each chip can only belong to one server."
               >
-                <LookupSelect
-                  resource="cpu-models"
-                  placeholder="Select CPU model"
-                />
-              </Form.Item>
-              <Form.Item
-                label={"CPU Count"}
-                name={["cpuCount"]}
-                rules={CPU_COUNT_RULES}
-                initialValue={1}
-              >
-                <InputNumber
-                  min={1}
-                  precision={0}
-                  style={{ width: "100%" }}
-                  placeholder="e.g. 2"
+                <Select
+                  mode="multiple"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  options={cpuOptions}
+                  loading={cpuLoading}
+                  placeholder="Select physical CPUs"
                 />
               </Form.Item>
               <Row gutter={8}>

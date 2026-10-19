@@ -14,6 +14,7 @@ import {
 import { PassthroughSlot } from './entities/passthrough-slot.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { ServerSlot } from '../physical-server/entities/server-slot.entity';
+import { PhysicalCpu } from '../physical-cpu/entities/physical-cpu.entity';
 import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { CreateVirtualServerDto } from './dto/create-virtual-server.dto';
@@ -149,9 +150,9 @@ export class VirtualServerService {
 
   /**
    * Guards against granting a single guest more vCPUs than the host physically
-   * provides. A host's total thread count is `cpuCount × cpuModel.threads`, so a
-   * guest requesting more vCPUs than there are hardware threads can never be
-   * fully scheduled.
+   * provides. A host's total thread count is the sum of its installed physical
+   * CPUs' `threads`, so a guest requesting more vCPUs than there are hardware
+   * threads can never be fully scheduled.
    */
   private async assertWithinHostThreadCapacity(
     hostServerId: string,
@@ -159,7 +160,7 @@ export class VirtualServerService {
     transaction: Transaction,
   ): Promise<void> {
     const host = await this.physicalServerModel.findByPk(hostServerId, {
-      include: [CpuModel],
+      include: [{ model: PhysicalCpu, include: [CpuModel] }],
       transaction,
     });
 
@@ -169,8 +170,10 @@ export class VirtualServerService {
       );
     }
 
-    const totalThreads =
-      Number(host.cpuCount ?? 0) * Number(host.cpuModel?.threads ?? 0);
+    const totalThreads = (host.cpus ?? []).reduce(
+      (sum, cpu) => sum + Number(cpu.cpuModel?.threads ?? 0),
+      0,
+    );
 
     // Skip when the host's CPU data is incomplete rather than blocking on 0.
     if (totalThreads > 0 && requestedVcpus > totalThreads) {

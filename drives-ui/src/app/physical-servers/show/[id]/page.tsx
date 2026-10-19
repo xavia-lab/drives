@@ -30,8 +30,9 @@ export default function PhysicalServerShow() {
   const { result: record, query } = useShow({});
   const { isLoading } = query;
 
-  const { options: cpuModelOptions } = useLookupOptions({
-    resource: "cpu-models",
+  const { options: physicalCpuOptions } = useLookupOptions({
+    resource: "physical-cpus",
+    optionLabel: "label",
   });
   const { options: operatingSystemOptions } = useLookupOptions({
     resource: "operating-systems",
@@ -42,6 +43,10 @@ export default function PhysicalServerShow() {
   });
 
   const slots = (record?.slots as ServerSlotRecord[] | undefined) ?? [];
+  const cpus =
+    (record?.cpus as
+      { id: string; label?: string; serialNumber?: string }[] | undefined) ??
+    [];
 
   const interfaceLabel = (id: string) =>
     interfaceOptions.find((option) => option.value === id)?.label ?? id;
@@ -94,16 +99,22 @@ export default function PhysicalServerShow() {
               <Descriptions.Item label="Hostname">
                 {record?.hostname}
               </Descriptions.Item>
-              <Descriptions.Item label="CPU Model" span={2}>
-                <LinkedLabel
-                  resource="cpu-models"
-                  options={cpuModelOptions}
-                  value={record?.cpuModelId}
-                  fallback="-"
-                />
-              </Descriptions.Item>
-              <Descriptions.Item label="CPU Count">
-                {record?.cpuCount}
+              <Descriptions.Item label="Physical CPUs" span={2}>
+                {cpus.length > 0 ? (
+                  <Space direction="vertical" size={4}>
+                    {cpus.map((cpu) => (
+                      <LinkedLabel
+                        key={cpu.id}
+                        resource="physical-cpus"
+                        options={physicalCpuOptions}
+                        value={cpu.id}
+                        label={cpu.label ?? cpu.serialNumber}
+                      />
+                    ))}
+                  </Space>
+                ) : (
+                  "-"
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Memory">
                 {record?.memoryValue !== undefined

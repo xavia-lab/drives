@@ -14,6 +14,9 @@ import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
+import { CurrencyFormatter } from "@utils/currency-formatter";
+
+const currencyFormatter = new CurrencyFormatter();
 
 export default function PhysicalDriveList() {
   const { tableProps, sorters, filters } = useTable({
@@ -27,8 +30,10 @@ export default function PhysicalDriveList() {
     useLookupOptions({ resource: "drive-models", optionLabel: "title" });
   const { options: retailerOptions, isLoading: retailerLoading } =
     useLookupOptions({ resource: "vendors" });
-  const { options: currencyOptions, isLoading: currencyLoading } =
-    useLookupOptions({ resource: "currencies" });
+  const { options: currencyOptions } = useLookupOptions({
+    resource: "currencies",
+    optionLabel: "code",
+  });
 
   return (
     <List>
@@ -160,53 +165,21 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
-          dataIndex="currencyId"
-          title={"Currency"}
-          width={120}
-          sorter={{ multiple: 3 }}
-          filteredValue={getDefaultFilter("currencyId", filters, "in") || null}
-          filterDropdown={(props) => (
-            <FilterDropdown
-              {...props}
-              mapValue={(selectedKeys) =>
-                selectedKeys?.map((val) =>
-                  isNaN(Number(val)) ? val : Number(val),
-                )
-              }
-            >
-              <Select
-                style={{ minWidth: 140 }}
-                placeholder="Search Currency"
-                mode="multiple"
-                showSearch
-                allowClear
-                optionLabelProp="label"
-                optionFilterProp="label"
-                options={currencyOptions}
-                loading={currencyLoading}
-              />
-            </FilterDropdown>
-          )}
-          render={(value) => (
-            <LinkedLabel
-              resource="currencies"
-              options={currencyOptions}
-              value={value}
-            />
-          )}
-        />
-        <Table.Column
           dataIndex="acquisitionCost"
           title={"Acquisition Cost"}
           width={160}
           align={"right"}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("acquisitionCost", sorters)}
-          render={(value) =>
-            value !== undefined && value !== null
-              ? Number(value).toFixed(2)
-              : "-"
-          }
+          render={(value, record: BaseRecord) => {
+            if (value === undefined || value === null) return "-";
+            const currencyCode = currencyOptions.find(
+              (option) => option.value === record.currencyId,
+            )?.label;
+            return currencyFormatter.format(Number(value), currencyCode, {
+              withSymbol: true,
+            });
+          }}
         />
         <Table.Column
           dataIndex="worldwideNameWwn"

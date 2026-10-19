@@ -8,7 +8,7 @@ import {
   BeforeSave,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { CpuModel } from '../../cpu-model/entities/cpu-model.entity';
+import { PhysicalCpu } from '../../physical-cpu/entities/physical-cpu.entity';
 import { OperatingSystem } from '../../operating-system/entities/operating-system.entity';
 import { Rack } from '../../rack/entities/rack.entity';
 import { ServerSlot } from './server-slot.entity';
@@ -30,11 +30,6 @@ export type MemoryUnit = 'MiB' | 'GiB' | 'TiB';
       name: 'physical_servers_placement_unique_idx',
       unique: true,
       fields: ['rack_id', 'rack_unit_position'],
-    },
-    {
-      name: 'physical_servers_cpu_model_id_idx',
-      using: 'btree',
-      fields: ['cpu_model_id'],
     },
     {
       name: 'physical_servers_operating_system_id_idx',
@@ -93,14 +88,6 @@ export class PhysicalServer extends BaseModel {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    defaultValue: 1,
-    field: 'cpu_count',
-  })
-  declare cpuCount: number;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
     field: 'rack_unit_position',
   })
   declare rackUnitPosition: number;
@@ -121,20 +108,6 @@ export class PhysicalServer extends BaseModel {
   })
   declare operatingSystem: OperatingSystem;
 
-  @ForeignKey(() => CpuModel)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-    field: 'cpu_model_id',
-  })
-  declare cpuModelId: string;
-
-  @BelongsTo(() => CpuModel, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
-  declare cpuModel: CpuModel;
-
   @ForeignKey(() => Rack)
   @Column({
     type: DataType.UUID,
@@ -150,6 +123,12 @@ export class PhysicalServer extends BaseModel {
   declare rack: Rack;
 
   // --- Owned Children ---
+
+  // Physical CPU chips installed in this server's sockets. The foreign key
+  // (`physical_cpus.physical_server_id`) lives on the child, mirroring the
+  // `ServerSlot` ownership model.
+  @HasMany(() => PhysicalCpu, { foreignKey: 'physicalServerId' })
+  declare cpus: PhysicalCpu[];
 
   @HasMany(() => ServerSlot)
   declare slots: ServerSlot[];

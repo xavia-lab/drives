@@ -85,7 +85,7 @@ export class PhysicalServerController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Referenced cpuModelId, operatingSystemId or rackId not found',
+    description: 'Referenced operatingSystemId, rackId or cpuIds not found',
   })
   @ApiResponse({
     status: 409,

@@ -8,6 +8,7 @@ import { VirtualServerController } from './virtual-server.controller';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
+import { PhysicalCpu } from '../physical-cpu/entities/physical-cpu.entity';
 import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
 
 @Module({
@@ -18,6 +19,7 @@ import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
       PhysicalServer,
       ServerSlot,
       OperatingSystem,
+      PhysicalCpu,
       CpuModel,
     ]),
   ],

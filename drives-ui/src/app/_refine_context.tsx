@@ -277,6 +277,19 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "physical-cpus",
+                  list: "/physical-cpus",
+                  create: "/physical-cpus/create",
+                  edit: "/physical-cpus/edit/:id",
+                  show: "/physical-cpus/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Physical CPUs",
+                    parent: "hardware",
+                    icon: <ClusterOutlined />,
+                  },
+                },
+                {
                   name: "reference",
                   meta: {
                     label: "Reference",

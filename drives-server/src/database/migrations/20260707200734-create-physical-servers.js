@@ -39,18 +39,6 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
-      cpu_model_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        references: { model: 'cpu_models', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
-      },
-      cpu_count: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 1,
-      },
       operating_system_id: {
         type: Sequelize.UUID, // 🌟 Normalized structural lookup pointer
         allowNull: false,
@@ -96,12 +84,6 @@ module.exports = {
         unique: true,
       },
     );
-
-    // B-Tree indexing optimization for capacity accounting by matching architecture chipsets
-    await queryInterface.addIndex('physical_servers', ['cpu_model_id'], {
-      name: 'physical_servers_cpu_model_id_idx',
-      using: 'btree',
-    });
 
     // Fast metric lookup index for calculating total OS system allocations app-wide
     await queryInterface.addIndex('physical_servers', ['operating_system_id'], {

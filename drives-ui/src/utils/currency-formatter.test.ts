@@ -1,6 +1,6 @@
-// src/utils/CurrencyFormatter.test.ts
+// src/utils/currency-formatter.test.ts
 import { describe, it, expect } from "vitest";
-import { CurrencyFormatter } from "./CurrencyFormatter";
+import { CurrencyFormatter } from "./currency-formatter";
 
 describe("CurrencyFormatter Class", () => {
   const formatter = new CurrencyFormatter("en-US");
@@ -11,10 +11,15 @@ describe("CurrencyFormatter Class", () => {
   });
 
   it("should format with a currency symbol when option is enabled", () => {
-    const result = formatter.format(1234.56, "USD", { useSymbol: true });
+    const result = formatter.format(1234.56, "USD", { withSymbol: true });
     // Note: Use a regex or non-breaking space check if testing specific Intl outputs
     expect(result).toContain("$");
     expect(result).toContain("1,234.56");
+  });
+
+  it("should format without a currency code as a plain number", () => {
+    const result = formatter.format(700, undefined, { withSymbol: true });
+    expect(result).toBe("700.00");
   });
 
   it("should handle different locales (e.g., German)", () => {

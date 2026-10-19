@@ -6,7 +6,7 @@ export class QueryPhysicalServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, hostname, memoryValue, memoryUnit, absoluteMemory, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, hostname, memoryValue, memoryUnit, absoluteMemory, operatingSystemId, rackId, rackUnitPosition, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
@@ -16,8 +16,6 @@ export class QueryPhysicalServerDto extends PaginationQueryDto {
     'memoryValue',
     'memoryUnit',
     'absoluteMemory', // 🌟 Denormalised byte count allows sorting by real memory size
-    'cpuModelId',
-    'cpuCount',
     'operatingSystemId',
     'rackId',
     'rackUnitPosition',
@@ -29,7 +27,7 @@ export class QueryPhysicalServerDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Filterable fields: id, displayKey, hostname, memoryValue, memoryUnit, cpuModelId, cpuCount, operatingSystemId, rackId, rackUnitPosition',
+      'Filterable fields: id, displayKey, hostname, memoryValue, memoryUnit, operatingSystemId, rackId, rackUnitPosition',
   })
   @IsOptional()
   @IsIn([
@@ -38,8 +36,6 @@ export class QueryPhysicalServerDto extends PaginationQueryDto {
     'hostname',
     'memoryValue',
     'memoryUnit',
-    'cpuModelId',
-    'cpuCount',
     'operatingSystemId',
     'rackId',
     'rackUnitPosition',

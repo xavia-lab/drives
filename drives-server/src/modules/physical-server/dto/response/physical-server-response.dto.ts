@@ -49,6 +49,36 @@ export class PhysicalServerSlotResponseDto {
   updatedAt: Date;
 }
 
+export class PhysicalServerCpuResponseDto {
+  @Expose()
+  @ApiProperty({
+    example: '019f6a00-0000-7d01-8d01-000000000051',
+    description: 'The unique UUIDv7 primary identifier of the physical CPU',
+  })
+  id: string;
+
+  @Expose()
+  @ApiProperty({
+    example: 'AM-EP-20240315-001',
+    description: 'The auto-generated asset label of the physical CPU',
+  })
+  label: string;
+
+  @Expose()
+  @ApiProperty({
+    example: 'BF2104S00012',
+    description: 'The serial number printed on the CPU heat-spreader',
+  })
+  serialNumber: string;
+
+  @Expose()
+  @ApiProperty({
+    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
+    description: 'The CPU model catalog template this chip instantiates',
+  })
+  cpuModelId: string;
+}
+
 export class PhysicalServerResponseDto {
   @Expose()
   @ApiProperty({
@@ -97,22 +127,6 @@ export class PhysicalServerResponseDto {
 
   @Expose()
   @ApiProperty({
-    example: '019f4fa1-57db-72d7-b037-2f35d54f2794',
-    description:
-      'The matching relational identifier linking the system to its CPU specifications',
-  })
-  cpuModelId: string;
-
-  @Expose()
-  @ApiProperty({
-    example: 2,
-    description:
-      'Total active processor sockets currently loaded on the motherboard backplane tray',
-  })
-  cpuCount: number;
-
-  @Expose()
-  @ApiProperty({
     example: '019f5431-1bf4-73bc-9d1a-5b32e0bc2754',
     description: 'The normalized operating system look up ID',
   })
@@ -140,6 +154,15 @@ export class PhysicalServerResponseDto {
   @Expose()
   @ApiProperty({ example: '2026-07-12T05:23:21.690Z' })
   updatedAt: Date;
+
+  @Expose()
+  @Type(() => PhysicalServerCpuResponseDto)
+  @ApiProperty({
+    type: [PhysicalServerCpuResponseDto],
+    description:
+      'Physical CPU chips owned by and eagerly loaded with this server',
+  })
+  cpus: PhysicalServerCpuResponseDto[];
 
   @Expose()
   @Type(() => PhysicalServerSlotResponseDto)
