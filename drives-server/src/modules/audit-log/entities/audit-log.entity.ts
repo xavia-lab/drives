@@ -1,6 +1,5 @@
-import { Table, Column, DataType, ForeignKey } from 'sequelize-typescript';
+import { Table, Column, DataType } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
-import { User } from '../../user/entities/user.entity';
 
 // Explicit type layout for Refine-compliant historical payload objects
 export interface RefineAuditPayload {
@@ -46,11 +45,13 @@ export class AuditLog extends BaseModel {
   })
   declare timestamp: Date;
 
-  // --- Identity Federation Foreign Key ---
+  // --- Identity Federation Actor ---
 
-  @ForeignKey(() => User)
+  // Stores the Keycloak subject (sub) of the operator who produced the event.
+  // Deliberately NOT a FK to `users`: audit entries must remain append-only even
+  // when the actor has never been JIT-provisioned or their user row is removed.
   @Column({
-    type: DataType.UUID, // Maintained as UUID to match your Keycloak-federated architecture
+    type: DataType.UUID,
     allowNull: true, // Nullable to ensure automated system crons or webhook workers don't crash validation
     field: 'user_id',
   })

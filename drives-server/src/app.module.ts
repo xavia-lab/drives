@@ -40,6 +40,7 @@ import { WarrantyClaimModule } from './modules/warranty-claim/warranty-claim.mod
 
 import { HealthModule } from './modules/health/health.module';
 import { SystemModule } from './modules/system/system.module';
+import { MetadataModule } from './modules/metadata/metadata.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 
 @Module({
@@ -52,6 +53,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     }),
     CommonModule,
     DatabaseModule,
+    MetadataModule,
     KeycloakModule,
     UserModule, // This must come before modules that use KeycloakAuthGuard
     AuditLogModule,

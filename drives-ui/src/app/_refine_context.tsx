@@ -14,6 +14,7 @@ import routerProvider from "@refinedev/nextjs-router";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ColorModeContextProvider } from "@contexts/color-mode";
 import { dataProvider } from "@providers/data-provider";
+import { auditLogProvider } from "@providers/audit-log-provider";
 import "@refinedev/antd/dist/reset.css";
 import {
   ApiOutlined,
@@ -36,6 +37,7 @@ import {
   GlobalOutlined,
   GoldOutlined,
   HddOutlined,
+  HistoryOutlined,
   LayoutOutlined,
   LinkOutlined,
   MonitorOutlined,
@@ -111,6 +113,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
               notificationProvider={useNotificationProvider}
               authProvider={authProvider}
               accessControlProvider={accessControlProvider}
+              auditLogProvider={auditLogProvider}
               resources={[
                 {
                   name: "dashboard",
@@ -460,6 +463,15 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     label: "Status",
                     parent: "system", // Nest it under Admin or remove to keep it top-level
                     icon: <CheckCircleOutlined />,
+                  },
+                },
+                {
+                  name: "audit-logs",
+                  list: "/audit-logs",
+                  meta: {
+                    label: "Audit Logs",
+                    parent: "system",
+                    icon: <HistoryOutlined />,
                   },
                 },
               ]}

@@ -1,4 +1,4 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { DriveLifecycleEventType } from '../../entities/drive-lifecycle-event.entity';
 import { PhysicalDriveResponseDto } from '../../../physical-drive/dto/response/physical-drive-response.dto';
@@ -54,6 +54,10 @@ export class DriveLifecycleEventResponseDto {
     nullable: true,
   })
   @Expose()
+  // `contextMetadata` is arbitrary JSON, so it must be passed through verbatim:
+  // with `excludeExtraneousValues` class-transformer otherwise collapses an
+  // `Object`-typed value into `{}` (see SerializeInterceptor).
+  @Transform(({ obj, key }) => (obj as Record<string, unknown>)[key])
   contextMetadata: Record<string, any> | null;
 
   @ApiProperty({

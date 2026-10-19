@@ -1,7 +1,12 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuditLogDeltaPayloadDto {
+  // The delta maps are arbitrary JSON, so they must be passed through verbatim:
+  // with `excludeExtraneousValues` class-transformer would otherwise collapse an
+  // `Object`-typed value into `{}` (see SerializeInterceptor).
+  @Expose()
+  @Transform(({ obj, key }) => (obj as Record<string, unknown>)[key])
   @ApiPropertyOptional({
     description:
       'The complete snapshot state of the record properties BEFORE the modification took place',
@@ -11,6 +16,8 @@ export class AuditLogDeltaPayloadDto {
   })
   previous?: Record<string, any> | null;
 
+  @Expose()
+  @Transform(({ obj, key }) => (obj as Record<string, unknown>)[key])
   @ApiPropertyOptional({
     description:
       'The updated state of the record properties AFTER the modification was committed',
@@ -88,6 +95,15 @@ export class AuditLogResponseDto {
   })
   @Expose()
   userId: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Display name of the acting operator resolved from the `users` table (null when the actor is unprovisioned or a system action)',
+    example: 'Ada Lovelace',
+    nullable: true,
+  })
+  @Expose()
+  userName?: string | null;
 
   constructor(partial: Partial<AuditLogResponseDto>) {
     Object.assign(this, partial);

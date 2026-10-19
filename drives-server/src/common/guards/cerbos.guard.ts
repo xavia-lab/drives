@@ -10,6 +10,7 @@ import { GRPC as Cerbos } from '@cerbos/grpc';
 import { Value } from '@cerbos/core';
 import { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 import { PolicyMetadata } from '../decorators/check-policy.decorator';
+import { ManagedResourcesService } from '../../modules/metadata/managed-resources.service';
 
 @Injectable()
 export class CerbosGuard implements CanActivate {
@@ -19,6 +20,7 @@ export class CerbosGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private configService: ConfigService,
+    private readonly managedResources: ManagedResourcesService,
   ) {
     const cerbosUrl = this.configService.get<string>(
       'DRIVES_BACKEND_CERBOS_URL',
@@ -61,16 +63,9 @@ export class CerbosGuard implements CanActivate {
     // Use unknown record type to safely avoid explicit "any" casting rules
     let attributes: Record<string, Value> = {};
 
-    const managedResources = [
-      'currencies',
-      'countries',
-      'storage-types',
-      'form-factors',
-      'bus-protocols',
-      'interfaces',
-      'capacities',
-    ];
-    if (id && managedResources.includes(policy.resource)) {
+    // The set of managed resources is derived from the models at bootstrap
+    // (see ManagedResourcesService) so it can never drift from the entities.
+    if (id && this.managedResources.has(policy.resource)) {
       attributes = { managed: false };
     }
 

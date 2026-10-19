@@ -1,27 +1,31 @@
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseInterceptors,
-  ClassSerializerInterceptor,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 import { QueryAuditLogDto } from './dto/query-audit-log.dto';
 import { AuditLogResponseDto } from './dto/response/audit-log-response.dto';
-import { Public } from '../../common/decorators/public.decorator';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
+import { RequestUser } from '../../common/decorators/request-user.decorator';
+import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
+import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
+import { CerbosGuard } from '../../common/guards/cerbos.guard';
+import { Serialize } from '../../common/interceptors/serialize.interceptor';
 
-@ApiTags('Audit System Infrastructure Logs')
+@ApiTags('audit-logs')
 @Controller('audit-logs')
-@UseInterceptors(ClassSerializerInterceptor) // Evaluates class-transformer @Expose properties
+@UseGuards(KeycloakAuthGuard, CerbosGuard)
+@ApiBearerAuth()
+@Serialize(AuditLogResponseDto) // Evaluates class-transformer @Expose properties
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 
-  @Public()
   @Post()
+  @CheckPolicy('create', 'audit-logs')
   @ApiOperation({
     summary:
       'Append a new change log state record into the compliance history grid',
@@ -33,12 +37,15 @@ export class AuditLogController {
   })
   async create(
     @Body() createAuditLogDto: CreateAuditLogDto,
+    @RequestUser() user?: AuthenticatedUser,
   ): Promise<AuditLogResponseDto> {
-    return this.auditLogService.create(createAuditLogDto);
+    // The acting operator is taken from the validated access token; the body
+    // `userId` is only a fallback for anonymous/system callers.
+    return this.auditLogService.create(createAuditLogDto, user?.id);
   }
 
-  @Public()
   @Get()
+  @CheckPolicy('list', 'audit-logs')
   @ApiOperation({
     summary:
       'Paginated lookups optimized for Refine data table lists and resource audit trails',
