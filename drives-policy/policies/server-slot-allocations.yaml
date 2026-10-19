@@ -1,0 +1,27 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "server-slot-allocations"
+  rules:
+    # 1. Admin can operate the drive <-> slot allocation ledger
+    - actions:
+        [
+          "create",
+          "show",
+          "list",
+          "edit",
+          "delete",
+          "mount",
+          "unmount",
+          "save",
+        ]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin
+
+    # 2. Viewer read-only
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - owner
+        - viewer

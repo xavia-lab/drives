@@ -46,6 +46,10 @@ export default function PhysicalDriveShow() {
   const locationLabel = currentLocation
     ? [currentLocation.code, currentLocation.name].filter(Boolean).join(" - ")
     : undefined;
+  const currentAssignment = record?.currentAssignment as
+    | { serverId?: string; serverHostname?: string; slotLabel?: string }
+    | null
+    | undefined;
   const locations =
     (record?.locations as PhysicalDriveLocationEvent[] | undefined) ?? [];
 
@@ -110,6 +114,23 @@ export default function PhysicalDriveShow() {
                   />
                 ) : (
                   <Tag>Unassigned</Tag>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Current Server" span={2}>
+                {currentAssignment?.serverId ? (
+                  <Space>
+                    <LinkedLabel
+                      resource="physical-servers"
+                      value={currentAssignment.serverId}
+                      label={currentAssignment.serverHostname}
+                      fallback="-"
+                    />
+                    {currentAssignment.slotLabel && (
+                      <Tag color="blue">Slot {currentAssignment.slotLabel}</Tag>
+                    )}
+                  </Space>
+                ) : (
+                  <Tag>Not seated</Tag>
                 )}
               </Descriptions.Item>
             </Descriptions>

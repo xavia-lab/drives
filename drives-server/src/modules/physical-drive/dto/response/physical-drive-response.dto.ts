@@ -7,6 +7,7 @@ import {
   CurrentPhysicalDriveLocationDto,
   PhysicalDriveLocationResponseDto,
 } from './physical-drive-location-response.dto';
+import { CurrentPhysicalDriveAssignmentDto } from './physical-drive-assignment-response.dto';
 
 export class PhysicalDriveResponseDto {
   @Expose()
@@ -83,6 +84,15 @@ export class PhysicalDriveResponseDto {
       'Ascending location history for this drive (present on single-record reads).',
   })
   locations?: PhysicalDriveLocationResponseDto[];
+
+  @Expose()
+  @Type(() => CurrentPhysicalDriveAssignmentDto)
+  @ApiPropertyOptional({
+    type: CurrentPhysicalDriveAssignmentDto,
+    description:
+      'The physical server and slot the drive is currently mounted in, derived from the latest slot allocation event. Null when the drive is not seated.',
+  })
+  currentAssignment?: CurrentPhysicalDriveAssignmentDto | null;
 
   constructor(partial: Partial<PhysicalDriveResponseDto>) {
     Object.assign(this, partial);

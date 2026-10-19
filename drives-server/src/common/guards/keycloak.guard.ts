@@ -43,8 +43,19 @@ export class KeycloakAuthGuard extends AuthGuard('keycloak') {
 
     if (!authEnabled) {
       this.logger.warn('Authentication is disabled. Attaching mock user.');
-      context.switchToHttp().getRequest<GuardRequest>().user =
-        this.getMockUser();
+      const mockUser = this.getMockUser();
+      // Persist the mock operator so UUID foreign keys that reference `users`
+      // (e.g. server_slot_allocations.user_id) resolve while auth is disabled.
+      if (this.userService) {
+        try {
+          mockUser.dbUser =
+            await this.userService.upsertUserFromKeycloak(mockUser);
+        } catch (error) {
+          const err = error as Error;
+          this.logger.error(`Mock user JIT sync failed: ${err.message}`);
+        }
+      }
+      context.switchToHttp().getRequest<GuardRequest>().user = mockUser;
       return true;
     }
 

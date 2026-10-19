@@ -6,6 +6,7 @@ import { LinkedLabel } from "@components/linked-label";
 import { AttachedStoragePools } from "@components/attached-storage-pools";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import {
+  Button,
   Card,
   Col,
   Descriptions,
@@ -15,6 +16,8 @@ import {
   Tree,
   Typography,
 } from "antd";
+import { DeploymentUnitOutlined } from "@ant-design/icons";
+import Link from "next/link";
 import type { DataNode } from "antd/es/tree";
 
 const { Text } = Typography;
@@ -147,7 +150,16 @@ export default function PhysicalServerShow() {
           </Card>
         </Card>
 
-        <Card title={"Server Slots"}>
+        <Card
+          title={"Server Slots"}
+          extra={
+            <Link href={`/physical-servers/assign/${record?.id}`}>
+              <Button type="primary" icon={<DeploymentUnitOutlined />}>
+                Assign Drives
+              </Button>
+            </Link>
+          }
+        >
           {slots.length > 0 ? (
             <Tree
               treeData={slotsTree}
