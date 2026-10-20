@@ -3,6 +3,7 @@ import {
   FileProtectOutlined,
   HddOutlined,
   SwapOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import type { WorkflowDefinition } from "@components/workflow";
 
@@ -45,6 +46,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
       "Open an RMA claim for an unseated drive, moving it into the RMA lifecycle state.",
     href: "/workflows/create-warranty-claim",
     icon: <FileProtectOutlined />,
+    category: "Warranty",
+  },
+  {
+    key: "progress-warranty-claim",
+    title: "Progress Warranty Claim",
+    description:
+      "Record the next tracking event for an in-progress RMA claim and derive its updated status.",
+    href: "/workflows/progress-warranty-claim",
+    icon: <SyncOutlined />,
     category: "Warranty",
   },
 ];
