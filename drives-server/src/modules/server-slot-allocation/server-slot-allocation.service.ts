@@ -617,6 +617,56 @@ export class ServerSlotAllocationService {
         },
         transaction,
       );
+
+      // Keep the lifecycle ledger consistent with the seating change.
+      const moved = Boolean(
+        driveLatest && driveLatest.actionType === ServerSlotActionType.MOUNT,
+      );
+      const lifecycles = await this.lifecycleService.getCurrentLifecycleMap(
+        [physicalDriveId],
+        transaction,
+      );
+      const currentState = lifecycles.get(physicalDriveId)?.state;
+      const contextMetadata = {
+        reason: moved ? 'Moved between server slots' : 'Seated in server',
+        source: moved ? { slotId: driveLatest?.serverSlotId ?? null } : null,
+        target: { serverId, slotId, slotLabel: slot.slotLabel },
+      };
+      const lifecycleActor = {
+        performedByUserId: actorId,
+        triggeredBy: 'slot-assignment',
+      };
+
+      if (moved) {
+        await this.lifecycleService.recordEventInTransaction(
+          physicalDriveId,
+          {
+            eventType: DriveLifecycleEventType.DEPROVISION,
+            contextMetadata,
+          },
+          lifecycleActor,
+          transaction,
+        );
+        await this.lifecycleService.recordEventInTransaction(
+          physicalDriveId,
+          {
+            eventType: DriveLifecycleEventType.PROVISION,
+            contextMetadata,
+          },
+          lifecycleActor,
+          transaction,
+        );
+      } else if (currentState !== DriveLifecycleState.IN_SERVICE) {
+        await this.lifecycleService.recordEventInTransaction(
+          physicalDriveId,
+          {
+            eventType: DriveLifecycleEventType.PROVISION,
+            contextMetadata,
+          },
+          lifecycleActor,
+          transaction,
+        );
+      }
     });
 
     return this.getBoard(serverId);
@@ -662,6 +712,33 @@ export class ServerSlotAllocationService {
         },
         transaction,
       );
+
+      // An in-service drive must leave the service state when it is unseated.
+      const lifecycles = await this.lifecycleService.getCurrentLifecycleMap(
+        [latest.physicalDriveId],
+        transaction,
+      );
+      if (
+        lifecycles.get(latest.physicalDriveId)?.state ===
+        DriveLifecycleState.IN_SERVICE
+      ) {
+        await this.lifecycleService.recordEventInTransaction(
+          latest.physicalDriveId,
+          {
+            eventType: DriveLifecycleEventType.DEPROVISION,
+            contextMetadata: {
+              reason: 'Unseated from server',
+              source: {
+                serverId,
+                slotId,
+                slotLabel: slot.slotLabel,
+              },
+            },
+          },
+          { performedByUserId: actorId, triggeredBy: 'slot-assignment' },
+          transaction,
+        );
+      }
     });
 
     return this.getBoard(serverId);
@@ -846,6 +923,92 @@ export class ServerSlotAllocationService {
           },
           transaction,
         );
+      }
+
+      // Keep the lifecycle ledger consistent with the seating changes:
+      // moved -> DEPROVISION + PROVISION; unseated -> DEPROVISION when in
+      // service; newly seated -> PROVISION when not already in service.
+      const unmountSlotByDrive = new Map(
+        unmounts.map(({ slotId, driveId }) => [driveId, slotId]),
+      );
+      const mountSlotByDrive = new Map(
+        mounts.map(({ slotId, driveId }) => [driveId, slotId]),
+      );
+      const lifecycleDriveIds = [
+        ...new Set([
+          ...unmounts.map(({ driveId }) => driveId),
+          ...mounts.map(({ driveId }) => driveId),
+        ]),
+      ].sort();
+
+      if (lifecycleDriveIds.length > 0) {
+        const lifecycles = await this.lifecycleService.getCurrentLifecycleMap(
+          lifecycleDriveIds,
+          transaction,
+        );
+        const lifecycleActor = {
+          performedByUserId: actorId,
+          triggeredBy: 'slot-assignment',
+        };
+
+        for (const driveId of lifecycleDriveIds) {
+          const state = lifecycles.get(driveId)?.state;
+          const sourceSlotId = unmountSlotByDrive.get(driveId) ?? null;
+          const targetSlotId = mountSlotByDrive.get(driveId) ?? null;
+          const contextMetadata = {
+            reason:
+              sourceSlotId && targetSlotId
+                ? 'Moved between server slots'
+                : targetSlotId
+                  ? 'Seated in server'
+                  : 'Unseated from server',
+            source: sourceSlotId ? { slotId: sourceSlotId } : null,
+            target: targetSlotId ? { serverId, slotId: targetSlotId } : null,
+          };
+
+          if (sourceSlotId && targetSlotId) {
+            await this.lifecycleService.recordEventInTransaction(
+              driveId,
+              {
+                eventType: DriveLifecycleEventType.DEPROVISION,
+                contextMetadata,
+              },
+              lifecycleActor,
+              transaction,
+            );
+            await this.lifecycleService.recordEventInTransaction(
+              driveId,
+              {
+                eventType: DriveLifecycleEventType.PROVISION,
+                contextMetadata,
+              },
+              lifecycleActor,
+              transaction,
+            );
+          } else if (sourceSlotId) {
+            if (state === DriveLifecycleState.IN_SERVICE) {
+              await this.lifecycleService.recordEventInTransaction(
+                driveId,
+                {
+                  eventType: DriveLifecycleEventType.DEPROVISION,
+                  contextMetadata,
+                },
+                lifecycleActor,
+                transaction,
+              );
+            }
+          } else if (targetSlotId && state !== DriveLifecycleState.IN_SERVICE) {
+            await this.lifecycleService.recordEventInTransaction(
+              driveId,
+              {
+                eventType: DriveLifecycleEventType.PROVISION,
+                contextMetadata,
+              },
+              lifecycleActor,
+              transaction,
+            );
+          }
+        }
       }
     });
 

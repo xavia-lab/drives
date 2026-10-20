@@ -9,6 +9,11 @@
 //
 // Events reference drives by their position in the id-ordered physical drives
 // fixture, so this file stays decoupled from serial numbers.
+//
+// Fixture alignment: a drive that is provisioned but NOT currently seated in a
+// server slot (according to the slot-allocation ledger, which this seeder runs
+// after) gets a trailing DEPROVISION event. This keeps "IN_SERVICE" aligned
+// with "currently seated" and avoids leaving unseated drives in service.
 
 const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 const TOTAL_DRIVES = 50;
@@ -28,7 +33,7 @@ const BASE_TIME = Date.UTC(2026, 0, 1, 8, 0, 0);
 //   7     fail -> FAILED
 //   8     fail -> RMA initiate -> IN_RMA
 //   9     degrade -> DEGRADED
-//   10-39 provisioned -> IN_SERVICE
+//   10-39 provisioned -> IN_SERVICE (then DEPROVISION if unseated)
 //   40-49 acquired only -> RECEIVED
 // ----------------------------------------------------------------------------
 
@@ -78,6 +83,10 @@ const events = rawEvents.map((event, index) => ({
   event_timestamp: new Date(BASE_TIME + index * STEP_MS),
 }));
 
+// Deterministic id range for the generated alignment events.
+const extraEventId = (sequence) =>
+  `019f6a82-0000-7c00-8c00-${(sequence + 1).toString(16).padStart(12, '0')}`;
+
 module.exports = {
   async up(queryInterface) {
     // Ensure the mock operator exists (the slot allocation fixture also seeds
@@ -119,9 +128,52 @@ module.exports = {
     }
     const driveIdAt = (index) => driveRows[index].id;
 
+    // Which drives are currently mounted? This seeder runs after the slot
+    // allocation fixture, so the derived seating is available.
+    const [allocationRows] = await queryInterface.sequelize.query(
+      `SELECT DISTINCT ON (physical_drive_id) physical_drive_id, action_type
+       FROM server_slot_allocations
+       ORDER BY physical_drive_id, timestamp DESC, display_key DESC;`,
+    );
+    const mountedDriveIds = new Set(
+      allocationRows
+        .filter((row) => row.action_type === 'MOUNT')
+        .map((row) => row.physical_drive_id),
+    );
+
+    // Drives whose last static event is PROVISION are IN_SERVICE; if they are
+    // not seated, align them by appending DEPROVISION.
+    const lastEventByDrive = new Map();
+    for (const event of events) {
+      lastEventByDrive.set(event.drive_index, event.event_type);
+    }
+    const provisionedUnseatedIndices = [...lastEventByDrive.entries()]
+      .filter(
+        ([driveIndex, eventType]) =>
+          eventType === 'PROVISION' &&
+          !mountedDriveIds.has(driveIdAt(driveIndex)),
+      )
+      .map(([driveIndex]) => driveIndex);
+
+    const extraEvents = provisionedUnseatedIndices.map(
+      (driveIndex, extraIndex) => ({
+        id: extraEventId(extraIndex),
+        drive_index: driveIndex,
+        event_type: 'DEPROVISION',
+        event_timestamp: new Date(
+          BASE_TIME + (events.length + extraIndex) * STEP_MS,
+        ),
+        context_metadata: {
+          reason: 'Fixture alignment: drive is unseated after provisioning',
+        },
+      }),
+    );
+
+    const allEvents = [...events, ...extraEvents];
+
     await queryInterface.bulkInsert(
       'drive_lifecycle_events',
-      events.map((event) => ({
+      allEvents.map((event) => ({
         id: event.id,
         physical_drive_id: driveIdAt(event.drive_index),
         replacement_physical_drive_id:
@@ -145,9 +197,19 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     const { Op } = Sequelize;
 
+    // The alignment events use a reserved id range; delete both the static
+    // events and every possible alignment id.
+    const alignmentIds = Array.from({ length: TOTAL_DRIVES }, (_, index) =>
+      extraEventId(index),
+    );
+
     await queryInterface.bulkDelete(
       'drive_lifecycle_events',
-      { id: { [Op.in]: events.map((event) => event.id) } },
+      {
+        id: {
+          [Op.in]: [...events.map((event) => event.id), ...alignmentIds],
+        },
+      },
       {},
     );
   },

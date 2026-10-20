@@ -33,6 +33,7 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   DesktopOutlined,
+  FileProtectOutlined,
   GlobalOutlined,
   GoldOutlined,
   HddOutlined,
@@ -42,6 +43,7 @@ import {
   MonitorOutlined,
   NumberOutlined,
   PoundOutlined,
+  SafetyCertificateOutlined,
   SettingOutlined,
   ShopOutlined,
   TagsOutlined,
@@ -120,6 +122,26 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Dashboard",
                     icon: <DashboardOutlined />,
+                  },
+                },
+                {
+                  name: "warranty",
+                  meta: {
+                    label: "Warranty",
+                    icon: <SafetyCertificateOutlined />,
+                  },
+                },
+                {
+                  name: "warranty-claims",
+                  list: "/warranty-claims",
+                  create: "/warranty-claims/create",
+                  edit: "/warranty-claims/edit/:id",
+                  show: "/warranty-claims/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Claims",
+                    parent: "warranty",
+                    icon: <FileProtectOutlined />,
                   },
                 },
                 {

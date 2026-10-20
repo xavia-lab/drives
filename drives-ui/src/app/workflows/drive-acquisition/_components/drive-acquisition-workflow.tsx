@@ -251,7 +251,7 @@ export const DriveAcquisitionWorkflow = () => {
                   placeholder="Select manufacturer"
                   loading={vendorsQuery.isLoading}
                   options={manufacturerOptions}
-                  onChange={() => form.setFieldValue("driveModelId", undefined)}
+                  onChange={() => form.resetFields(["driveModelId"])}
                 />
               </Form.Item>
             </Col>

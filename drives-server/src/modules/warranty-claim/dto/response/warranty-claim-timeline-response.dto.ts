@@ -1,6 +1,7 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WarrantyClaimStatus } from '../../entities/warranty-claim.entity';
+import { WarrantyClaimEventType } from '../../entities/warranty-claim-event.entity';
 import { WarrantyClaimEventResponseDto } from './warranty-claim-event-response.dto';
 
 // Full tracking timeline for a single warranty claim: the derived current
@@ -18,6 +19,15 @@ export class WarrantyClaimTimelineResponseDto {
     example: WarrantyClaimStatus.SUBMITTED,
   })
   currentStatus: WarrantyClaimStatus;
+
+  @Expose()
+  @ApiProperty({
+    enum: WarrantyClaimEventType,
+    isArray: true,
+    description:
+      'Events that are legal from the current status (NOTE is always allowed).',
+  })
+  allowedEvents: WarrantyClaimEventType[];
 
   @Expose()
   @Type(() => WarrantyClaimEventResponseDto)
