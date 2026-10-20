@@ -302,7 +302,11 @@ export const ProgressWarrantyClaimWorkflow = () => {
           message.warning("Loading the claim's available transitions...");
           return false;
         }
-        if (claimId && tracking && tracking.allowedEvents.length === 0) {
+        if (
+          claimId &&
+          Array.isArray(tracking?.allowedEvents) &&
+          tracking.allowedEvents.length === 0
+        ) {
           message.warning("This claim has no available transitions.");
           return false;
         }

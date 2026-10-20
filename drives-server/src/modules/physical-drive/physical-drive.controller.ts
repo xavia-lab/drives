@@ -31,6 +31,7 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
+import { PhysicalDriveStatsResponseDto } from './dto/response/physical-drive-stats-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
@@ -41,12 +42,12 @@ import type { AuthenticatedUser } from '../../common/interfaces/authenticated-re
 @Controller('physical-drives')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
 @ApiBearerAuth()
-@Serialize(PhysicalDriveResponseDto)
 export class PhysicalDriveController {
   constructor(private readonly physicalDriveService: PhysicalDriveService) {}
 
   @Get()
   @Public()
+  @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryPhysicalDriveDto })
   @ApiResponse({
@@ -59,8 +60,24 @@ export class PhysicalDriveController {
     return await this.physicalDriveService.findAll(query);
   }
 
+  @Get('stats')
+  @Public()
+  @Serialize(PhysicalDriveStatsResponseDto)
+  @ApiOperation({
+    summary:
+      'Get drive counts grouped by derived current datacenter (plus unassigned)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Physical drive distribution retrieved successfully',
+  })
+  async getStats(): Promise<PhysicalDriveStatsResponseDto> {
+    return await this.physicalDriveService.getStats();
+  }
+
   @Get(':id')
   @Public()
+  @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get PhysicalDrive by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -99,6 +116,7 @@ export class PhysicalDriveController {
   }
 
   @Post('acquisitions')
+  @Serialize(PhysicalDriveResponseDto)
   @CheckPolicy('create', 'physical-drives')
   @ApiOperation({
     summary:
@@ -131,6 +149,7 @@ export class PhysicalDriveController {
   }
 
   @Post(':id/relocations')
+  @Serialize(PhysicalDriveResponseDto)
   @CheckPolicy('locate', 'physical-drives')
   @ApiOperation({
     summary:
@@ -162,6 +181,7 @@ export class PhysicalDriveController {
   }
 
   @Post(':id/locations')
+  @Serialize(PhysicalDriveResponseDto)
   @Public()
   @ApiOperation({
     summary:
@@ -192,6 +212,7 @@ export class PhysicalDriveController {
   }
 
   @Put(':id')
+  @Serialize(PhysicalDriveResponseDto)
   @Public()
   @ApiOperation({ summary: 'Update a physical-drive' })
   @ApiParam({
