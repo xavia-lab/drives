@@ -16,6 +16,15 @@ export class CurrentDriveLifecycleDto {
   state: DriveLifecycleState;
 
   @Expose()
+  @ApiProperty({
+    enum: DriveLifecycleEventType,
+    isArray: true,
+    description:
+      'State-changing events that are legal from the current state (informational events are always allowed).',
+  })
+  allowedEvents: DriveLifecycleEventType[];
+
+  @Expose()
   @ApiPropertyOptional({ nullable: true })
   eventId: string | null;
 

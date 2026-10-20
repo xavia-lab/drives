@@ -60,10 +60,15 @@ export const WorkflowWizard = ({
   const isLastStep = current === steps.length - 1;
 
   const handleNext = async () => {
+    const step = steps[current];
     try {
-      await form.validateFields(steps[current].fields);
+      await form.validateFields(step.fields);
     } catch {
       return;
+    }
+    if (step.validate) {
+      const valid = await step.validate({ form, values });
+      if (!valid) return;
     }
     setCurrent((index) => Math.min(index + 1, steps.length - 1));
   };
