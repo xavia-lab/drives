@@ -42,6 +42,7 @@ import { HealthModule } from './modules/health/health.module';
 import { SystemModule } from './modules/system/system.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     KeycloakModule,
     UserModule, // This must come before modules that use KeycloakAuthGuard
     AuditLogModule,
+    DashboardModule,
     QRCodeModule,
     StorageModule,
 

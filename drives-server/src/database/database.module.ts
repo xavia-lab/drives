@@ -15,6 +15,7 @@ import { Capacity } from 'src/modules/capacity/entities/capacity.entity';
 import { Country } from '../modules/country/entities/country.entity';
 import { CpuModel } from '../modules/cpu-model/entities/cpu-model.entity';
 import { Currency } from '../modules/currency/entities/currency.entity';
+import { ExchangeRate } from '../modules/exchange-rate/entities/exchange-rate.entity';
 import { Datacenter } from '../modules/datacenter/entities/datacenter.entity';
 import { DriveLifecycleEvent } from '../modules/drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { FormFactor } from 'src/modules/form-factor/entities/form-factor.entity';
@@ -63,6 +64,7 @@ import { WarrantyClaimEvent } from '../modules/warranty-claim/entities/warranty-
             Country,
             CpuModel,
             Currency,
+            ExchangeRate,
             Datacenter,
             DriveLifecycleEvent,
             FormFactor,

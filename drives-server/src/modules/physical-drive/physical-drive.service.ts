@@ -183,7 +183,7 @@ export class PhysicalDriveService implements OnModuleInit {
 
   // Batched "current location" derivation for a set of drives: one query,
   // reduce to the latest event per drive in memory.
-  private async getCurrentLocationMap(
+  async getCurrentLocationMap(
     driveIds: string[],
   ): Promise<Map<string, CurrentDriveLocation | null>> {
     const map = new Map<string, CurrentDriveLocation | null>();
