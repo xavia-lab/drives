@@ -30,6 +30,7 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CapacityResponseDto } from './dto/response/capacity-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('capacities')
 @Controller('capacities')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -39,6 +40,7 @@ export class CapacityController {
   constructor(private readonly capacityService: CapacityService) {}
 
   @Get()
+  @Cacheable({ tags: ['capacities'] })
   @Public()
   // @CheckPolicy('list', 'capacities')
   @ApiOperation({ summary: 'Get all capacities with pagination' })
@@ -52,6 +54,7 @@ export class CapacityController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['capacities'] })
   @Public()
   // @CheckPolicy('show', 'capacities')
   @ApiOperation({ summary: 'Get capacity by ID' })
@@ -75,6 +78,7 @@ export class CapacityController {
   }
 
   @Post()
+  @InvalidateCache('capacities')
   @Public()
   // @CheckPolicy('create', 'capacities')
   @ApiOperation({ summary: 'Create a new capacity' })
@@ -87,6 +91,7 @@ export class CapacityController {
   }
 
   @Put(':id')
+  @InvalidateCache('capacities')
   @Public()
   // @CheckPolicy('edit', 'capacities')
   @ApiOperation({ summary: 'Update a capacity' })
@@ -116,6 +121,7 @@ export class CapacityController {
   }
 
   @Delete(':id')
+  @InvalidateCache('capacities')
   @Public()
   // @CheckPolicy('delete', 'capacities')
   @ApiOperation({ summary: 'Delete a capacity' })

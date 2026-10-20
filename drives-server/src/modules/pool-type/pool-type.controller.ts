@@ -31,6 +31,7 @@ import { PoolTypeResponseDto } from './dto/response/pool-type-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('pool-types')
 @Controller('pool-types')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class PoolTypeController {
   constructor(private readonly poolTypeService: PoolTypeService) {}
 
   @Get()
+  @Cacheable({ tags: ['pool-types'] })
   @Public()
   @ApiOperation({ summary: 'Get all Pool Types with pagination' })
   @ApiQuery({ type: QueryPoolTypeDto })
@@ -54,6 +56,7 @@ export class PoolTypeController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['pool-types'] })
   @Public()
   @ApiOperation({ summary: 'Get Pool Type by ID' })
   @ApiParam({
@@ -77,6 +80,7 @@ export class PoolTypeController {
   }
 
   @Post()
+  @InvalidateCache('pool-types')
   @Public()
   @ApiOperation({ summary: 'Create a new Pool Type' })
   @ApiResponse({
@@ -91,6 +95,7 @@ export class PoolTypeController {
   }
 
   @Put(':id')
+  @InvalidateCache('pool-types')
   @Public()
   @ApiOperation({ summary: 'Update a Pool Type' })
   @ApiParam({
@@ -122,6 +127,7 @@ export class PoolTypeController {
   }
 
   @Delete(':id')
+  @InvalidateCache('pool-types')
   @Public()
   @ApiOperation({ summary: 'Delete a Pool Type' })
   @ApiParam({

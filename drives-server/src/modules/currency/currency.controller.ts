@@ -30,6 +30,7 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CurrencyResponseDto } from './dto/response/currency-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('currencies')
 @Controller('currencies')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -39,6 +40,7 @@ export class CurrencyController {
   constructor(private readonly currencyService: CurrencyService) {}
 
   @Get()
+  @Cacheable({ tags: ['currencies'] })
   @Public()
   // @CheckPolicy('list', 'currencies')
   @ApiOperation({ summary: 'Get all currencies with pagination' })
@@ -52,6 +54,7 @@ export class CurrencyController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['currencies'] })
   @Public()
   // @CheckPolicy('show', 'currencies')
   @ApiOperation({ summary: 'Get currency by ID' })
@@ -75,6 +78,7 @@ export class CurrencyController {
   }
 
   @Post()
+  @InvalidateCache('currencies')
   @Public()
   // @CheckPolicy('create', 'currencies')
   @ApiOperation({ summary: 'Create a new currency' })
@@ -87,6 +91,7 @@ export class CurrencyController {
   }
 
   @Put(':id')
+  @InvalidateCache('currencies')
   @Public()
   // @CheckPolicy('edit', 'currencies')
   @ApiOperation({ summary: 'Update a currency' })
@@ -116,6 +121,7 @@ export class CurrencyController {
   }
 
   @Delete(':id')
+  @InvalidateCache('currencies')
   @Public()
   // @CheckPolicy('delete', 'currencies')
   @ApiOperation({ summary: 'Delete a currency' })

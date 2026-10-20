@@ -33,6 +33,7 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { VendorResponseDto } from './dto/response/vendor-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('vendors')
 @Controller('vendors')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -42,6 +43,7 @@ export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
   @Get()
+  @Cacheable({ tags: ['vendors'] })
   @Public()
   // @CheckPolicy('list', 'vendors')
   @ApiOperation({ summary: 'Get all vendors with pagination' })
@@ -57,6 +59,7 @@ export class VendorController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['vendors'] })
   @Public()
   // @CheckPolicy('show', 'vendors')
   @ApiOperation({ summary: 'Get Vendor by ID' })
@@ -83,6 +86,7 @@ export class VendorController {
   }
 
   @Post()
+  @InvalidateCache('vendors')
   @Public()
   // @CheckPolicy('create', 'vendors')
   @ApiOperation({ summary: 'Create a new vendor' })
@@ -96,6 +100,7 @@ export class VendorController {
   }
 
   @Put(':id')
+  @InvalidateCache('vendors')
   @Public()
   // @CheckPolicy('edit', 'vendors')
   @ApiOperation({ summary: 'Update a vendor' })
@@ -125,6 +130,7 @@ export class VendorController {
   }
 
   @Delete(':id')
+  @InvalidateCache('vendors')
   @Public()
   // @CheckPolicy('delete', 'vendors')
   @ApiOperation({ summary: 'Delete a vendor' })

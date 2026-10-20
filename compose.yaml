@@ -25,6 +25,32 @@ services:
       start_period: 10s
     restart: "unless-stopped"
 
+  valkey:
+    image: valkey/valkey:8.0-alpine
+    container_name: "drives-valkey"
+    networks:
+      - inner-net
+    ports:
+      - "6379:6379/tcp"
+    command:
+      [
+        "valkey-server",
+        "--appendonly",
+        "no",
+        "--maxmemory",
+        "256mb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: "unless-stopped"
+
   adminer:
     image: adminer:latest
     container_name: "drives-adminer"
@@ -76,3 +102,4 @@ services:
 
 volumes:
   postgres_data:
+  valkey_data:

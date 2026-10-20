@@ -31,6 +31,7 @@ import { StorageTypeResponseDto } from './dto/response/storage-type-response.dto
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('storage-types')
 @Controller('storage-types')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class StorageTypeController {
   constructor(private readonly StorageTypeService: StorageTypeService) {}
 
   @Get()
+  @Cacheable({ tags: ['storage-types'] })
   @Public()
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
   @ApiQuery({ type: QueryStorageTypeDto })
@@ -54,6 +56,7 @@ export class StorageTypeController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['storage-types'] })
   @Public()
   @ApiOperation({ summary: 'Get StorageType by ID' })
   // 2. Updated Swagger documentation metadata type hint
@@ -79,6 +82,7 @@ export class StorageTypeController {
   }
 
   @Post()
+  @InvalidateCache('storage-types')
   @Public()
   @ApiOperation({ summary: 'Create a new StorageType' })
   @ApiResponse({
@@ -93,6 +97,7 @@ export class StorageTypeController {
   }
 
   @Put(':id')
+  @InvalidateCache('storage-types')
   @Public()
   @ApiOperation({ summary: 'Update a StorageType' })
   @ApiParam({
@@ -124,6 +129,7 @@ export class StorageTypeController {
   }
 
   @Delete(':id')
+  @InvalidateCache('storage-types')
   @Public()
   @ApiOperation({ summary: 'Delete a StorageType' })
   @ApiParam({

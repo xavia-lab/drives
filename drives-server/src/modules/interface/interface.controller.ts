@@ -31,6 +31,7 @@ import { InterfaceResponseDto } from './dto/response/interface-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('interfaces')
 @Controller('interfaces')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class InterfaceController {
   constructor(private readonly interfaceService: InterfaceService) {}
 
   @Get()
+  @Cacheable({ tags: ['interfaces'] })
   @Public()
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryInterfaceDto })
@@ -54,6 +56,7 @@ export class InterfaceController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['interfaces'] })
   @Public()
   @ApiOperation({ summary: 'Get Interface by ID' })
   // 2. Updated Swagger documentation metadata type hint
@@ -79,6 +82,7 @@ export class InterfaceController {
   }
 
   @Post()
+  @InvalidateCache('interfaces')
   @Public()
   @ApiOperation({ summary: 'Create a new interface' })
   @ApiResponse({
@@ -93,6 +97,7 @@ export class InterfaceController {
   }
 
   @Put(':id')
+  @InvalidateCache('interfaces')
   @Public()
   @ApiOperation({ summary: 'Update a interface' })
   @ApiParam({
@@ -121,6 +126,7 @@ export class InterfaceController {
   }
 
   @Delete(':id')
+  @InvalidateCache('interfaces')
   @Public()
   @ApiOperation({ summary: 'Delete a interface' })
   @ApiParam({

@@ -31,6 +31,7 @@ import { FormFactorResponseDto } from './dto/response/form-factor-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('form-factors')
 @Controller('form-factors')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class FormFactorController {
   constructor(private readonly FormFactorService: FormFactorService) {}
 
   @Get()
+  @Cacheable({ tags: ['form-factors'] })
   @Public()
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
   @ApiQuery({ type: QueryFormFactorDto })
@@ -54,6 +56,7 @@ export class FormFactorController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['form-factors'] })
   @Public()
   @ApiOperation({ summary: 'Get FormFactor by ID' })
   // 2. Updated Swagger documentation metadata type hint
@@ -79,6 +82,7 @@ export class FormFactorController {
   }
 
   @Post()
+  @InvalidateCache('form-factors')
   @Public()
   @ApiOperation({ summary: 'Create a new FormFactor' })
   @ApiResponse({
@@ -93,6 +97,7 @@ export class FormFactorController {
   }
 
   @Put(':id')
+  @InvalidateCache('form-factors')
   @Public()
   @ApiOperation({ summary: 'Update a FormFactor' })
   @ApiParam({
@@ -124,6 +129,7 @@ export class FormFactorController {
   }
 
   @Delete(':id')
+  @InvalidateCache('form-factors')
   @Public()
   @ApiOperation({ summary: 'Delete a FormFactor' })
   @ApiParam({
