@@ -5,6 +5,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import keycloakConfig from './config/keycloak.config';
 import storageConfig from './config/storage.config';
+import exchangeRateConfig from './config/exchange-rate.config';
 import { PaginationModule } from './modules/pagination/pagination.module';
 import { DatabaseModule } from './database/database.module';
 import { KeycloakModule } from './modules/keycloak/keycloak.module';
@@ -43,12 +44,19 @@ import { SystemModule } from './modules/system/system.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, keycloakConfig, storageConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        keycloakConfig,
+        storageConfig,
+        exchangeRateConfig,
+      ],
       // Add '.env' to the end of the array as a fallback
       envFilePath: [`.env.${process.env.NODE_ENV}.local`, '.env.local', '.env'],
     }),
@@ -59,6 +67,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     UserModule, // This must come before modules that use KeycloakAuthGuard
     AuditLogModule,
     DashboardModule,
+    ExchangeRateModule,
     QRCodeModule,
     StorageModule,
 

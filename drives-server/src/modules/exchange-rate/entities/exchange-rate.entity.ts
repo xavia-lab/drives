@@ -33,7 +33,7 @@ import { Currency } from '../../currency/entities/currency.entity';
 })
 export class ExchangeRate extends BaseModel {
   @Column({
-    type: DataType.DECIMAL(18, 6),
+    type: DataType.DECIMAL(18, 10),
     allowNull: false,
     field: 'rate_to_usd',
   })
