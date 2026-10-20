@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
-import { NotFoundException } from '@nestjs/common';
+import { getModelToken, getConnectionToken } from '@nestjs/sequelize';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { WarrantyClaimService } from './warranty-claim.service';
 import {
   WarrantyClaim,
@@ -9,7 +9,14 @@ import {
 import { WarrantyClaimEventService } from './warranty-claim-event.service';
 import { WarrantyClaimEventType } from './entities/warranty-claim-event.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
-import { DriveLifecycleEvent } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
+import { PhysicalDriveLocation } from '../physical-drive/entities/physical-drive-location.entity';
+import {
+  DriveLifecycleEvent,
+  DriveLifecycleEventType,
+  DriveLifecycleState,
+} from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { PaginationService } from '../pagination/pagination.service';
 import { CreateWarrantyClaimDto } from './dto/create-warranty-claim.dto';
@@ -22,8 +29,21 @@ describe('WarrantyClaimService', () => {
   let mockPhysicalDriveModel: Record<string, Mock>;
   let mockEventModel: Record<string, Mock>;
   let mockVendorModel: Record<string, Mock>;
-  let mockWarrantyClaimEventService: { getStatusMap: Mock };
+  let mockLocationModel: Record<string, Mock>;
+  let mockWarrantyClaimEventService: {
+    getStatusMap: Mock;
+    getActiveClaimForDrive: Mock;
+    recordEventInTransaction: Mock;
+  };
+  let mockLifecycleService: {
+    recordEventInTransaction: Mock;
+    getCurrentLifecycleMap: Mock;
+  };
+  let mockAllocationService: { getCurrentAssignmentsForDrives: Mock };
+  let mockSequelize: { transaction: Mock };
   let mockPaginationService: { paginate: Mock };
+
+  const mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
 
   beforeEach(async () => {
     mockWarrantyClaimModel = {
@@ -35,6 +55,7 @@ describe('WarrantyClaimService', () => {
     mockPhysicalDriveModel = { findByPk: vi.fn() };
     mockEventModel = { findByPk: vi.fn() };
     mockVendorModel = { findByPk: vi.fn() };
+    mockLocationModel = { findOne: vi.fn() };
 
     mockWarrantyClaimEventService = {
       getStatusMap: vi.fn((ids: string[]) => {
@@ -44,6 +65,25 @@ describe('WarrantyClaimService', () => {
         }
         return Promise.resolve(map);
       }),
+      getActiveClaimForDrive: vi.fn().mockResolvedValue(null),
+      recordEventInTransaction: vi.fn().mockResolvedValue({}),
+    };
+
+    mockLifecycleService = {
+      recordEventInTransaction: vi
+        .fn()
+        .mockResolvedValue({ currentEvent: { id: 'rma-event' } }),
+      getCurrentLifecycleMap: vi.fn().mockResolvedValue(new Map()),
+    };
+
+    mockAllocationService = {
+      getCurrentAssignmentsForDrives: vi.fn().mockResolvedValue(new Map()),
+    };
+
+    mockSequelize = {
+      transaction: vi.fn((cb: (transaction: unknown) => unknown) =>
+        Promise.resolve(cb(mockTransaction)),
+      ),
     };
 
     mockPaginationService = { paginate: vi.fn() };
@@ -65,10 +105,23 @@ describe('WarrantyClaimService', () => {
         },
         { provide: getModelToken(Vendor), useValue: mockVendorModel },
         {
+          provide: getModelToken(PhysicalDriveLocation),
+          useValue: mockLocationModel,
+        },
+        {
           provide: WarrantyClaimEventService,
           useValue: mockWarrantyClaimEventService,
         },
+        {
+          provide: DriveLifecycleEventService,
+          useValue: mockLifecycleService,
+        },
+        {
+          provide: ServerSlotAllocationService,
+          useValue: mockAllocationService,
+        },
         { provide: PaginationService, useValue: mockPaginationService },
+        { provide: getConnectionToken(), useValue: mockSequelize },
       ],
     }).compile();
 
@@ -175,6 +228,142 @@ describe('WarrantyClaimService', () => {
       await expect(service.create(createDto)).rejects.toThrow(
         new NotFoundException(expectedErrorMessage),
       );
+    });
+  });
+
+  describe('openClaim', () => {
+    const dto = {
+      datacenterId: 'dc-1',
+      physicalDriveId: 'drive-1',
+      handledByVendorId: 'vendor-1',
+      rmaTrackingNumber: 'RMA-1',
+      notes: 'n',
+    };
+    const drive = { id: 'drive-1' };
+    const claim = { id: 'claim-1', setDataValue: vi.fn() };
+
+    const setup = (state: DriveLifecycleState) => {
+      mockPhysicalDriveModel.findByPk.mockResolvedValue(drive);
+      mockWarrantyClaimModel.findByPk.mockResolvedValue(claim);
+      mockVendorModel.findByPk.mockResolvedValue({ id: 'vendor-1' });
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map(),
+      );
+      mockLocationModel.findOne.mockResolvedValue({ datacenterId: 'dc-1' });
+      mockLifecycleService.getCurrentLifecycleMap.mockResolvedValue(
+        new Map([['drive-1', { state }]]),
+      );
+      mockWarrantyClaimModel.create.mockResolvedValue(claim);
+    };
+
+    it('deprovisions an IN_SERVICE drive, initiates RMA and creates the claim', async () => {
+      setup(DriveLifecycleState.IN_SERVICE);
+
+      const result = await service.openClaim(dto, 'user-1');
+
+      expect(result).toBe(claim);
+      expect(
+        (
+          mockLifecycleService.recordEventInTransaction.mock
+            .calls as unknown[][]
+        ).map(
+          (call) =>
+            (call[1] as { eventType: DriveLifecycleEventType }).eventType,
+        ),
+      ).toEqual([
+        DriveLifecycleEventType.DEPROVISION,
+        DriveLifecycleEventType.RMA_INITIATE,
+      ]);
+      expect(mockWarrantyClaimModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          physicalDriveId: 'drive-1',
+          triggeringEventId: 'rma-event',
+          handledByVendorId: 'vendor-1',
+          rmaTrackingNumber: 'RMA-1',
+          notes: 'n',
+        }),
+        { transaction: mockTransaction },
+      );
+      expect(
+        mockWarrantyClaimEventService.recordEventInTransaction,
+      ).toHaveBeenCalledWith(
+        'claim-1',
+        expect.objectContaining({
+          eventType: WarrantyClaimEventType.NOTE,
+        }),
+        { performedByUserId: 'user-1' },
+        mockTransaction,
+      );
+    });
+
+    it('sends a FAILED drive directly to RMA', async () => {
+      setup(DriveLifecycleState.FAILED);
+
+      await service.openClaim(dto, 'user-1');
+
+      const calls = mockLifecycleService.recordEventInTransaction.mock
+        .calls as unknown[][];
+      expect(calls).toHaveLength(1);
+      expect(
+        (calls[0][1] as { eventType: DriveLifecycleEventType }).eventType,
+      ).toBe(DriveLifecycleEventType.RMA_INITIATE);
+    });
+
+    it('rejects a drive that already has an open warranty claim', async () => {
+      setup(DriveLifecycleState.IN_SERVICE);
+      mockWarrantyClaimEventService.getActiveClaimForDrive.mockResolvedValue({
+        id: 'claim-existing',
+        status: WarrantyClaimStatus.SHIPPED_TO_VENDOR,
+      });
+
+      await expect(service.openClaim(dto, 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockWarrantyClaimModel.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a drive whose warranty has expired', async () => {
+      setup(DriveLifecycleState.IN_SERVICE);
+      mockPhysicalDriveModel.findByPk.mockResolvedValue({
+        id: 'drive-1',
+        warrantyExpiryDate: '2000-01-01',
+      });
+
+      await expect(service.openClaim(dto, 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockWarrantyClaimModel.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a drive that is still seated in a server', async () => {
+      setup(DriveLifecycleState.IN_SERVICE);
+      mockAllocationService.getCurrentAssignmentsForDrives.mockResolvedValue(
+        new Map([['drive-1', { serverHostname: 'host-1', slotLabel: 'S1' }]]),
+      );
+
+      await expect(service.openClaim(dto, 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockWarrantyClaimModel.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a drive outside the selected datacenter', async () => {
+      setup(DriveLifecycleState.IN_SERVICE);
+      mockLocationModel.findOne.mockResolvedValue({ datacenterId: 'dc-2' });
+
+      await expect(service.openClaim(dto, 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockWarrantyClaimModel.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a lifecycle state that cannot enter RMA', async () => {
+      setup(DriveLifecycleState.RETIRED);
+
+      await expect(service.openClaim(dto, 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockWarrantyClaimModel.create).not.toHaveBeenCalled();
     });
   });
 

@@ -440,15 +440,14 @@ export const DriveAllocationWorkflow = () => {
   };
 
   const handleDatacenterChange = () => {
-    form.setFieldValue("sourceServerId", undefined);
-    form.setFieldValue("targetServerId", undefined);
+    form.resetFields(["sourceServerId", "targetServerId"]);
     resetAllocation();
   };
 
   const handleSourceChange = (value?: string) => {
     resetAllocation();
     if (form.getFieldValue("targetServerId") === value) {
-      form.setFieldValue("targetServerId", undefined);
+      form.resetFields(["targetServerId"]);
     }
   };
 

@@ -228,8 +228,7 @@ export const RelocateDriveWorkflow = () => {
                   loading={datacentersQuery.isLoading}
                   options={sourceOptions}
                   onChange={() => {
-                    form.setFieldValue("physicalDriveId", undefined);
-                    form.setFieldValue("datacenterId", undefined);
+                    form.resetFields(["physicalDriveId", "datacenterId"]);
                   }}
                 />
               </Form.Item>

@@ -41,7 +41,7 @@ describe('WarrantyClaimEventService', () => {
       findByPk: vi.fn(),
       create: vi.fn(),
     };
-    mockClaimModel = { findByPk: vi.fn() };
+    mockClaimModel = { findByPk: vi.fn(), findAll: vi.fn() };
     mockDriveModel = { findByPk: vi.fn() };
     mockUserModel = { findByPk: vi.fn() };
     mockPaginationService = { paginate: vi.fn() };
@@ -112,6 +112,65 @@ describe('WarrantyClaimEventService', () => {
       const map = await service.getStatusMap([]);
       expect(map.size).toBe(0);
       expect(mockEventModel.findAll).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getActiveClaimForDrive', () => {
+    it('returns null when the drive has no claims', async () => {
+      mockClaimModel.findAll.mockResolvedValue([]);
+
+      await expect(
+        service.getActiveClaimForDrive('drive-1'),
+      ).resolves.toBeNull();
+    });
+
+    it('skips CLOSED claims and returns the first open claim', async () => {
+      mockClaimModel.findAll.mockResolvedValue([
+        { id: 'claim-1' },
+        { id: 'claim-2' },
+      ]);
+      mockEventModel.findAll.mockResolvedValue([
+        {
+          warrantyClaimId: 'claim-1',
+          eventType: WarrantyClaimEventType.CLOSED,
+          id: 'e1',
+        },
+        {
+          warrantyClaimId: 'claim-2',
+          eventType: WarrantyClaimEventType.SHIPPED_TO_VENDOR,
+          id: 'e2',
+        },
+      ]);
+
+      await expect(service.getActiveClaimForDrive('drive-1')).resolves.toEqual({
+        id: 'claim-2',
+        status: WarrantyClaimStatus.SHIPPED_TO_VENDOR,
+      });
+    });
+
+    it('treats a claim with no events as SUBMITTED (open)', async () => {
+      mockClaimModel.findAll.mockResolvedValue([{ id: 'claim-1' }]);
+      mockEventModel.findAll.mockResolvedValue([]);
+
+      await expect(service.getActiveClaimForDrive('drive-1')).resolves.toEqual({
+        id: 'claim-1',
+        status: WarrantyClaimStatus.SUBMITTED,
+      });
+    });
+
+    it('returns null when every claim is CLOSED', async () => {
+      mockClaimModel.findAll.mockResolvedValue([{ id: 'claim-1' }]);
+      mockEventModel.findAll.mockResolvedValue([
+        {
+          warrantyClaimId: 'claim-1',
+          eventType: WarrantyClaimEventType.CLOSED,
+          id: 'e1',
+        },
+      ]);
+
+      await expect(
+        service.getActiveClaimForDrive('drive-1'),
+      ).resolves.toBeNull();
     });
   });
 

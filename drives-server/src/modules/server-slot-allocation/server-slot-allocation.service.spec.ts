@@ -20,7 +20,10 @@ import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
-import { DriveLifecycleEventType } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
+import {
+  DriveLifecycleEventType,
+  DriveLifecycleState,
+} from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
 describe('ServerSlotAllocationService', () => {
@@ -311,6 +314,46 @@ describe('ServerSlotAllocationService', () => {
         service.unmount('server-1', 'slot-1', 'user-1'),
       ).rejects.toThrow(ConflictException);
       expect(mockAllocationModel.create).not.toHaveBeenCalled();
+    });
+
+    it('deprovisions an IN_SERVICE drive when it is unseated', async () => {
+      mockServerSlotModel.findByPk.mockResolvedValue({
+        id: 'slot-1',
+        serverId: 'server-1',
+        slotLabel: 'Bay 0',
+      });
+      mockAllocationModel.findAll.mockResolvedValue([
+        {
+          id: 'a1',
+          serverSlotId: 'slot-1',
+          physicalDriveId: 'drive-1',
+          actionType: ServerSlotActionType.MOUNT,
+          timestamp: new Date('2026-07-01T00:00:00Z'),
+        },
+      ]);
+      mockAllocationModel.create.mockResolvedValue({});
+      mockLifecycleService.getCurrentLifecycleMap.mockResolvedValue(
+        new Map([['drive-1', { state: DriveLifecycleState.IN_SERVICE }]]),
+      );
+      vi.spyOn(service, 'getBoard').mockResolvedValue(
+        {} as SlotAssignmentBoard,
+      );
+
+      await service.unmount('server-1', 'slot-1', 'user-1');
+
+      expect(
+        mockLifecycleService.recordEventInTransaction,
+      ).toHaveBeenCalledWith(
+        'drive-1',
+        expect.objectContaining({
+          eventType: DriveLifecycleEventType.DEPROVISION,
+        }),
+        expect.objectContaining({
+          performedByUserId: 'user-1',
+          triggeredBy: 'slot-assignment',
+        }),
+        mockTransaction,
+      );
     });
   });
 

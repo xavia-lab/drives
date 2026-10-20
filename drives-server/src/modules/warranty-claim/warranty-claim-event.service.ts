@@ -22,6 +22,7 @@ import { QueryWarrantyClaimEventDto } from './dto/query-warranty-claim-event.dto
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import {
+  allowedEventsFor,
   canTransition,
   INFORMATIONAL_EVENT_TYPES,
   isStateChangingEvent,
@@ -42,6 +43,8 @@ export interface CurrentWarrantyClaimStatus {
 export interface WarrantyClaimTimeline {
   warrantyClaimId: string;
   currentStatus: WarrantyClaimStatus;
+  /** State-changing events allowed from the current status, plus NOTE. */
+  allowedEvents: WarrantyClaimEventType[];
   currentEvent: WarrantyClaimEvent | null;
   events: WarrantyClaimEvent[];
 }
@@ -102,6 +105,7 @@ export class WarrantyClaimEventService {
   // entry for every requested id (SUBMITTED when the claim has no events).
   async getStatusMap(
     claimIds: string[],
+    transaction?: Transaction,
   ): Promise<Map<string, CurrentWarrantyClaimStatus>> {
     const map = new Map<string, CurrentWarrantyClaimStatus>();
     if (claimIds.length === 0) {
@@ -111,6 +115,7 @@ export class WarrantyClaimEventService {
     const events = await this.warrantyClaimEventModel.findAll({
       where: { warrantyClaimId: { [Op.in]: claimIds } },
       order: [['warrantyClaimId', 'ASC'], ...LATEST_FIRST],
+      transaction,
     });
 
     for (const event of events) {
@@ -129,6 +134,60 @@ export class WarrantyClaimEventService {
     }
 
     return map;
+  }
+
+  // Returns the first claim for a drive that is not CLOSED (terminal). Used by
+  // the Create Warranty Claim workflow to prevent duplicate active claims.
+  async getActiveClaimForDrive(
+    driveId: string,
+    transaction?: Transaction,
+  ): Promise<{ id: string; status: WarrantyClaimStatus } | null> {
+    const claims = await this.warrantyClaimModel.findAll({
+      where: { physicalDriveId: driveId },
+      attributes: ['id'],
+      transaction,
+    });
+    if (claims.length === 0) {
+      return null;
+    }
+
+    const statusMap = await this.getStatusMap(
+      claims.map((claim) => claim.id),
+      transaction,
+    );
+
+    for (const claim of claims) {
+      const status =
+        statusMap.get(claim.id)?.status ?? WarrantyClaimStatus.SUBMITTED;
+      if (status !== WarrantyClaimStatus.CLOSED) {
+        return { id: claim.id, status };
+      }
+    }
+
+    return null;
+  }
+
+  // Resolves the ids of claims whose derived status is one of the given
+  // statuses. Used by the list's derived `currentStatus` filter.
+  async getClaimIdsByStatus(statuses: string[]): Promise<string[]> {
+    const normalized = statuses
+      .map((status) => status.trim().toUpperCase())
+      .filter(Boolean);
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    const claims = await this.warrantyClaimModel.findAll({
+      attributes: ['id'],
+    });
+    const claimIds = claims.map((claim) => claim.id);
+    const statusMap = await this.getStatusMap(claimIds);
+
+    return claimIds.filter((claimId) => {
+      const status =
+        statusMap.get(claimId)?.status ?? WarrantyClaimStatus.SUBMITTED;
+      return normalized.includes(status);
+    });
   }
 
   async findAll(
@@ -197,12 +256,17 @@ export class WarrantyClaimEventService {
     );
     const currentEvent =
       stateEvents.length > 0 ? stateEvents[stateEvents.length - 1] : null;
+    const currentStatus = currentEvent
+      ? statusForEvent(currentEvent.eventType)
+      : WarrantyClaimStatus.SUBMITTED;
 
     return {
       warrantyClaimId: claimId,
-      currentStatus: currentEvent
-        ? statusForEvent(currentEvent.eventType)
-        : WarrantyClaimStatus.SUBMITTED,
+      currentStatus,
+      allowedEvents: [
+        ...allowedEventsFor(currentStatus),
+        WarrantyClaimEventType.NOTE,
+      ],
       currentEvent,
       events,
     };
@@ -285,68 +349,77 @@ export class WarrantyClaimEventService {
     dto: CreateWarrantyClaimEventDto,
     actor: RecordWarrantyClaimEventActor = {},
   ): Promise<WarrantyClaimTimeline> {
-    return this.sequelize.transaction(async (transaction) => {
-      const claim = await this.warrantyClaimModel.findByPk(claimId, {
-        transaction,
-        lock: transaction.LOCK.UPDATE,
-      });
+    return this.sequelize.transaction((transaction) =>
+      this.recordEventInTransaction(claimId, dto, actor, transaction),
+    );
+  }
 
-      if (!claim) {
-        throw new NotFoundException(
-          `WarrantyClaim with ID ${claimId} not found`,
-        );
-      }
-
-      const performedByUserId =
-        actor.performedByUserId ?? dto.performedByUserId ?? null;
-
-      await this.assertPerformedByUserExists(performedByUserId, transaction);
-
-      const [latestEvent, latestStateEvent] = await Promise.all([
-        this.getLatestEvent(claimId, transaction, false),
-        this.getLatestEvent(claimId, transaction, true),
-      ]);
-
-      const currentStatus = latestStateEvent
-        ? statusForEvent(latestStateEvent.eventType)
-        : WarrantyClaimStatus.SUBMITTED;
-
-      if (!canTransition(currentStatus, dto.eventType)) {
-        throw new ConflictException(
-          `Cannot record ${dto.eventType} for a claim in status ${currentStatus}`,
-        );
-      }
-
-      const eventTimestamp = dto.eventTimestamp
-        ? new Date(dto.eventTimestamp)
-        : new Date();
-
-      if (
-        latestEvent &&
-        eventTimestamp.getTime() <
-          new Date(latestEvent.eventTimestamp).getTime()
-      ) {
-        throw new ConflictException(
-          'eventTimestamp must not precede the latest tracking event',
-        );
-      }
-
-      await this.assertReplacement(claim, dto, transaction);
-
-      await this.warrantyClaimEventModel.create(
-        {
-          ...(dto.id ? { id: dto.id } : {}),
-          warrantyClaimId: claimId,
-          eventType: dto.eventType,
-          eventTimestamp,
-          notes: dto.notes ?? null,
-          performedByUserId,
-          replacementPhysicalDriveId: dto.replacementPhysicalDriveId ?? null,
-        } as Partial<WarrantyClaimEvent>,
-        { transaction },
-      );
-
-      return this.loadTimeline(claimId, transaction);
+  // Same as `recordEvent`, but joins a caller-owned transaction. Used by
+  // multi-table workflows (e.g. opening a claim together with its drive's
+  // RMA_INITIATE lifecycle event).
+  async recordEventInTransaction(
+    claimId: string,
+    dto: CreateWarrantyClaimEventDto,
+    actor: RecordWarrantyClaimEventActor,
+    transaction: Transaction,
+  ): Promise<WarrantyClaimTimeline> {
+    const claim = await this.warrantyClaimModel.findByPk(claimId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
+
+    if (!claim) {
+      throw new NotFoundException(`WarrantyClaim with ID ${claimId} not found`);
+    }
+
+    const performedByUserId =
+      actor.performedByUserId ?? dto.performedByUserId ?? null;
+
+    await this.assertPerformedByUserExists(performedByUserId, transaction);
+
+    const [latestEvent, latestStateEvent] = await Promise.all([
+      this.getLatestEvent(claimId, transaction, false),
+      this.getLatestEvent(claimId, transaction, true),
+    ]);
+
+    const currentStatus = latestStateEvent
+      ? statusForEvent(latestStateEvent.eventType)
+      : WarrantyClaimStatus.SUBMITTED;
+
+    if (!canTransition(currentStatus, dto.eventType)) {
+      throw new ConflictException(
+        `Cannot record ${dto.eventType} for a claim in status ${currentStatus}`,
+      );
+    }
+
+    const eventTimestamp = dto.eventTimestamp
+      ? new Date(dto.eventTimestamp)
+      : new Date();
+
+    if (
+      latestEvent &&
+      eventTimestamp.getTime() < new Date(latestEvent.eventTimestamp).getTime()
+    ) {
+      throw new ConflictException(
+        'eventTimestamp must not precede the latest tracking event',
+      );
+    }
+
+    await this.assertReplacement(claim, dto, transaction);
+
+    await this.warrantyClaimEventModel.create(
+      {
+        ...(dto.id ? { id: dto.id } : {}),
+        warrantyClaimId: claimId,
+        eventType: dto.eventType,
+        eventTimestamp,
+        notes: dto.notes ?? null,
+        performedByUserId,
+        replacementPhysicalDriveId: dto.replacementPhysicalDriveId ?? null,
+      } as Partial<WarrantyClaimEvent>,
+      { transaction },
+    );
+
+    return this.loadTimeline(claimId, transaction);
   }
 }

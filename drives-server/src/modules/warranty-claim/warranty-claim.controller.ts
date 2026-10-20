@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +23,7 @@ import {
 import { WarrantyClaimService } from './warranty-claim.service';
 import { WarrantyClaim } from './entities/warranty-claim.entity';
 import { CreateWarrantyClaimDto } from './dto/create-warranty-claim.dto';
+import { CreateWarrantyClaimWorkflowDto } from './dto/create-warranty-claim-workflow.dto';
 import { UpdateWarrantyClaimDto } from './dto/update-warranty-claim.dto';
 import { QueryWarrantyClaimDto } from './dto/query-warranty-claim.dto';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
@@ -30,6 +32,9 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { WarrantyClaimResponseDto } from './dto/response/warranty-claim-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
+import { RequestUser } from '../../common/decorators/request-user.decorator';
+import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
 @ApiTags('warranty-claims')
 @Controller('warranty-claims')
@@ -93,6 +98,36 @@ export class WarrantyClaimController {
     return this.warrantyClaimService.create(createWarrantyClaimDto);
   }
 
+  @Post('initiate')
+  @CheckPolicy('create', 'warranty-claims')
+  @ApiOperation({
+    summary:
+      'Create Warranty Claim workflow: create the claim, move the unseated drive to IN_RMA and append the initial tracking note atomically',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Warranty Claim initiated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid payload',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Drive, vendor or datacenter not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Drive is seated, outside the datacenter, or its lifecycle cannot enter RMA',
+  })
+  async initiate(
+    @Body() dto: CreateWarrantyClaimWorkflowDto,
+    @RequestUser() user?: AuthenticatedUser,
+  ): Promise<WarrantyClaim> {
+    return this.warrantyClaimService.openClaim(dto, this.resolveActorId(user));
+  }
+
   @Put(':id')
   @Public()
   @ApiOperation({ summary: 'Update a warranty claim' })
@@ -147,5 +182,15 @@ export class WarrantyClaimController {
         message: `WarrantyClaim with ID ${id} deleted successfully`,
       };
     }
+  }
+
+  private resolveActorId(user?: AuthenticatedUser): string {
+    const actorId = user?.dbUser?.id ?? user?.id;
+    if (!actorId) {
+      throw new UnauthorizedException(
+        'An authenticated operator is required to open a warranty claim',
+      );
+    }
+    return actorId;
   }
 }

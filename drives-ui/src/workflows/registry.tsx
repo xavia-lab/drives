@@ -1,5 +1,6 @@
 import {
   ApartmentOutlined,
+  FileProtectOutlined,
   HddOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
@@ -36,5 +37,14 @@ export const WORKFLOWS: WorkflowDefinition[] = [
     href: "/workflows/drive-allocation",
     icon: <ApartmentOutlined />,
     category: "Inventory",
+  },
+  {
+    key: "create-warranty-claim",
+    title: "Create Warranty Claim",
+    description:
+      "Open an RMA claim for an unseated drive, moving it into the RMA lifecycle state.",
+    href: "/workflows/create-warranty-claim",
+    icon: <FileProtectOutlined />,
+    category: "Warranty",
   },
 ];
