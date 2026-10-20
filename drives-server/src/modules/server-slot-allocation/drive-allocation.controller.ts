@@ -22,6 +22,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('drive-allocation')
 @Controller('physical-servers')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -32,6 +34,7 @@ export class DriveAllocationController {
   ) {}
 
   @Post('allocations')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @CheckPolicy('save', 'server-slot-allocations')
   @ApiOperation({
     summary:

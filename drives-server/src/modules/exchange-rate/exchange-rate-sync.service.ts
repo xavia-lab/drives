@@ -5,6 +5,8 @@ import { Transaction } from 'sequelize';
 import { Currency } from '../currency/entities/currency.entity';
 import { ExchangeRate } from './entities/exchange-rate.entity';
 import { ExchangeRateLockService } from './exchange-rate-lock.service';
+import { CacheService } from '../cache/cache.service';
+import { CACHE_TAGS } from '../cache/cache.tags';
 
 const SYNC_LOCK_KEY = 2_026_102_001;
 const SUPPORTED_CURRENCIES_TTL_MS = 24 * 60 * 60 * 1000;
@@ -40,6 +42,7 @@ export class ExchangeRateSyncService {
     private readonly currencyModel: typeof Currency,
     private readonly config: ConfigService,
     private readonly lockService: ExchangeRateLockService,
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
@@ -77,6 +80,8 @@ export class ExchangeRateSyncService {
         );
         return null;
       }
+
+      await this.cacheService.invalidateTags([CACHE_TAGS.DASHBOARD]);
 
       this.logger.log(
         `Stored ${prepared.rows.length} exchange rates effective ${prepared.date}` +

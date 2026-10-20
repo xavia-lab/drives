@@ -6,6 +6,7 @@ import { ExchangeRateSyncService } from './exchange-rate-sync.service';
 import { ExchangeRateLockService } from './exchange-rate-lock.service';
 import { ExchangeRate } from './entities/exchange-rate.entity';
 import { Currency } from '../currency/entities/currency.entity';
+import { CacheService } from '../cache/cache.service';
 
 const CURRENCIES = [
   { id: 'usd-id', code: 'USD' },
@@ -27,6 +28,7 @@ describe('ExchangeRateSyncService', () => {
   let currencyModel: { findAll: ReturnType<typeof vi.fn> };
   let config: { get: ReturnType<typeof vi.fn> };
   let lockService: { runWithLock: ReturnType<typeof vi.fn> };
+  let cacheService: { invalidateTags: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     exchangeRateModel = { bulkCreate: vi.fn() };
@@ -46,6 +48,7 @@ describe('ExchangeRateSyncService', () => {
         work(undefined),
       ),
     };
+    cacheService = { invalidateTags: vi.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +60,7 @@ describe('ExchangeRateSyncService', () => {
         { provide: getModelToken(Currency), useValue: currencyModel },
         { provide: ConfigService, useValue: config },
         { provide: ExchangeRateLockService, useValue: lockService },
+        { provide: CacheService, useValue: cacheService },
       ],
     }).compile();
 
@@ -140,6 +144,7 @@ describe('ExchangeRateSyncService', () => {
     expect(options).toMatchObject({
       updateOnDuplicate: ['rateToUsd', 'source', 'updatedAt'],
     });
+    expect(cacheService.invalidateTags).toHaveBeenCalledWith(['dashboard']);
   });
 
   it('does nothing when the scheduler is disabled', async () => {

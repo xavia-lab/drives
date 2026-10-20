@@ -31,6 +31,8 @@ import { RackResponseDto } from './dto/response/rack-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('racks')
 @Controller('racks')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -69,6 +71,7 @@ export class RackController {
   }
 
   @Post()
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Create a new Rack cabinet frame' })
   @ApiResponse({ status: 201, description: 'Rack created successfully' })
@@ -85,6 +88,7 @@ export class RackController {
   }
 
   @Put(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Update Rack asset configurations' })
   @ApiParam({
@@ -109,6 +113,7 @@ export class RackController {
   }
 
   @Delete(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Delete a Rack asset record' })
   @ApiParam({

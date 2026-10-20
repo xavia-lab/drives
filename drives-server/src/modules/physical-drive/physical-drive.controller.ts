@@ -37,6 +37,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('physical-drives')
 @Controller('physical-drives')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -45,6 +47,7 @@ export class PhysicalDriveController {
   constructor(private readonly physicalDriveService: PhysicalDriveService) {}
 
   @Get()
+  @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
   @Public()
   @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
@@ -60,6 +63,7 @@ export class PhysicalDriveController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
   @Public()
   @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get PhysicalDrive by ID' })
@@ -86,6 +90,7 @@ export class PhysicalDriveController {
   }
 
   @Post()
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Create a new physical-drive' })
   @ApiResponse({
@@ -100,6 +105,7 @@ export class PhysicalDriveController {
   }
 
   @Post('acquisitions')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
   @CheckPolicy('create', 'physical-drives')
   @ApiOperation({
@@ -133,6 +139,7 @@ export class PhysicalDriveController {
   }
 
   @Post(':id/relocations')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
   @CheckPolicy('locate', 'physical-drives')
   @ApiOperation({
@@ -165,6 +172,7 @@ export class PhysicalDriveController {
   }
 
   @Post(':id/locations')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
   @Public()
   @ApiOperation({
@@ -196,6 +204,7 @@ export class PhysicalDriveController {
   }
 
   @Put(':id')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
   @Public()
   @ApiOperation({ summary: 'Update a physical-drive' })
@@ -228,6 +237,7 @@ export class PhysicalDriveController {
   }
 
   @Delete(':id')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Delete a physical-drive' })
   @ApiParam({

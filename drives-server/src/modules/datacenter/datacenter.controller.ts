@@ -31,6 +31,8 @@ import { DatacenterResponseDto } from './dto/response/datacenter-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('datacenters')
 @Controller('datacenters')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -77,6 +79,7 @@ export class DatacenterController {
   }
 
   @Post()
+  @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
   @Public()
   @ApiOperation({ summary: 'Create a new datacenter' })
   @ApiResponse({
@@ -92,6 +95,7 @@ export class DatacenterController {
   }
 
   @Put(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
   @Public()
   @ApiOperation({ summary: 'Update a datacenter' })
   @ApiParam({
@@ -123,6 +127,7 @@ export class DatacenterController {
   }
 
   @Delete(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
   @Public()
   @ApiOperation({ summary: 'Delete a datacenter' })
   @ApiParam({
