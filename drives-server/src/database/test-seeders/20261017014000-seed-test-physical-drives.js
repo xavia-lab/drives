@@ -14,7 +14,7 @@
 
 const { idMap, required } = require('./lib/lookups');
 
-// The reference drive models seeded by 20261017140200-seed-test-drive-models.js.
+// The reference drive models seeded by 20261017003320-seed-test-drive-models.js.
 // `mfg`/`model`/`capacity` only shape the generated label; the FK is resolved by
 // `storage_manufacturer` + `drive_model_number`.
 const DRIVE_MODEL_POOL = [

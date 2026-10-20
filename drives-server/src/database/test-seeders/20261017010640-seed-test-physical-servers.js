@@ -60,6 +60,24 @@ const physicalServers = [
     rack_key: 'GB-SLO-1/RACK-B01',
     rack_unit_position: 2,
   },
+  {
+    id: '019f6a00-0000-7d16-8d16-000000000056',
+    hostname: 'fra-compute-01',
+    memory_value: 512,
+    memory_unit: 'GiB',
+    os_name: 'Ubuntu 24.04 LTS',
+    rack_key: 'DE-FRA-1/RACK-C01',
+    rack_unit_position: 1,
+  },
+  {
+    id: '019f6a00-0000-7d17-8d17-000000000057',
+    hostname: 'fra-storage-01',
+    memory_value: 384,
+    memory_unit: 'GiB',
+    os_name: 'Debian 13',
+    rack_key: 'DE-FRA-1/RACK-C01',
+    rack_unit_position: 2,
+  },
 ];
 
 module.exports = {

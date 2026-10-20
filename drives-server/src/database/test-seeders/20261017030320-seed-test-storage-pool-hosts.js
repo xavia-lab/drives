@@ -85,6 +85,26 @@ const poolHostEvents = [
     event_timestamp: new Date('2026-07-04T09:00:00.000Z'),
     notes: 'Guest pool import.',
   },
+  // zfs-fra-backup: attached to the Frankfurt storage head
+  {
+    id: '019f6a60-0000-7e60-8e60-000000000008',
+    pool_name: 'zfs-fra-backup',
+    host_kind: HOST.physical,
+    host_name: 'fra-storage-01',
+    event_type: 'IMPORT',
+    event_timestamp: new Date('2026-07-06T09:00:00.000Z'),
+    notes: 'Initial backup pool import.',
+  },
+  // ceph-osd-fra: attached to the Frankfurt backup guest
+  {
+    id: '019f6a60-0000-7e60-8e60-000000000009',
+    pool_name: 'ceph-osd-fra',
+    host_kind: HOST.virtual,
+    host_name: 'vm-backup-01',
+    event_type: 'IMPORT',
+    event_timestamp: new Date('2026-07-07T09:00:00.000Z'),
+    notes: 'Guest pool import.',
+  },
 ];
 
 module.exports = {

@@ -12,6 +12,11 @@ const countries = [
     name: 'United Kingdom',
   },
   {
+    id: '019f52eb-a75c-7c02-8c00-000000000002',
+    code: 'DE',
+    name: 'Germany',
+  },
+  {
     id: '019f52eb-a75c-776f-83b5-b2169a3735b1',
     code: 'KR',
     name: 'South Korea',

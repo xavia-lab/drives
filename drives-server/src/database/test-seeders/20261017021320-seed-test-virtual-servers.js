@@ -3,8 +3,8 @@
 // TEST-ONLY fixture for the `virtual_servers` table. Not part of production seeding.
 // Run via `pnpm --filter @drives/drives-server seed:test`.
 //
-// Guests are hosted by the test physical servers (20261017140400-seed-test-
-// physical-servers.js) and reference the production `operating_systems` lookup.
+// Guests are hosted by the test physical servers (20261017010640-seed-test-physical-servers.js)
+// and reference the production `operating_systems` lookup.
 // Allocations are kept well under each host's `absolute_memory` ceiling so the
 // fixture stays valid under the service's capacity guard.
 
@@ -107,6 +107,45 @@ const virtualServers = [
     allocated_memory_unit: 'GiB',
     is_active: true,
     notes: 'Nested storage VM receiving raw disk passthrough.',
+  },
+  {
+    id: '019f6a30-0000-7d22-8d22-000000000008',
+    host_server: 'fra-compute-01',
+    vmid: 100,
+    hostname: 'vm-build-01',
+    type: 'VM',
+    os_name: 'Ubuntu 24.04 LTS',
+    allocated_vcpus: 16,
+    allocated_memory_value: 64,
+    allocated_memory_unit: 'GiB',
+    is_active: true,
+    notes: 'CI build runner and container image cache.',
+  },
+  {
+    id: '019f6a30-0000-7d22-8d22-000000000009',
+    host_server: 'fra-compute-01',
+    vmid: 200,
+    hostname: 'ct-metrics-01',
+    type: 'CONTAINER',
+    os_name: 'Alpine Linux',
+    allocated_vcpus: 4,
+    allocated_memory_value: 8,
+    allocated_memory_unit: 'GiB',
+    is_active: true,
+    notes: 'Prometheus and Grafana metrics stack.',
+  },
+  {
+    id: '019f6a30-0000-7d22-8d22-00000000000a',
+    host_server: 'fra-storage-01',
+    vmid: 100,
+    hostname: 'vm-backup-01',
+    type: 'VM',
+    os_name: 'Debian 13',
+    allocated_vcpus: 8,
+    allocated_memory_value: 32,
+    allocated_memory_unit: 'GiB',
+    is_active: true,
+    notes: 'Backup catalog and restore testing host.',
   },
 ];
 

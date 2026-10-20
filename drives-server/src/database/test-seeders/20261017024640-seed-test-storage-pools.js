@@ -5,8 +5,8 @@
 //
 // Pools are host-agnostic here: which host a pool is attached to (and when) is
 // recorded by the append-only `storage_pool_hosts` log seeded in
-// 20261017141000-seed-test-storage-pool-hosts.js. Pool types come from the
-// production `pool_types` lookup (20260709213010-seed-pool-types.js), which must
+// 20261017030320-seed-test-storage-pool-hosts.js. Pool types come from the
+// production `pool_types` lookup (20260710023000-seed-pool-types.js), which must
 // be seeded first.
 
 const { idMap, required } = require('./lib/lookups');
@@ -47,6 +47,18 @@ const storagePools = [
     pool_name: 'truenas-vm-pool',
     pool_type_name: 'ZFS',
     encryption_enabled: false,
+  },
+  {
+    id: '019f6a50-0000-7e50-8e50-000000000007',
+    pool_name: 'zfs-fra-backup',
+    pool_type_name: 'ZFS',
+    encryption_enabled: true,
+  },
+  {
+    id: '019f6a50-0000-7e50-8e50-000000000008',
+    pool_name: 'ceph-osd-fra',
+    pool_type_name: 'CEPH_OSD_POOL',
+    encryption_enabled: true,
   },
 ];
 

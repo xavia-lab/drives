@@ -24,6 +24,12 @@ const racks = [
     datacenter_code: 'GB-SLO-1',
     total_rack_units: 48,
   },
+  {
+    id: '019f6a00-0000-7b04-8b04-000000000014',
+    name: 'RACK-C01',
+    datacenter_code: 'DE-FRA-1',
+    total_rack_units: 42,
+  },
 ];
 
 module.exports = {

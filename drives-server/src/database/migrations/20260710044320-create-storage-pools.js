@@ -47,7 +47,7 @@ module.exports = {
     // A pool's compute host is no longer a rigid column on this table. Hosting
     // is modelled as a many-to-many-over-time relationship in the
     // `storage_pool_hosts` IMPORT/EXPORT event log (see
-    // 20260709213300-create-storage-pool-hosts.js), which lets a pool be
+    // 20260710050000-create-storage-pool-hosts.js), which lets a pool be
     // exported from one server and imported into another while keeping history.
 
     // Fast scans for isolating storage groupings by their pool type lookup
