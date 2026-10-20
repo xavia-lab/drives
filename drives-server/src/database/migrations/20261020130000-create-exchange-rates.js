@@ -38,7 +38,7 @@ module.exports = {
           onUpdate: 'CASCADE',
         },
         rate_to_usd: {
-          type: Sequelize.DECIMAL(18, 6),
+          type: Sequelize.DECIMAL(18, 10),
           allowNull: false,
         },
         effective_at: {

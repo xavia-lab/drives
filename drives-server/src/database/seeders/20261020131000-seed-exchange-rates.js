@@ -1,42 +1,43 @@
 'use strict';
 
-// Baseline exchange-rate observations so the dashboard has a usable fleet
-// value before the periodic market-data worker exists. The application always
-// reads the latest effective_at row per currency, so these rows demonstrate
-// that history is retained rather than mutating a single value.
+const { QueryTypes } = require('sequelize');
+
+// Baseline exchange-rate observations for the system-managed currencies.
+// The application always reads the latest effective_at row per currency, so
+// EUR/GBP include an older row to exercise that selection logic.
 const rates = [
   {
     id: '019f6a92-0000-7d00-8d00-000000000001',
-    currencyId: '019f52ea-51fb-71f7-b8fa-bb537fe77078', // USD
-    rateToUsd: '1.000000',
+    currencyCode: 'USD',
+    rateToUsd: '1.0000000000',
     effectiveAt: '2026-10-01T00:00:00.000Z',
     source: 'seed',
   },
   {
     id: '019f6a92-0000-7d00-8d00-000000000002',
-    currencyId: '019f52ea-51fb-7c8a-9f9b-9e90cb765ce2', // EUR (older)
-    rateToUsd: '1.060000',
+    currencyCode: 'EUR',
+    rateToUsd: '1.0600000000',
     effectiveAt: '2026-09-01T00:00:00.000Z',
     source: 'seed',
   },
   {
     id: '019f6a92-0000-7d00-8d00-000000000003',
-    currencyId: '019f52ea-51fb-7c8a-9f9b-9e90cb765ce2', // EUR (latest)
-    rateToUsd: '1.080000',
+    currencyCode: 'EUR',
+    rateToUsd: '1.0800000000',
     effectiveAt: '2026-10-01T00:00:00.000Z',
     source: 'seed',
   },
   {
     id: '019f6a92-0000-7d00-8d00-000000000004',
-    currencyId: '019f52ea-51fb-793d-ac52-3b0833c13d4a', // GBP (older)
-    rateToUsd: '1.250000',
+    currencyCode: 'GBP',
+    rateToUsd: '1.2500000000',
     effectiveAt: '2026-09-01T00:00:00.000Z',
     source: 'seed',
   },
   {
     id: '019f6a92-0000-7d00-8d00-000000000005',
-    currencyId: '019f52ea-51fb-793d-ac52-3b0833c13d4a', // GBP (latest)
-    rateToUsd: '1.270000',
+    currencyCode: 'GBP',
+    rateToUsd: '1.2700000000',
     effectiveAt: '2026-10-01T00:00:00.000Z',
     source: 'seed',
   },
@@ -45,19 +46,53 @@ const rates = [
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface) {
-    await queryInterface.bulkInsert(
-      'exchange_rates',
-      rates.map((rate) => ({
-        id: rate.id,
-        currency_id: rate.currencyId,
-        rate_to_usd: rate.rateToUsd,
-        effective_at: rate.effectiveAt,
-        source: rate.source,
-        created_at: new Date(),
-        updated_at: new Date(),
-      })),
-      {},
+    const codes = [...new Set(rates.map((rate) => rate.currencyCode))];
+
+    // Resolve by business key so the seed keeps working if the currency UUIDs
+    // change, and only seed currencies the system still manages.
+    const currencies = await queryInterface.sequelize.query(
+      `SELECT id, code FROM currencies WHERE managed = true AND code IN (:codes)`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: { codes },
+      },
     );
+    const currencyIdByCode = new Map(
+      currencies.map((currency) => [currency.code, currency.id]),
+    );
+
+    const rows = rates
+      .map((rate) => {
+        const currencyId = currencyIdByCode.get(rate.currencyCode);
+        if (!currencyId) return null;
+
+        return {
+          id: rate.id,
+          currency_id: currencyId,
+          rate_to_usd: rate.rateToUsd,
+          effective_at: rate.effectiveAt,
+          source: rate.source,
+          created_at: new Date(),
+          updated_at: new Date(),
+        };
+      })
+      .filter(Boolean);
+
+    const missing = codes.filter((code) => !currencyIdByCode.has(code));
+    if (missing.length > 0) {
+      console.warn(
+        `Skipping exchange-rate seed for missing managed currencies: ${missing.join(', ')}`,
+      );
+    }
+
+    if (rows.length === 0) {
+      console.warn('No managed currencies matched the exchange-rate seed.');
+      return;
+    }
+
+    await queryInterface.bulkInsert('exchange_rates', rows, {
+      ignoreDuplicates: true,
+    });
   },
 
   async down(queryInterface, Sequelize) {
