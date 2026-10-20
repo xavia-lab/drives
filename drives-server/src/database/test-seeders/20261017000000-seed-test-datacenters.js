@@ -20,6 +20,13 @@ const datacenters = [
     city: 'Slough',
     country_code: 'GB',
   },
+  {
+    id: '019f6a00-0000-7a03-8a03-000000000003',
+    code: 'DE-FRA-1',
+    name: 'Frankfurt Data Center 1',
+    city: 'Frankfurt',
+    country_code: 'DE',
+  },
 ];
 
 module.exports = {

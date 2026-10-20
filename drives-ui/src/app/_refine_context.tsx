@@ -32,8 +32,10 @@ import {
   ContainerOutlined,
   DashboardOutlined,
   DatabaseOutlined,
+  DeploymentUnitOutlined,
   DesktopOutlined,
   FileProtectOutlined,
+  FolderOutlined,
   GlobalOutlined,
   GoldOutlined,
   HddOutlined,
@@ -43,6 +45,7 @@ import {
   MonitorOutlined,
   NumberOutlined,
   PoundOutlined,
+  ProjectOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   ShopOutlined,
@@ -302,7 +305,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Physical CPUs",
                     parent: "hardware",
-                    icon: <ClusterOutlined />,
+                    icon: <DeploymentUnitOutlined />,
                   },
                 },
                 {
@@ -317,7 +320,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Hardware",
                     parent: "reference",
-                    icon: <ApartmentOutlined />,
+                    icon: <ProjectOutlined />,
                   },
                 },
                 {
@@ -338,7 +341,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   meta: {
                     label: "Storage",
                     parent: "reference",
-                    icon: <ApartmentOutlined />,
+                    icon: <FolderOutlined />,
                   },
                 },
                 {

@@ -7,7 +7,7 @@
 //
 // A drive's current location is DERIVED from its latest event. This fixture
 // assigns a datacenter to 46 of the 50 seeded drives (so the slot-assignment
-// board has free drives in both datacenters) and deliberately leaves 4 drives
+// board has free drives in all datacenters) and deliberately leaves 4 drives
 // without any location. The curated events below keep their anchors for the
 // downstream slot-allocation fixture; `S6BZNA0T512346` additionally carries a
 // full move (VA-ASH-1 -> GB-SLO-1) to exercise the timeline.
@@ -59,8 +59,8 @@ const UNASSIGNED_SERIALS = [
   'TESTDRV-0050-EX',
 ];
 
-// Generated drives alternate between the two datacenters.
-const DATACENTERS = ['VA-ASH-1', 'GB-SLO-1'];
+// Generated drives rotate across the three datacenters.
+const DATACENTERS = ['VA-ASH-1', 'GB-SLO-1', 'DE-FRA-1'];
 
 // The generated events continue the drive fixture's `7fxx` id sequence, so each
 // event id is a stable transformation of the drive id (keeping `up`/`down` in

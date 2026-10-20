@@ -3,8 +3,8 @@
 // TEST-ONLY fixture for the `passthrough_slots` table. Not part of production seeding.
 // Run via `pnpm --filter @drives/drives-server seed:test`.
 //
-// Maps host physical-server backplane slots (20261017140600-seed-test-server-
-// slots.js) into guests (20261017140700-seed-test-virtual-servers.js). Each host
+// Maps host physical-server backplane slots (20261017015640-seed-test-server-slots.js)
+// into guests (20261017021320-seed-test-virtual-servers.js). Each host
 // slot is passed through at most once, and only to a guest running on the same
 // host, matching the service-level invariants.
 
@@ -71,6 +71,24 @@ const passthroughSlots = [
     virtual_server_hostname: 'vm-truenas-vm-01',
     server_hostname: 'slo-nas-01',
     slot_label: 'L2ARC 1',
+  },
+  {
+    id: '019f6a40-0000-7e11-8e11-00000000000b',
+    virtual_server_hostname: 'vm-build-01',
+    server_hostname: 'fra-compute-01',
+    slot_label: 'Bay 0',
+  },
+  {
+    id: '019f6a40-0000-7e11-8e11-00000000000c',
+    virtual_server_hostname: 'vm-backup-01',
+    server_hostname: 'fra-storage-01',
+    slot_label: 'HDD Bay 10',
+  },
+  {
+    id: '019f6a40-0000-7e11-8e11-00000000000d',
+    virtual_server_hostname: 'vm-backup-01',
+    server_hostname: 'fra-storage-01',
+    slot_label: 'HDD Bay 11',
   },
 ];
 

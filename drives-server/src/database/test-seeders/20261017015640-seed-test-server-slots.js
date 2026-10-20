@@ -4,7 +4,7 @@
 // Run via `pnpm --filter @drives/drives-server seed:test`.
 //
 // Slots are owned children of `physical_servers` (see the test physical-server
-// fixture in 20261017140400-seed-test-physical-servers.js) and reference the
+// fixture in 20261017010640-seed-test-physical-servers.js) and reference the
 // production `interfaces` lookup. Each server gets a plausible backplane layout.
 
 const { idMap, required } = require('./lib/lookups');
@@ -84,6 +84,38 @@ const serverSlots = [
       { slot_label: 'SLOG 1', interface_name: 'NVMe Gen 4.0 x4', pcie_bus_address: '0000:42:00.0' },
       { slot_label: 'L2ARC 0', interface_name: 'NVMe Gen 4.0 x4', pcie_bus_address: '0000:43:00.0' },
       { slot_label: 'L2ARC 1', interface_name: 'NVMe Gen 4.0 x4', pcie_bus_address: '0000:44:00.0' },
+    ],
+  },
+  {
+    // Frankfurt compute node: six NVMe Gen 5 bays.
+    server_hostname: 'fra-compute-01',
+    slots: [
+      { slot_label: 'Bay 0', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:51:00.0' },
+      { slot_label: 'Bay 1', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:52:00.0' },
+      { slot_label: 'Bay 2', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:53:00.0' },
+      { slot_label: 'Bay 3', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:54:00.0' },
+      { slot_label: 'Bay 4', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:55:00.0' },
+      { slot_label: 'Bay 5', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:56:00.0' },
+    ],
+  },
+  {
+    // Frankfurt storage chassis: twelve SAS HDD bays plus two NVMe cache bays.
+    server_hostname: 'fra-storage-01',
+    slots: [
+      { slot_label: 'HDD Bay 0', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 1', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 2', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 3', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 4', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 5', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 6', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 7', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 8', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 9', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 10', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'HDD Bay 11', interface_name: 'SAS 12G', pcie_bus_address: null },
+      { slot_label: 'Cache 0', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:81:00.0' },
+      { slot_label: 'Cache 1', interface_name: 'NVMe Gen 5.0 x4', pcie_bus_address: '0000:82:00.0' },
     ],
   },
 ];

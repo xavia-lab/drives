@@ -46,11 +46,11 @@ const claimSpecs = [
     triggering_drive_index: 8,
   },
   {
-    drive_index: 40,
+    drive_index: 39,
     vendor: 'Samsung Electronics',
-    rma_tracking_number: null,
-    notes: 'Bulk preventative return; no triggering drive event.',
-    triggering_drive_index: null,
+    rma_tracking_number: 'RMA-SEED-0005',
+    notes: 'Controller fault; drive entered RMA and is awaiting shipment.',
+    triggering_drive_index: 39,
   },
   {
     drive_index: 2,

@@ -13,7 +13,7 @@
 //   2  shipped -> approved -> closed                          (CLOSED)
 //   3  shipped                                                (SHIPPED_TO_VENDOR)
 //   4  (no events)                                            (SUBMITTED)
-//   5  shipped -> approved                                    (APPROVED)
+//   5  shipped -> approved -> closed                          (CLOSED)
 
 const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 const TOTAL_DRIVES = 50;
@@ -40,6 +40,7 @@ push(3, 'SHIPPED_TO_VENDOR');
 
 push(5, 'SHIPPED_TO_VENDOR');
 push(5, 'APPROVED');
+push(5, 'CLOSED', { notes: 'Reconciled with the vendor after scrapping.' });
 
 const events = rawEvents.map((event, index) => ({
   ...event,

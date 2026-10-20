@@ -33,7 +33,8 @@ const BASE_TIME = Date.UTC(2026, 0, 1, 8, 0, 0);
 //   7     fail -> FAILED
 //   8     fail -> RMA initiate -> IN_RMA
 //   9     degrade -> DEGRADED
-//   10-39 provisioned -> IN_SERVICE (then DEPROVISION if unseated)
+//   10-38 provisioned -> IN_SERVICE (then DEPROVISION if unseated)
+//   39    fail -> RMA initiate -> IN_RMA
 //   40-49 acquired only -> RECEIVED
 // ----------------------------------------------------------------------------
 
@@ -74,6 +75,11 @@ push(7, 'FAIL');
 push(8, 'FAIL');
 push(8, 'RMA_INITIATE');
 push(9, 'DEGRADE');
+
+push(39, 'FAIL', { context_metadata: { failure_code: 'CONTROLLER_FAULT' } });
+push(39, 'RMA_INITIATE', {
+  context_metadata: { rma_tracking_number: 'RMA-SEED-0007' },
+});
 
 // Assign deterministic ids and ascending timestamps: event N happens STEP_MS
 // after the previous one, so each drive's history is monotonic.
