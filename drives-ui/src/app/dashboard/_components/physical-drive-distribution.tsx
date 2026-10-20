@@ -2,26 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { stringifyTableParams, useApiUrl, useCustom } from "@refinedev/core";
+import { stringifyTableParams } from "@refinedev/core";
 import {
-  Alert,
-  Button,
   Card,
   Col,
   Empty,
   Row,
-  Skeleton,
   Space,
   Statistic,
   Typography,
   theme,
 } from "antd";
-import {
-  PieChartOutlined,
-  ReloadOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
+import { PieChartOutlined, RightOutlined } from "@ant-design/icons";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import type { DriveDistribution } from "./types";
 
 const { Text } = Typography;
 
@@ -39,20 +33,6 @@ const DATACENTER_PALETTE = [
   "#008685",
   "#F08BB4",
 ];
-
-type DatacenterDriveCount = {
-  datacenterId: string;
-  code: string;
-  name: string;
-  count: number;
-};
-
-type PhysicalDriveStats = {
-  total: number;
-  assigned: number;
-  unassigned: number;
-  byDatacenter: DatacenterDriveCount[];
-};
 
 type DistributionSlice = {
   key: string;
@@ -223,28 +203,16 @@ const LegendRow = ({
 };
 
 /**
- * Dashboard chart for the derived current location of every physical drive.
- * The backend aggregates the append-only location ledger, so this stays a
- * single request even as the inventory grows.
+ * Presentational distribution chart for the derived current location of every
+ * physical drive. The dashboard summary supplies the aggregated counts.
  */
-export const PhysicalDriveDistribution = () => {
+export const PhysicalDriveDistribution = ({
+  distribution,
+}: {
+  distribution: DriveDistribution;
+}) => {
   const { token } = theme.useToken();
-  const apiUrl = useApiUrl();
-
-  const { query, result } = useCustom({
-    url: `${apiUrl}/physical-drives/stats`,
-    method: "get",
-  });
-
-  // Refine's `useCustom` returns a frozen EMPTY_OBJECT while the request is in
-  // flight, so validate the shape before treating it as stats.
-  const rawStats = result?.data as Partial<PhysicalDriveStats> | undefined;
-  const stats =
-    rawStats &&
-    typeof rawStats.total === "number" &&
-    Array.isArray(rawStats.byDatacenter)
-      ? (rawStats as PhysicalDriveStats)
-      : undefined;
+  const stats = distribution;
 
   const slices = useMemo<DistributionSlice[]>(() => {
     if (!stats) {
@@ -314,31 +282,7 @@ export const PhysicalDriveDistribution = () => {
   );
 
   const renderBody = () => {
-    if (query.isLoading) {
-      return <Skeleton active paragraph={{ rows: 6 }} />;
-    }
-
-    if (query.isError) {
-      return (
-        <Alert
-          type="error"
-          showIcon
-          message="Could not load the drive distribution"
-          description="The inventory summary request failed. Check the API and try again."
-          action={
-            <Button
-              size="small"
-              icon={<ReloadOutlined />}
-              onClick={() => query.refetch()}
-            >
-              Retry
-            </Button>
-          }
-        />
-      );
-    }
-
-    if (!stats || stats.total === 0) {
+    if (stats.total === 0) {
       return (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}

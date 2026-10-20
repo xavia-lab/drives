@@ -183,7 +183,7 @@ export class PhysicalDriveService implements OnModuleInit {
 
   // Batched "current location" derivation for a set of drives: one query,
   // reduce to the latest event per drive in memory.
-  private async getCurrentLocationMap(
+  async getCurrentLocationMap(
     driveIds: string[],
   ): Promise<Map<string, CurrentDriveLocation | null>> {
     const map = new Map<string, CurrentDriveLocation | null>();
@@ -285,62 +285,6 @@ export class PhysicalDriveService implements OnModuleInit {
         currentLocationMap.get(driveId)?.datacenterId ?? '',
       ),
     );
-  }
-
-  // Aggregated inventory snapshot: total drives and their derived current
-  // location grouped by datacenter (plus the never-located remainder). Drives
-  // are grouped by their *latest* location event, matching `findAll`.
-  async getStats(): Promise<{
-    total: number;
-    assigned: number;
-    unassigned: number;
-    byDatacenter: Array<{
-      datacenterId: string;
-      code: string;
-      name: string;
-      count: number;
-    }>;
-  }> {
-    const drives = await this.physicalDriveModel.findAll({
-      attributes: ['id'],
-    });
-    const driveIds = drives.map((drive) => drive.id);
-    const currentLocationMap = await this.getCurrentLocationMap(driveIds);
-
-    const byDatacenter = new Map<
-      string,
-      { datacenterId: string; code: string; name: string; count: number }
-    >();
-    let unassigned = 0;
-
-    for (const driveId of driveIds) {
-      const location = currentLocationMap.get(driveId);
-      if (!location) {
-        unassigned += 1;
-        continue;
-      }
-
-      const entry = byDatacenter.get(location.datacenterId);
-      if (entry) {
-        entry.count += 1;
-      } else {
-        byDatacenter.set(location.datacenterId, {
-          datacenterId: location.datacenterId,
-          code: location.code,
-          name: location.name,
-          count: 1,
-        });
-      }
-    }
-
-    return {
-      total: driveIds.length,
-      assigned: driveIds.length - unassigned,
-      unassigned,
-      byDatacenter: [...byDatacenter.values()].sort(
-        (a, b) => b.count - a.count,
-      ),
-    };
   }
 
   async findAll(

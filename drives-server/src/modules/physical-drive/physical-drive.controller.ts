@@ -31,7 +31,6 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
-import { PhysicalDriveStatsResponseDto } from './dto/response/physical-drive-stats-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
@@ -58,21 +57,6 @@ export class PhysicalDriveController {
     @Query() query: QueryPhysicalDriveDto,
   ): Promise<PaginatedResponse<PhysicalDrive>> {
     return await this.physicalDriveService.findAll(query);
-  }
-
-  @Get('stats')
-  @Public()
-  @Serialize(PhysicalDriveStatsResponseDto)
-  @ApiOperation({
-    summary:
-      'Get drive counts grouped by derived current datacenter (plus unassigned)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Physical drive distribution retrieved successfully',
-  })
-  async getStats(): Promise<PhysicalDriveStatsResponseDto> {
-    return await this.physicalDriveService.getStats();
   }
 
   @Get(':id')

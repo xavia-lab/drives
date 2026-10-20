@@ -3,14 +3,14 @@
 import { Space } from "antd";
 import { WorkflowLauncher } from "@components/workflow";
 import { WORKFLOWS } from "@workflows/registry";
-import { PhysicalDriveDistribution } from "./_components/physical-drive-distribution";
+import { DashboardInsights } from "./_components/dashboard-insights";
 
 export default function DashboardMainPage() {
   return (
     <div style={{ padding: "24px" }}>
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <WorkflowLauncher workflows={WORKFLOWS} />
-        <PhysicalDriveDistribution />
+        <DashboardInsights />
       </Space>
     </div>
   );
