@@ -31,6 +31,7 @@ import { OperatingSystemResponseDto } from './dto/response/operating-system-resp
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('operating-systems')
 @Controller('operating-systems')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class OperatingSystemController {
   constructor(private readonly osService: OperatingSystemService) {}
 
   @Get()
+  @Cacheable({ tags: ['operating-systems'] })
   @Public()
   @ApiOperation({ summary: 'Get all Operating Systems with pagination' })
   @ApiQuery({ type: QueryOperatingSystemDto })
@@ -54,6 +56,7 @@ export class OperatingSystemController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['operating-systems'] })
   @Public()
   @ApiOperation({ summary: 'Get Operating System by ID' })
   @ApiParam({
@@ -76,6 +79,7 @@ export class OperatingSystemController {
   }
 
   @Post()
+  @InvalidateCache('operating-systems')
   @Public()
   @ApiOperation({ summary: 'Create a new Operating System lookup mapping' })
   @ApiResponse({
@@ -93,6 +97,7 @@ export class OperatingSystemController {
   }
 
   @Put(':id')
+  @InvalidateCache('operating-systems')
   @Public()
   @ApiOperation({ summary: 'Update an Operating System definition' })
   @ApiParam({
@@ -114,6 +119,7 @@ export class OperatingSystemController {
   }
 
   @Delete(':id')
+  @InvalidateCache('operating-systems')
   @Public()
   @ApiOperation({ summary: 'Delete an Operating System mapping' })
   @ApiParam({

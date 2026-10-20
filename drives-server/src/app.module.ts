@@ -6,6 +6,8 @@ import databaseConfig from './config/database.config';
 import keycloakConfig from './config/keycloak.config';
 import storageConfig from './config/storage.config';
 import exchangeRateConfig from './config/exchange-rate.config';
+import cacheConfig from './config/cache.config';
+import { CacheModule } from './modules/cache/cache.module';
 import { PaginationModule } from './modules/pagination/pagination.module';
 import { DatabaseModule } from './database/database.module';
 import { KeycloakModule } from './modules/keycloak/keycloak.module';
@@ -56,10 +58,12 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
         keycloakConfig,
         storageConfig,
         exchangeRateConfig,
+        cacheConfig,
       ],
       // Add '.env' to the end of the array as a fallback
       envFilePath: [`.env.${process.env.NODE_ENV}.local`, '.env.local', '.env'],
     }),
+    CacheModule,
     PaginationModule,
     DatabaseModule,
     MetadataModule,

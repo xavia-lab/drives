@@ -31,6 +31,7 @@ import { DriveModelResponseDto } from './dto/response/drive-model-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('drive-models')
 @Controller('drive-models')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class DriveModelController {
   constructor(private readonly driveModelService: DriveModelService) {}
 
   @Get()
+  @Cacheable({ tags: ['drive-models'] })
   @Public()
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryDriveModelDto })
@@ -54,6 +56,7 @@ export class DriveModelController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['drive-models'] })
   @Public()
   @ApiOperation({ summary: 'Get DriveModel by ID' })
   // 2. Updated Swagger documentation metadata type hint
@@ -79,6 +82,7 @@ export class DriveModelController {
   }
 
   @Post()
+  @InvalidateCache('drive-models')
   @Public()
   @ApiOperation({ summary: 'Create a new drive-model' })
   @ApiResponse({
@@ -93,6 +97,7 @@ export class DriveModelController {
   }
 
   @Put(':id')
+  @InvalidateCache('drive-models')
   @Public()
   @ApiOperation({ summary: 'Update a drive-model' })
   @ApiParam({
@@ -121,6 +126,7 @@ export class DriveModelController {
   }
 
   @Delete(':id')
+  @InvalidateCache('drive-models')
   @Public()
   @ApiOperation({ summary: 'Delete a drive-model' })
   @ApiParam({

@@ -30,6 +30,7 @@ import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CountryResponseDto } from './dto/response/country-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('countries')
 @Controller('countries')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -39,6 +40,7 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   @Get()
+  @Cacheable({ tags: ['countries'] })
   @Public()
   // @CheckPolicy('list', 'countries')
   @ApiOperation({ summary: 'Get all countries with pagination' })
@@ -52,6 +54,7 @@ export class CountryController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['countries'] })
   @Public()
   // @CheckPolicy('show', 'countries')
   @ApiOperation({ summary: 'Get country by ID' })
@@ -75,6 +78,7 @@ export class CountryController {
   }
 
   @Post()
+  @InvalidateCache('countries')
   @Public()
   // @CheckPolicy('create', 'countries')
   @ApiOperation({ summary: 'Create a new country' })
@@ -85,6 +89,7 @@ export class CountryController {
   }
 
   @Put(':id')
+  @InvalidateCache('countries')
   @Public()
   // @CheckPolicy('edit', 'countries')
   @ApiOperation({ summary: 'Update a country' })
@@ -114,6 +119,7 @@ export class CountryController {
   }
 
   @Delete(':id')
+  @InvalidateCache('countries')
   @Public()
   // @CheckPolicy('delete', 'countries')
   @ApiOperation({ summary: 'Delete a country' })

@@ -31,6 +31,7 @@ import { CpuModelResponseDto } from './dto/response/cpu-model-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('cpu-models')
 @Controller('cpu-models')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class CpuModelController {
   constructor(private readonly cpuModelService: CpuModelService) {}
 
   @Get()
+  @Cacheable({ tags: ['cpu-models'] })
   @Public()
   @ApiOperation({ summary: 'Get all CPU Models with pagination' })
   @ApiQuery({ type: QueryCpuModelDto })
@@ -54,6 +56,7 @@ export class CpuModelController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['cpu-models'] })
   @Public()
   @ApiOperation({ summary: 'Get CPU Model by ID' })
   @ApiParam({
@@ -77,6 +80,7 @@ export class CpuModelController {
   }
 
   @Post()
+  @InvalidateCache('cpu-models')
   @Public()
   @ApiOperation({ summary: 'Create a new CPU model' })
   @ApiResponse({
@@ -91,6 +95,7 @@ export class CpuModelController {
   }
 
   @Put(':id')
+  @InvalidateCache('cpu-models')
   @Public()
   @ApiOperation({ summary: 'Update a CPU model' })
   @ApiParam({
@@ -116,6 +121,7 @@ export class CpuModelController {
   }
 
   @Delete(':id')
+  @InvalidateCache('cpu-models')
   @Public()
   @ApiOperation({ summary: 'Delete a CPU model' })
   @ApiParam({

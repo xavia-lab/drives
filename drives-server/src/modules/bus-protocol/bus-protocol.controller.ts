@@ -31,6 +31,7 @@ import { BusProtocolResponseDto } from './dto/response/bus-protocol-response.dto
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 @ApiTags('bus-protocols')
 @Controller('bus-protocols')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,6 +41,7 @@ export class BusProtocolController {
   constructor(private readonly BusProtocolService: BusProtocolService) {}
 
   @Get()
+  @Cacheable({ tags: ['bus-protocols'] })
   @Public()
   // @CheckPolicy('list', 'bus-protocols')
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
@@ -55,6 +57,7 @@ export class BusProtocolController {
   }
 
   @Get(':id')
+  @Cacheable({ tags: ['bus-protocols'] })
   @Public()
   // @CheckPolicy('show', 'bus-protocols')
   @ApiOperation({ summary: 'Get BusProtocol by ID' })
@@ -81,6 +84,7 @@ export class BusProtocolController {
   }
 
   @Post()
+  @InvalidateCache('bus-protocols')
   @Public()
   // @CheckPolicy('create', 'bus-protocols')
   @ApiOperation({ summary: 'Create a new BusProtocol' })
@@ -96,6 +100,7 @@ export class BusProtocolController {
   }
 
   @Put(':id')
+  @InvalidateCache('bus-protocols')
   @Public()
   // @CheckPolicy('edit', 'bus-protocols')
   @ApiOperation({ summary: 'Update a BusProtocol' })
@@ -128,6 +133,7 @@ export class BusProtocolController {
   }
 
   @Delete(':id')
+  @InvalidateCache('bus-protocols')
   @Public()
   // @CheckPolicy('delete', 'bus-protocols')
   @ApiOperation({ summary: 'Delete a BusProtocol' })
