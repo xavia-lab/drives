@@ -31,6 +31,7 @@ import { CurrencyResponseDto } from './dto/response/currency-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('currencies')
 @Controller('currencies')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -78,7 +79,7 @@ export class CurrencyController {
   }
 
   @Post()
-  @InvalidateCache('currencies')
+  @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
   @Public()
   // @CheckPolicy('create', 'currencies')
   @ApiOperation({ summary: 'Create a new currency' })
@@ -91,7 +92,7 @@ export class CurrencyController {
   }
 
   @Put(':id')
-  @InvalidateCache('currencies')
+  @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
   @Public()
   // @CheckPolicy('edit', 'currencies')
   @ApiOperation({ summary: 'Update a currency' })
@@ -121,7 +122,7 @@ export class CurrencyController {
   }
 
   @Delete(':id')
-  @InvalidateCache('currencies')
+  @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
   @Public()
   // @CheckPolicy('delete', 'currencies')
   @ApiOperation({ summary: 'Delete a currency' })

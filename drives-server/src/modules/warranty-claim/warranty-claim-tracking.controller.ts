@@ -25,6 +25,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('warranty-claim-tracking')
 @Controller('warranty-claims')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -51,6 +53,7 @@ export class WarrantyClaimTrackingController {
   }
 
   @Post(':id/tracking')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @CheckPolicy('create', 'warranty-claim-events')
   @Serialize(WarrantyClaimTimelineResponseDto)
   @ApiOperation({

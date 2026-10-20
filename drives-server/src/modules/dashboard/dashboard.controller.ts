@@ -11,6 +11,8 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { DashboardService } from './dashboard.service';
 import { DashboardSummaryResponseDto } from './dto/response/dashboard-summary-response.dto';
+import { Cacheable } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 
 @ApiTags('dashboard')
 @Controller('dashboard')
@@ -20,6 +22,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('summary')
+  @Cacheable({ tags: [CACHE_TAGS.DASHBOARD], ttlMs: 30_000 })
   @Public()
   @Serialize(DashboardSummaryResponseDto)
   @ApiOperation({

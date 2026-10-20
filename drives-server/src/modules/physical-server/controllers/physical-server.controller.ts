@@ -31,6 +31,8 @@ import { PhysicalServerResponseDto } from '../dto/response/physical-server-respo
 import { PaginatedResponse } from '../../pagination/interfaces/paginated-response';
 import { Public } from '../../../common/decorators/public.decorator';
 
+import { InvalidateCache } from '../../cache/cache.decorators';
+import { CACHE_TAGS } from '../../cache/cache.tags';
 @ApiTags('physical-servers')
 @Controller('physical-servers')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -77,6 +79,7 @@ export class PhysicalServerController {
   }
 
   @Post()
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Create a new Physical Server node' })
   @ApiResponse({
@@ -98,6 +101,7 @@ export class PhysicalServerController {
   }
 
   @Put(':id')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Update Physical Server details' })
   @ApiParam({
@@ -129,6 +133,7 @@ export class PhysicalServerController {
   }
 
   @Delete(':id')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Delete a Physical Server' })
   @ApiParam({

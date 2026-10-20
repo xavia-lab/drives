@@ -25,6 +25,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('drive-lifecycle')
 @Controller('physical-drives')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -35,6 +37,7 @@ export class DriveLifecycleController {
   ) {}
 
   @Get(':id/lifecycle')
+  @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
   @Public()
   @Serialize(DriveLifecycleTimelineResponseDto)
   @ApiOperation({
@@ -51,6 +54,7 @@ export class DriveLifecycleController {
   }
 
   @Post(':id/lifecycle-events')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @CheckPolicy('create', 'drive-lifecycle-events')
   @Serialize(DriveLifecycleTimelineResponseDto)
   @ApiOperation({

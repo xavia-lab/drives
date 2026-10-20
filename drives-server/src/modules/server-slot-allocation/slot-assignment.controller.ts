@@ -28,6 +28,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('slot-assignment')
 @Controller('physical-servers')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -54,6 +56,7 @@ export class SlotAssignmentController {
   }
 
   @Post(':id/slots/:slotId/mount')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @CheckPolicy('mount', 'server-slot-allocations')
   @ApiOperation({
     summary: 'Mount a physical drive into a server slot',
@@ -86,6 +89,7 @@ export class SlotAssignmentController {
   }
 
   @Post(':id/slots/:slotId/unmount')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @CheckPolicy('unmount', 'server-slot-allocations')
   @ApiOperation({
     summary: 'Unmount the drive currently seated in a server slot',
@@ -112,6 +116,7 @@ export class SlotAssignmentController {
   }
 
   @Put(':id/slot-assignments')
+  @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @CheckPolicy('save', 'server-slot-allocations')
   @ApiOperation({
     summary:

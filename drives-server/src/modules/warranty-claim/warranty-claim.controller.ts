@@ -36,6 +36,8 @@ import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
 
+import { InvalidateCache } from '../cache/cache.decorators';
+import { CACHE_TAGS } from '../cache/cache.tags';
 @ApiTags('warranty-claims')
 @Controller('warranty-claims')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -82,6 +84,7 @@ export class WarrantyClaimController {
   }
 
   @Post()
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Create a new warranty claim' })
   @ApiResponse({
@@ -99,6 +102,7 @@ export class WarrantyClaimController {
   }
 
   @Post('initiate')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @CheckPolicy('create', 'warranty-claims')
   @ApiOperation({
     summary:
@@ -129,6 +133,7 @@ export class WarrantyClaimController {
   }
 
   @Put(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Update a warranty claim' })
   @ApiParam({
@@ -159,6 +164,7 @@ export class WarrantyClaimController {
   }
 
   @Delete(':id')
+  @InvalidateCache(CACHE_TAGS.DASHBOARD)
   @Public()
   @ApiOperation({ summary: 'Delete a warranty claim' })
   @ApiParam({
