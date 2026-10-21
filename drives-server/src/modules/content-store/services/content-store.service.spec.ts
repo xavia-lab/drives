@@ -24,6 +24,7 @@ describe('ContentStoreService', () => {
       exists: vi.fn(),
       delete: vi.fn(),
       list: vi.fn(),
+      listDetailed: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -138,14 +139,14 @@ describe('ContentStoreService', () => {
     it('should filter out .json files and return only hashes', async () => {
       const first = 'a'.repeat(64);
       const second = 'b'.repeat(64);
-      const mockFiles = [
-        `${prefix}${first}`,
-        `${prefix}${first}.json`,
-        `${prefix}${second}`,
-        `${prefix}${second}.json`,
-        `${prefix}not-a-hash`,
+      const mockObjects = [
+        { key: `${prefix}${first}`, lastModified: new Date() },
+        { key: `${prefix}${first}.json`, lastModified: new Date() },
+        { key: `${prefix}${second}`, lastModified: new Date() },
+        { key: `${prefix}${second}.json`, lastModified: new Date() },
+        { key: `${prefix}not-a-hash`, lastModified: new Date() },
       ];
-      storageMock.list.mockResolvedValue(mockFiles);
+      storageMock.listDetailed.mockResolvedValue(mockObjects);
 
       const result = await service.listHashes();
 

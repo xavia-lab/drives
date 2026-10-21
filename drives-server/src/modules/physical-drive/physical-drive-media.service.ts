@@ -7,7 +7,7 @@ import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Media } from '../media/entities/media.entity';
-import { MediaService } from '../media/media.service';
+import { MediaService, type PreparedMediaUpload } from '../media/media.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import {
   PhysicalDriveMedia,
@@ -96,11 +96,10 @@ export class PhysicalDriveMediaService {
 
     await this.assertDriveExists(driveId);
 
-    // Upload first so the DB transaction stays short. Identical content is
-    // deduplicated by MediaService, and media rows remain reusable if the
-    // attachment transaction later fails.
-    const uploaded: Array<{
-      mediaId: string;
+    // Write content first so the DB transaction stays short. Media rows are
+    // resolved inside the transaction below.
+    const prepared: Array<{
+      upload: PreparedMediaUpload;
       attachmentType: PhysicalDriveMediaType;
       notes: string | null;
       isPrimary: boolean;
@@ -111,13 +110,13 @@ export class PhysicalDriveMediaService {
     for (let index = 0; index < files.length; index += 1) {
       const file = files[index];
       const item = addItems[index] ?? {};
-      const { media } = await this.mediaService.trackUpload(file);
+      const upload = await this.mediaService.prepareUpload(file);
 
       const isPrimary = Boolean(item.isPrimary) && !addPrimarySeen;
       if (isPrimary) addPrimarySeen = true;
 
-      const existingUpload = uploaded.find(
-        (entry) => entry.mediaId === media.id,
+      const existingUpload = prepared.find(
+        (entry) => entry.upload.fileId === upload.fileId,
       );
       if (existingUpload) {
         existingUpload.attachmentType =
@@ -128,8 +127,8 @@ export class PhysicalDriveMediaService {
         continue;
       }
 
-      uploaded.push({
-        mediaId: media.id,
+      prepared.push({
+        upload,
         attachmentType:
           item.attachmentType ?? this.inferAttachmentType(file.mimetype),
         notes: item.notes?.trim() || null,
@@ -140,6 +139,28 @@ export class PhysicalDriveMediaService {
 
     await this.sequelize.transaction(async (transaction) => {
       await this.lockDrive(driveId, transaction);
+
+      const uploaded: Array<{
+        mediaId: string;
+        attachmentType: PhysicalDriveMediaType;
+        notes: string | null;
+        isPrimary: boolean;
+        sortOrder?: number;
+      }> = [];
+
+      for (const entry of prepared) {
+        const { media } = await this.mediaService.findOrCreateMedia(
+          entry.upload,
+          transaction,
+        );
+        uploaded.push({
+          mediaId: media.id,
+          attachmentType: entry.attachmentType,
+          notes: entry.notes,
+          isPrimary: entry.isPrimary,
+          sortOrder: entry.sortOrder,
+        });
+      }
 
       const current = await this.physicalDriveMediaModel.findAll({
         where: { physicalDriveId: driveId },

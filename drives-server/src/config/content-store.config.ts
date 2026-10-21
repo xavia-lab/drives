@@ -1,5 +1,10 @@
 import { registerAs } from '@nestjs/config';
 
+const parseBoolean = (value?: string): boolean | undefined => {
+  if (value === undefined || value.trim() === '') return undefined;
+  return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
+};
+
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -20,6 +25,19 @@ export default registerAs('contentStore', () => ({
     process.env.DRIVES_BACKEND_CONTENT_STORE_DRIVER ??
       process.env.DRIVES_BACKEND_STORAGE_DRIVER,
   ),
+  gc: {
+    enabled:
+      parseBoolean(process.env.DRIVES_BACKEND_CONTENT_STORE_GC_ENABLED) ??
+      process.env.NODE_ENV !== 'test',
+    graceMs: parseNumber(
+      process.env.DRIVES_BACKEND_CONTENT_STORE_GC_GRACE_MS,
+      24 * 60 * 60 * 1000,
+    ),
+    batchSize: parseNumber(
+      process.env.DRIVES_BACKEND_CONTENT_STORE_GC_BATCH_SIZE,
+      500,
+    ),
+  },
   local: {
     root:
       process.env.DRIVES_BACKEND_CONTENT_STORE_LOCAL_PATH ??

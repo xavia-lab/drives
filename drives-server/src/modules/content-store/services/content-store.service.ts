@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
+import type { ContentStoreObject } from '../interfaces/content-store-provider.interface';
 import {
   CONTENT_STORE_PROVIDER,
   type ContentStoreProvider,
@@ -89,11 +90,26 @@ export class ContentStoreService {
   }
 
   async listHashes(): Promise<string[]> {
-    const files = await this.storage.list(this.prefix);
+    return (await this.listContentObjects()).map((object) => object.fileId);
+  }
 
-    return files
-      .filter((file) => file.startsWith(this.prefix))
-      .map((file) => file.slice(this.prefix.length))
-      .filter((fileId) => /^[a-f0-9]{64}$/.test(fileId));
+  /**
+   * Returns content objects (excluding sidecars) with their storage timestamp,
+   * used by the garbage collector to respect a grace period.
+   */
+  async listContentObjects(): Promise<
+    Array<{ fileId: string; lastModified: Date | null }>
+  > {
+    const objects: ContentStoreObject[] = await this.storage.listDetailed(
+      this.prefix,
+    );
+
+    return objects
+      .filter((object) => object.key.startsWith(this.prefix))
+      .map((object) => ({
+        fileId: object.key.slice(this.prefix.length),
+        lastModified: object.lastModified,
+      }))
+      .filter((object) => /^[a-f0-9]{64}$/.test(object.fileId));
   }
 }

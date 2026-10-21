@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -64,6 +65,7 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
       // Add '.env' to the end of the array as a fallback
       envFilePath: [`.env.${process.env.NODE_ENV}.local`, '.env.local', '.env'],
     }),
+    ScheduleModule.forRoot(),
     CacheModule,
     PaginationModule,
     DatabaseModule,

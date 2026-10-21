@@ -1,7 +1,10 @@
 import { promises as fs } from 'fs';
 import type { Dirent } from 'fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path';
-import { ContentStoreProvider } from '../interfaces/content-store-provider.interface';
+import {
+  ContentStoreObject,
+  ContentStoreProvider,
+} from '../interfaces/content-store-provider.interface';
 
 /**
  * Filesystem-backed content store for single-node / small deployments.
@@ -105,15 +108,20 @@ export class LocalContentStoreProvider implements ContentStoreProvider {
   }
 
   async list(prefix: string): Promise<string[]> {
+    return (await this.listDetailed(prefix)).map((object) => object.key);
+  }
+
+  async listDetailed(prefix: string): Promise<ContentStoreObject[]> {
     const start = this.resolvePrefix(prefix);
-    const result: string[] = [];
+    const result: ContentStoreObject[] = [];
 
     const walk = async (directory: string): Promise<void> => {
       let entries: Dirent[];
       try {
         entries = await fs.readdir(directory, { withFileTypes: true });
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'ENOENT' || code === 'ENOTDIR') return;
         throw error;
       }
 
@@ -122,13 +130,14 @@ export class LocalContentStoreProvider implements ContentStoreProvider {
         if (entry.isDirectory()) {
           await walk(fullPath);
         } else if (entry.isFile() && !entry.name.endsWith('.tmp')) {
-          result.push(this.toKey(fullPath));
+          const stat = await fs.stat(fullPath);
+          result.push({ key: this.toKey(fullPath), lastModified: stat.mtime });
         }
       }
     };
 
     await walk(start);
-    return result.sort();
+    return result.sort((a, b) => a.key.localeCompare(b.key));
   }
 
   private resolveKey(key: string): string {
