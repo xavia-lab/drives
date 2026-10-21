@@ -4,6 +4,7 @@ import { PhysicalDriveController } from './physical-drive.controller';
 import { PhysicalDriveService } from './physical-drive.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import { PhysicalDriveLocation } from './entities/physical-drive-location.entity';
+import { PhysicalDriveMedia } from './entities/physical-drive-media.entity';
 import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Vendor } from '../vendor/entities/vendor.entity';
 import { Currency } from '../currency/entities/currency.entity';
@@ -16,6 +17,7 @@ import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecy
     SequelizeModule.forFeature([
       PhysicalDrive,
       PhysicalDriveLocation,
+      PhysicalDriveMedia,
       DriveModel,
       Vendor,
       Currency,

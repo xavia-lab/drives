@@ -1,18 +1,17 @@
-import { Expose, Transform } from 'class-transformer';
+import { Expose } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-// Define a safe interface signature layout for the incoming Transform parameter context
-interface TransformFnParams {
-  value: unknown;
-  key: string;
-  obj: Record<string, unknown>; // Maps the source object to a known indexable dictionary record structure
-  type: number;
-}
+import { MediaType } from '../../entities/media.entity';
 
 export class MediaResponseDto {
+  @ApiProperty({
+    example: '019f6a90-0000-7d00-8d00-000000000001',
+  })
+  @Expose()
+  id: string;
+
   @ApiProperty({ example: 1 })
   @Expose()
-  id: number;
+  displayKey: number;
 
   @ApiProperty({
     example: 'cc493aa94da119a37208c618875ca25510434a3b7ee27ff22edc1a7f125559ca',
@@ -21,22 +20,22 @@ export class MediaResponseDto {
   fileId: string;
 
   @ApiProperty({
-    enum: ['IMAGE', 'VIDEO', 'DOCUMENT', 'CERTIFICATE', 'QR_CODE', 'LABEL'],
-    example: 'IMAGE',
+    enum: MediaType,
+    example: MediaType.IMAGE,
   })
   @Expose()
-  mediaType: string;
+  mediaType: MediaType;
 
-  @ApiProperty({ example: 'gold-ring.jpg' })
+  @ApiPropertyOptional({ example: 'gold-ring.jpg' })
   @Expose()
-  fileName: string;
+  fileName: string | null;
 
-  @ApiProperty({ example: 'image/jpeg' })
+  @ApiPropertyOptional({ example: 'image/jpeg' })
   @Expose()
-  mimeType: string;
+  mimeType: string | null;
 
   @Expose()
-  fileSize: number;
+  fileSize: number | null;
 
   @ApiPropertyOptional({
     example: {
@@ -47,46 +46,14 @@ export class MediaResponseDto {
     },
   })
   @Expose()
-  // Fixed: Passed explicit layouts to the callback parameters to destroy the implicit 'any' contexts
-  @Transform(({ value, obj }: TransformFnParams): Record<string, unknown> => {
-    // Extract safely using type-casting constraints to prevent checking boundary issues
-    const sourceMetadata =
-      obj.metadata && typeof obj.metadata === 'object'
-        ? (obj.metadata as Record<string, unknown>)
-        : null;
-
-    const currentMetadata =
-      value && typeof value === 'object'
-        ? (value as Record<string, unknown>)
-        : null;
-
-    const hasData = sourceMetadata && Object.keys(sourceMetadata).length > 0;
-    const isValueEmpty =
-      !currentMetadata || Object.keys(currentMetadata).length === 0;
-
-    if (isValueEmpty && hasData && sourceMetadata) {
-      return sourceMetadata;
-    }
-
-    return currentMetadata || sourceMetadata || {};
-  })
-  metadata?: Record<string, unknown>; // Fixed: Changed Record<string, any> over to 'unknown' to lock types completely
+  metadata: Record<string, unknown> | null;
 
   @Expose()
   createdAt: Date;
 
   @Expose()
-  deletedAt: Date;
-
-  @Expose()
   updatedAt: Date;
 
   @Expose()
-  isPrimary: boolean;
-
-  @Expose()
-  isActive: boolean;
-
-  @Expose()
-  sortOrder: number;
+  deletedAt: Date | null;
 }
