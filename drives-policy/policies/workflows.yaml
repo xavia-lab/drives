@@ -1,0 +1,14 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "workflows"
+  rules:
+    - actions: ["run", "show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin
+
+    - actions: ["run", "show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - user

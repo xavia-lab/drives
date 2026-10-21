@@ -29,8 +29,8 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { LogicalDiskResponseDto } from './dto/response/logical-disk-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('logical-disks')
 @Controller('logical-disks')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,7 +40,7 @@ export class LogicalDiskController {
   constructor(private readonly logicalDiskService: LogicalDiskService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'logical-disks')
   @ApiOperation({ summary: 'Get all Logical Disks with pagination' })
   @ApiQuery({ type: QueryLogicalDiskDto })
   @ApiResponse({
@@ -54,7 +54,7 @@ export class LogicalDiskController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'logical-disks')
   @ApiOperation({ summary: 'Get Logical Disk mapping by ID' })
   @ApiParam({
     name: 'id',
@@ -77,7 +77,7 @@ export class LogicalDiskController {
   }
 
   @Post()
-  @Public()
+  @CheckPolicy('create', 'logical-disks')
   @ApiOperation({
     summary: 'Map a physical hardware drive into a logical vdev configuration',
   })
@@ -99,7 +99,7 @@ export class LogicalDiskController {
   }
 
   @Put(':id')
-  @Public()
+  @CheckPolicy('edit', 'logical-disks')
   @ApiOperation({ summary: 'Update logical disk mapping configurations' })
   @ApiParam({
     name: 'id',
@@ -130,7 +130,7 @@ export class LogicalDiskController {
   }
 
   @Delete(':id')
-  @Public()
+  @CheckPolicy('delete', 'logical-disks')
   @ApiOperation({
     summary: 'Unmap or delete a logical disk from asset registry',
   })

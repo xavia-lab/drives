@@ -23,7 +23,6 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
-import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveMediaService } from './physical-drive-media.service';
@@ -47,7 +46,7 @@ export class PhysicalDriveMediaController {
   ) {}
 
   @Get(':id/media')
-  @Public()
+  @CheckPolicy('show', 'physical-drives')
   @Serialize(PhysicalDriveMediaResponseDto)
   @ApiOperation({ summary: 'List media attached to a physical drive' })
   @ApiParam({ name: 'id', type: String })
@@ -62,7 +61,7 @@ export class PhysicalDriveMediaController {
   }
 
   @Post(':id/media')
-  @CheckPolicy('edit', 'physical-drives')
+  @CheckPolicy('manage-media', 'physical-drives')
   @Serialize(PhysicalDriveMediaResponseDto)
   @UseInterceptors(
     FilesInterceptor('files', MAX_FILES, {
@@ -86,7 +85,7 @@ export class PhysicalDriveMediaController {
   }
 
   @Put(':id/media')
-  @CheckPolicy('edit', 'physical-drives')
+  @CheckPolicy('manage-media', 'physical-drives')
   @Serialize(PhysicalDriveMediaResponseDto)
   @UseInterceptors(
     FilesInterceptor('files', MAX_FILES, {
@@ -117,7 +116,7 @@ export class PhysicalDriveMediaController {
   }
 
   @Patch(':id/media/:attachmentId')
-  @CheckPolicy('edit', 'physical-drives')
+  @CheckPolicy('manage-media', 'physical-drives')
   @Serialize(PhysicalDriveMediaResponseDto)
   @ApiOperation({ summary: 'Update attachment notes, type or primary flag' })
   @ApiParam({ name: 'id', type: String })
@@ -137,7 +136,7 @@ export class PhysicalDriveMediaController {
   }
 
   @Delete(':id/media/:attachmentId')
-  @CheckPolicy('edit', 'physical-drives')
+  @CheckPolicy('manage-media', 'physical-drives')
   @ApiOperation({ summary: 'Detach media from a physical drive' })
   @ApiParam({ name: 'id', type: String })
   @ApiParam({ name: 'attachmentId', type: String })

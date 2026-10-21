@@ -32,7 +32,6 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalDriveResponseDto } from './dto/response/physical-drive-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
@@ -47,8 +46,8 @@ export class PhysicalDriveController {
   constructor(private readonly physicalDriveService: PhysicalDriveService) {}
 
   @Get()
+  @CheckPolicy('list', 'physical-drives')
   @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
-  @Public()
   @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryPhysicalDriveDto })
@@ -63,8 +62,8 @@ export class PhysicalDriveController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'physical-drives')
   @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
-  @Public()
   @Serialize(PhysicalDriveResponseDto)
   @ApiOperation({ summary: 'Get PhysicalDrive by ID' })
   // 2. Updated Swagger documentation metadata type hint
@@ -90,8 +89,8 @@ export class PhysicalDriveController {
   }
 
   @Post()
+  @CheckPolicy('create', 'physical-drives')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Create a new physical-drive' })
   @ApiResponse({
     status: 201,
@@ -107,7 +106,7 @@ export class PhysicalDriveController {
   @Post('acquisitions')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
-  @CheckPolicy('create', 'physical-drives')
+  @CheckPolicy('acquire', 'physical-drives')
   @ApiOperation({
     summary:
       'Acquire a new drive: atomically create the physical drive, its initial location event and the ACQUIRE lifecycle event',
@@ -141,7 +140,7 @@ export class PhysicalDriveController {
   @Post(':id/relocations')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
-  @CheckPolicy('locate', 'physical-drives')
+  @CheckPolicy('relocate', 'physical-drives')
   @ApiOperation({
     summary:
       'Relocate an unmounted drive to another datacenter (append-only location event)',
@@ -172,9 +171,9 @@ export class PhysicalDriveController {
   }
 
   @Post(':id/locations')
+  @CheckPolicy('locate', 'physical-drives')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
-  @Public()
   @ApiOperation({
     summary:
       'Record a location event for a physical drive (append-only move history)',
@@ -204,9 +203,9 @@ export class PhysicalDriveController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'physical-drives')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
   @Serialize(PhysicalDriveResponseDto)
-  @Public()
   @ApiOperation({ summary: 'Update a physical-drive' })
   @ApiParam({
     name: 'id',
@@ -237,8 +236,8 @@ export class PhysicalDriveController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'physical-drives')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Delete a physical-drive' })
   @ApiParam({
     name: 'id',

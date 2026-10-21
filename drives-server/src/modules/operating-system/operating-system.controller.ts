@@ -29,9 +29,9 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { OperatingSystemResponseDto } from './dto/response/operating-system-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('operating-systems')
 @Controller('operating-systems')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class OperatingSystemController {
   constructor(private readonly osService: OperatingSystemService) {}
 
   @Get()
+  @CheckPolicy('list', 'operating-systems')
   @Cacheable({ tags: ['operating-systems'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Operating Systems with pagination' })
   @ApiQuery({ type: QueryOperatingSystemDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class OperatingSystemController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'operating-systems')
   @Cacheable({ tags: ['operating-systems'] })
-  @Public()
   @ApiOperation({ summary: 'Get Operating System by ID' })
   @ApiParam({
     name: 'id',
@@ -79,8 +79,8 @@ export class OperatingSystemController {
   }
 
   @Post()
+  @CheckPolicy('create', 'operating-systems')
   @InvalidateCache('operating-systems')
-  @Public()
   @ApiOperation({ summary: 'Create a new Operating System lookup mapping' })
   @ApiResponse({
     status: 201,
@@ -97,8 +97,8 @@ export class OperatingSystemController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'operating-systems')
   @InvalidateCache('operating-systems')
-  @Public()
   @ApiOperation({ summary: 'Update an Operating System definition' })
   @ApiParam({
     name: 'id',
@@ -119,8 +119,8 @@ export class OperatingSystemController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'operating-systems')
   @InvalidateCache('operating-systems')
-  @Public()
   @ApiOperation({ summary: 'Delete an Operating System mapping' })
   @ApiParam({
     name: 'id',

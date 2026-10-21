@@ -29,10 +29,10 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { DatacenterResponseDto } from './dto/response/datacenter-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { InvalidateCache } from '../cache/cache.decorators';
 import { CACHE_TAGS } from '../cache/cache.tags';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('datacenters')
 @Controller('datacenters')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -42,7 +42,7 @@ export class DatacenterController {
   constructor(private readonly datacenterService: DatacenterService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'datacenters')
   @ApiOperation({ summary: 'Get all Datacenters with pagination' })
   @ApiQuery({ type: QueryDatacenterDto })
   @ApiResponse({
@@ -56,7 +56,7 @@ export class DatacenterController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'datacenters')
   @ApiOperation({ summary: 'Get Datacenter by ID' })
   @ApiParam({
     name: 'id',
@@ -79,8 +79,8 @@ export class DatacenterController {
   }
 
   @Post()
+  @CheckPolicy('create', 'datacenters')
   @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
-  @Public()
   @ApiOperation({ summary: 'Create a new datacenter' })
   @ApiResponse({
     status: 201,
@@ -95,8 +95,8 @@ export class DatacenterController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'datacenters')
   @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
-  @Public()
   @ApiOperation({ summary: 'Update a datacenter' })
   @ApiParam({
     name: 'id',
@@ -127,8 +127,8 @@ export class DatacenterController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'datacenters')
   @InvalidateCache(CACHE_TAGS.DASHBOARD, CACHE_TAGS.PHYSICAL_DRIVES)
-  @Public()
   @ApiOperation({ summary: 'Delete a datacenter' })
   @ApiParam({
     name: 'id',

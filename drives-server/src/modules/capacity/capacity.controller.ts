@@ -28,9 +28,9 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CapacityResponseDto } from './dto/response/capacity-response.dto';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('capacities')
 @Controller('capacities')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,9 +40,8 @@ export class CapacityController {
   constructor(private readonly capacityService: CapacityService) {}
 
   @Get()
+  @CheckPolicy('list', 'capacities')
   @Cacheable({ tags: ['capacities'] })
-  @Public()
-  // @CheckPolicy('list', 'capacities')
   @ApiOperation({ summary: 'Get all capacities with pagination' })
   @ApiQuery({ type: QueryCapacityDto })
   @ApiResponse({
@@ -54,9 +53,8 @@ export class CapacityController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'capacities')
   @Cacheable({ tags: ['capacities'] })
-  @Public()
-  // @CheckPolicy('show', 'capacities')
   @ApiOperation({ summary: 'Get capacity by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -78,9 +76,8 @@ export class CapacityController {
   }
 
   @Post()
+  @CheckPolicy('create', 'capacities')
   @InvalidateCache('capacities')
-  @Public()
-  // @CheckPolicy('create', 'capacities')
   @ApiOperation({ summary: 'Create a new capacity' })
   @ApiResponse({ status: 201, description: 'Capacity created successfully' })
   @ApiResponse({ status: 409, description: 'Capacity already exists' })
@@ -91,9 +88,8 @@ export class CapacityController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'capacities')
   @InvalidateCache('capacities')
-  @Public()
-  // @CheckPolicy('edit', 'capacities')
   @ApiOperation({ summary: 'Update a capacity' })
   @ApiParam({
     name: 'id',
@@ -121,9 +117,8 @@ export class CapacityController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'capacities')
   @InvalidateCache('capacities')
-  @Public()
-  // @CheckPolicy('delete', 'capacities')
   @ApiOperation({ summary: 'Delete a capacity' })
   @ApiParam({
     name: 'id',

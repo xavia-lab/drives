@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useApiUrl, useCustomMutation } from "@refinedev/core";
+import { useApiUrl, useCan, useCustomMutation } from "@refinedev/core";
 import { LookupSelect } from "@components/lookup-select";
 import {
   App,
@@ -47,6 +47,10 @@ export const WarrantyClaimTrackingActions = ({
   const [form] = Form.useForm<TrackingFormValues>();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { data: canManageClaims } = useCan({
+    resource: "warranty-claims",
+    action: "edit",
+  });
 
   const eventType = Form.useWatch("eventType", form);
   const replaceDrive = eventType === "REPLACEMENT_RECEIVED";
@@ -86,6 +90,10 @@ export const WarrantyClaimTrackingActions = ({
       setSubmitting(false);
     }
   };
+
+  if (!canManageClaims?.can) {
+    return null;
+  }
 
   return (
     <>

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 import React from "react";
 import { Footer } from "@components/footer";
+import { WorkflowAccessGuard } from "@components/workflow";
 
 export default async function Layout({ children }: React.PropsWithChildren) {
   const data = await getData();
@@ -15,7 +16,7 @@ export default async function Layout({ children }: React.PropsWithChildren) {
 
   return (
     <ThemedLayout Header={Header} Footer={Footer}>
-      {children}
+      <WorkflowAccessGuard>{children}</WorkflowAccessGuard>
     </ThemedLayout>
   );
 }

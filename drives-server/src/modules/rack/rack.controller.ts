@@ -29,10 +29,10 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { RackResponseDto } from './dto/response/rack-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { InvalidateCache } from '../cache/cache.decorators';
 import { CACHE_TAGS } from '../cache/cache.tags';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('racks')
 @Controller('racks')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -42,7 +42,7 @@ export class RackController {
   constructor(private readonly rackService: RackService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'racks')
   @ApiOperation({ summary: 'Get all Rack Cabinet Enclosures with pagination' })
   @ApiQuery({ type: QueryRackDto })
   @ApiResponse({ status: 200, description: 'Racks retrieved successfully' })
@@ -53,7 +53,7 @@ export class RackController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'racks')
   @ApiOperation({ summary: 'Get Rack by ID' })
   @ApiParam({
     name: 'id',
@@ -71,8 +71,8 @@ export class RackController {
   }
 
   @Post()
+  @CheckPolicy('create', 'racks')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Create a new Rack cabinet frame' })
   @ApiResponse({ status: 201, description: 'Rack created successfully' })
   @ApiResponse({
@@ -88,8 +88,8 @@ export class RackController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'racks')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Update Rack asset configurations' })
   @ApiParam({
     name: 'id',
@@ -113,8 +113,8 @@ export class RackController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'racks')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Delete a Rack asset record' })
   @ApiParam({
     name: 'id',

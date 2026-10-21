@@ -13,5 +13,5 @@ resourcePolicy:
     - actions: ["show", "list"]
       effect: EFFECT_ALLOW
       roles:
-        - owner
+        - user
         - viewer

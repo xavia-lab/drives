@@ -8,3 +8,4 @@ export type {
   WorkflowStepContext,
   WorkflowValues,
 } from "./types";
+export { WorkflowAccessGuard } from "./workflow-access-guard";

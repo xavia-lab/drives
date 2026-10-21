@@ -4,14 +4,29 @@ resourcePolicy:
   resource: "physical-drives"
   rules:
     # 1. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list", "edit", "delete", "locate"]
+    - actions:
+        [
+          "create",
+          "show",
+          "list",
+          "edit",
+          "delete",
+          "locate",
+          "acquire",
+          "relocate",
+          "manage-media",
+        ]
       effect: EFFECT_ALLOW
       roles:
         - admin
 
     # 2. Viewer
+    - actions: ["show", "list", "acquire", "relocate", "manage-media"]
+      effect: EFFECT_ALLOW
+      roles:
+        - user
+
     - actions: ["show", "list"]
       effect: EFFECT_ALLOW
       roles:
-        - owner
         - viewer

@@ -31,7 +31,6 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { WarrantyClaimResponseDto } from './dto/response/warranty-claim-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
@@ -47,7 +46,7 @@ export class WarrantyClaimController {
   constructor(private readonly warrantyClaimService: WarrantyClaimService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'warranty-claims')
   @ApiOperation({ summary: 'Get all Warranty Claims with pagination' })
   @ApiQuery({ type: QueryWarrantyClaimDto })
   @ApiResponse({
@@ -61,7 +60,7 @@ export class WarrantyClaimController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'warranty-claims')
   @ApiOperation({ summary: 'Get Warranty Claim by ID' })
   @ApiParam({
     name: 'id',
@@ -84,8 +83,8 @@ export class WarrantyClaimController {
   }
 
   @Post()
+  @CheckPolicy('create', 'warranty-claims')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Create a new warranty claim' })
   @ApiResponse({
     status: 201,
@@ -103,7 +102,7 @@ export class WarrantyClaimController {
 
   @Post('initiate')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @CheckPolicy('create', 'warranty-claims')
+  @CheckPolicy('initiate', 'warranty-claims')
   @ApiOperation({
     summary:
       'Create Warranty Claim workflow: create the claim, move the unseated drive to IN_RMA and append the initial tracking note atomically',
@@ -133,8 +132,8 @@ export class WarrantyClaimController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'warranty-claims')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Update a warranty claim' })
   @ApiParam({
     name: 'id',
@@ -164,8 +163,8 @@ export class WarrantyClaimController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'warranty-claims')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Delete a warranty claim' })
   @ApiParam({
     name: 'id',

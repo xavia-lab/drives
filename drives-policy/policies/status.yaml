@@ -8,4 +8,5 @@ resourcePolicy:
       effect: EFFECT_ALLOW
       roles:
         - admin
+        - user
         - viewer

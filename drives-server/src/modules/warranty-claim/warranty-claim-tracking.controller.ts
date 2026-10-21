@@ -20,7 +20,6 @@ import { WarrantyClaimTimelineResponseDto } from './dto/response/warranty-claim-
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
-import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
@@ -37,7 +36,7 @@ export class WarrantyClaimTrackingController {
   ) {}
 
   @Get(':id/tracking')
-  @Public()
+  @CheckPolicy('show', 'warranty-claim-events')
   @Serialize(WarrantyClaimTimelineResponseDto)
   @ApiOperation({
     summary:
@@ -54,7 +53,7 @@ export class WarrantyClaimTrackingController {
 
   @Post(':id/tracking')
   @InvalidateCache(CACHE_TAGS.DASHBOARD)
-  @CheckPolicy('create', 'warranty-claim-events')
+  @CheckPolicy('track', 'warranty-claim-events')
   @Serialize(WarrantyClaimTimelineResponseDto)
   @ApiOperation({
     summary:

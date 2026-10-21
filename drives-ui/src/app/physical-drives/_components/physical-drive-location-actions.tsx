@@ -1,6 +1,6 @@
 "use client";
 
-import { useApiUrl, useCustomMutation } from "@refinedev/core";
+import { useApiUrl, useCan, useCustomMutation } from "@refinedev/core";
 import { LookupSelect } from "@components/lookup-select";
 import { App, Button, DatePicker, Form, Input, Modal, Space, Tag } from "antd";
 import { EnvironmentOutlined } from "@ant-design/icons";
@@ -36,6 +36,10 @@ export const PhysicalDriveLocationActions = ({
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { data: canLocate } = useCan({
+    resource: "physical-drives",
+    action: "locate",
+  });
 
   const handleSubmit = async () => {
     try {
@@ -63,6 +67,10 @@ export const PhysicalDriveLocationActions = ({
       setSubmitting(false);
     }
   };
+
+  if (!canLocate?.can) {
+    return null;
+  }
 
   return (
     <>

@@ -1,0 +1,19 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "warranty-claim-events"
+  rules:
+    - actions: ["create", "show", "list", "track"]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin
+
+    - actions: ["show", "list", "track"]
+      effect: EFFECT_ALLOW
+      roles:
+        - user
+
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
+        - viewer

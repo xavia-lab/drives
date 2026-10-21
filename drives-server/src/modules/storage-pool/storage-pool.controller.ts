@@ -31,8 +31,8 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { StoragePoolResponseDto } from './dto/response/storage-pool-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('storage-pools')
 @Controller('storage-pools')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -42,7 +42,7 @@ export class StoragePoolController {
   constructor(private readonly storagePoolService: StoragePoolService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'storage-pools')
   @ApiOperation({ summary: 'Get all Storage Pools with pagination' })
   @ApiQuery({ type: QueryStoragePoolDto })
   @ApiResponse({
@@ -56,7 +56,7 @@ export class StoragePoolController {
   }
 
   @Get('attached')
-  @Public()
+  @CheckPolicy('list', 'storage-pools')
   @ApiOperation({
     summary: 'Get storage pools currently attached to a host',
   })
@@ -85,7 +85,7 @@ export class StoragePoolController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'storage-pools')
   @ApiOperation({ summary: 'Get Storage Pool by ID' })
   @ApiParam({
     name: 'id',
@@ -108,7 +108,7 @@ export class StoragePoolController {
   }
 
   @Post()
-  @Public()
+  @CheckPolicy('create', 'storage-pools')
   @ApiOperation({ summary: 'Create a new storage pool footprint array' })
   @ApiResponse({
     status: 201,
@@ -128,7 +128,7 @@ export class StoragePoolController {
   }
 
   @Put(':id')
-  @Public()
+  @CheckPolicy('edit', 'storage-pools')
   @ApiOperation({ summary: 'Update storage pool array properties' })
   @ApiParam({
     name: 'id',
@@ -155,7 +155,7 @@ export class StoragePoolController {
   }
 
   @Post(':id/import')
-  @Public()
+  @CheckPolicy('import', 'storage-pools')
   @ApiOperation({
     summary: 'Attach a detached storage pool to a host (IMPORT event)',
   })
@@ -180,7 +180,7 @@ export class StoragePoolController {
   }
 
   @Post(':id/export')
-  @Public()
+  @CheckPolicy('export', 'storage-pools')
   @ApiOperation({
     summary: 'Detach an attached storage pool from its host (EXPORT event)',
   })
@@ -205,7 +205,7 @@ export class StoragePoolController {
   }
 
   @Delete(':id')
-  @Public()
+  @CheckPolicy('delete', 'storage-pools')
   @ApiOperation({ summary: 'Purge a storage pool from tracking index' })
   @ApiParam({
     name: 'id',

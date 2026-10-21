@@ -29,8 +29,8 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { VirtualServerResponseDto } from './dto/response/virtual-server-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('virtual-servers')
 @Controller('virtual-servers')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,7 +40,7 @@ export class VirtualServerController {
   constructor(private readonly virtualServerService: VirtualServerService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'virtual-servers')
   @ApiOperation({ summary: 'Get all Virtual Servers with pagination' })
   @ApiQuery({ type: QueryVirtualServerDto })
   @ApiResponse({
@@ -54,7 +54,7 @@ export class VirtualServerController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'virtual-servers')
   @ApiOperation({ summary: 'Get Virtual Server by ID' })
   @ApiParam({
     name: 'id',
@@ -77,7 +77,7 @@ export class VirtualServerController {
   }
 
   @Post()
-  @Public()
+  @CheckPolicy('create', 'virtual-servers')
   @ApiOperation({ summary: 'Create a new virtual server cluster instance' })
   @ApiResponse({
     status: 201,
@@ -99,7 +99,7 @@ export class VirtualServerController {
   }
 
   @Put(':id')
-  @Public()
+  @CheckPolicy('edit', 'virtual-servers')
   @ApiOperation({
     summary: 'Update virtual server cluster resource parameters',
   })
@@ -132,7 +132,7 @@ export class VirtualServerController {
   }
 
   @Delete(':id')
-  @Public()
+  @CheckPolicy('delete', 'virtual-servers')
   @ApiOperation({ summary: 'Delete a virtual server from inventory tracking' })
   @ApiParam({
     name: 'id',
