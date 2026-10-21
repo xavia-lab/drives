@@ -1,0 +1,9 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "tasks"
+  rules:
+    - actions: ["list", "run"]
+      effect: EFFECT_ALLOW
+      roles:
+        - admin

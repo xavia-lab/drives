@@ -47,6 +47,8 @@ import { HealthModule } from './modules/health/health.module';
 import { SystemModule } from './modules/system/system.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { TaskRunsModule } from './modules/tasks/task-runs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module';
 
@@ -73,6 +75,8 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
     KeycloakModule,
     UserModule, // This must come before modules that use KeycloakAuthGuard
     AuditLogModule,
+    TaskRunsModule,
+    TasksModule,
     DashboardModule,
     ExchangeRateModule,
     QRCodeModule,

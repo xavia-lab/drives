@@ -47,6 +47,7 @@ import {
   PoundOutlined,
   ProjectOutlined,
   SafetyCertificateOutlined,
+  ScheduleOutlined,
   SettingOutlined,
   ShopOutlined,
   TagsOutlined,
@@ -479,6 +480,15 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     label: "Status",
                     parent: "system", // Nest it under Admin or remove to keep it top-level
                     icon: <CheckCircleOutlined />,
+                  },
+                },
+                {
+                  name: "tasks",
+                  list: "/system/tasks",
+                  meta: {
+                    label: "Tasks",
+                    parent: "system",
+                    icon: <ScheduleOutlined />,
                   },
                 },
                 {

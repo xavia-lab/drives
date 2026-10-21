@@ -6,6 +6,8 @@ import { QueryTypes, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Media } from '../media/entities/media.entity';
 import { ContentStoreService } from './services/content-store.service';
+import { TaskRunService } from '../tasks/task-run.service';
+import { BackgroundTaskTrigger } from '../tasks/entities/background-task-run.entity';
 
 const GC_LOCK_KEY = 2_026_102_003;
 
@@ -29,6 +31,7 @@ export class ContentStoreGcService {
     private readonly config: ConfigService,
     @InjectConnection()
     private readonly sequelize: Sequelize,
+    private readonly taskRunService: TaskRunService,
   ) {}
 
   @Cron('0 4 * * *', {
@@ -37,7 +40,11 @@ export class ContentStoreGcService {
     waitForCompletion: true,
   })
   async runScheduledGc(): Promise<void> {
-    await this.runGc();
+    await this.taskRunService.run(
+      'content-store-gc',
+      BackgroundTaskTrigger.SCHEDULED,
+      () => this.runGc(),
+    );
   }
 
   async runGc(): Promise<number | null> {

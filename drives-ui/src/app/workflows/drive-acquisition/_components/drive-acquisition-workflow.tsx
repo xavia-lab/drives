@@ -2,11 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useCustomMutation,
-  useList,
-  useNotification,
-} from "@refinedev/core";
+import { useCustomMutation, useList, useNotification } from "@refinedev/core";
 import {
   Alert,
   App,
@@ -96,11 +92,7 @@ type AcquisitionFormValues = {
 };
 
 type MediaAttachmentType =
-  | "PICTURE"
-  | "INVOICE"
-  | "DOCUMENT"
-  | "CERTIFICATE"
-  | "OTHER";
+  "PICTURE" | "INVOICE" | "DOCUMENT" | "CERTIFICATE" | "OTHER";
 
 type MediaDraft = {
   uid: string;
@@ -199,9 +191,7 @@ export const DriveAcquisitionWorkflow = () => {
   };
 
   const removeDraft = (uid: string) => {
-    setMediaDrafts((current) =>
-      current.filter((draft) => draft.uid !== uid),
-    );
+    setMediaDrafts((current) => current.filter((draft) => draft.uid !== uid));
   };
 
   const makePrimary = (uid: string) => {
@@ -656,9 +646,7 @@ export const DriveAcquisitionWorkflow = () => {
                       <Text type="secondary">
                         {formatFileSize(draft.file.size)}
                       </Text>
-                      {draft.isPrimary ? (
-                        <Tag color="gold">Primary</Tag>
-                      ) : null}
+                      {draft.isPrimary ? <Tag color="gold">Primary</Tag> : null}
                     </Space>
                   }
                   extra={
@@ -827,9 +815,7 @@ export const DriveAcquisitionWorkflow = () => {
                     <Space size={6} wrap>
                       <Tag>{draft.attachmentType}</Tag>
                       <Text>{draft.file.name}</Text>
-                      {draft.isPrimary ? (
-                        <Tag color="gold">Primary</Tag>
-                      ) : null}
+                      {draft.isPrimary ? <Tag color="gold">Primary</Tag> : null}
                     </Space>
                     <Text
                       type="secondary"

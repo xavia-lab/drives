@@ -150,11 +150,16 @@ export const PhysicalDriveMediaCard = ({ driveId }: { driveId?: string }) => {
                   )
                 }
               >
-                <Space direction="vertical" size={6} style={{ display: "flex" }}>
+                <Space
+                  direction="vertical"
+                  size={6}
+                  style={{ display: "flex" }}
+                >
                   <Space size={6} wrap>
                     <Tag
                       color={
-                        ATTACHMENT_COLORS[attachment.attachmentType] ?? "default"
+                        ATTACHMENT_COLORS[attachment.attachmentType] ??
+                        "default"
                       }
                     >
                       {attachment.attachmentType}

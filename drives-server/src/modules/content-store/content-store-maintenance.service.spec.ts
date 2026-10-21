@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContentStoreMaintenanceService } from './content-store-maintenance.service';
 import { CONTENT_STORE_PROVIDER } from './interfaces/content-store-provider.interface';
 import type { ContentStoreProvider } from './interfaces/content-store-provider.interface';
+import { TaskRunService } from '../tasks/task-run.service';
 
 describe('ContentStoreMaintenanceService', () => {
   const config = {
@@ -18,6 +19,14 @@ describe('ContentStoreMaintenanceService', () => {
         ContentStoreMaintenanceService,
         { provide: CONTENT_STORE_PROVIDER, useValue: provider },
         { provide: ConfigService, useValue: config },
+        {
+          provide: TaskRunService,
+          useValue: {
+            run: vi.fn((_key: string, _trigger: string, work: () => unknown) =>
+              work(),
+            ),
+          },
+        },
       ],
     }).compile();
 

@@ -67,11 +67,7 @@ type DriveRecord = {
 };
 
 type MediaAttachmentType =
-  | "PICTURE"
-  | "INVOICE"
-  | "DOCUMENT"
-  | "CERTIFICATE"
-  | "OTHER";
+  "PICTURE" | "INVOICE" | "DOCUMENT" | "CERTIFICATE" | "OTHER";
 
 type MediaRecord = {
   id: string;
@@ -204,9 +200,7 @@ export const DriveMediaManagementWorkflow = () => {
   const driveOptions = useMemo(
     () =>
       drives.map((drive) => ({
-        label: [drive.serialNumber, drive.label]
-          .filter(Boolean)
-          .join(" — "),
+        label: [drive.serialNumber, drive.label].filter(Boolean).join(" — "),
         value: drive.id,
       })),
     [drives],
@@ -260,7 +254,13 @@ export const DriveMediaManagementWorkflow = () => {
       })),
     );
     setNewDrafts([]);
-  }, [driveId, attachments, mediaResult?.data, mediaQuery.isLoading, mediaQuery.isError]);
+  }, [
+    driveId,
+    attachments,
+    mediaResult?.data,
+    mediaQuery.isLoading,
+    mediaQuery.isError,
+  ]);
 
   const resetMediaState = () => {
     lastLoadedDrive.current = null;
@@ -363,9 +363,7 @@ export const DriveMediaManagementWorkflow = () => {
   };
 
   const removeNew = (uid: string) => {
-    setNewDrafts((current) =>
-      current.filter((draft) => draft.uid !== uid),
-    );
+    setNewDrafts((current) => current.filter((draft) => draft.uid !== uid));
   };
 
   const beforeUpload: UploadProps["beforeUpload"] = (file) => {
@@ -661,9 +659,7 @@ export const DriveMediaManagementWorkflow = () => {
               </Descriptions>
             </Card>
           ) : null}
-          {datacenterId &&
-          !drivesQuery.isLoading &&
-          drives.length === 0 ? (
+          {datacenterId && !drivesQuery.isLoading && drives.length === 0 ? (
             <Alert
               type="warning"
               showIcon
@@ -740,7 +736,11 @@ export const DriveMediaManagementWorkflow = () => {
                   description="This drive has no attached media yet"
                 />
               ) : (
-                <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
                   {existingDrafts.length > 0 ? (
                     <div>
                       <Text strong>Current files</Text>
@@ -796,9 +796,8 @@ export const DriveMediaManagementWorkflow = () => {
                 : "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Datacenter" span={2}>
-              {datacenterOptions.find(
-                (option) => option.value === datacenterId,
-              )?.label ?? "-"}
+              {datacenterOptions.find((option) => option.value === datacenterId)
+                ?.label ?? "-"}
             </Descriptions.Item>
           </Descriptions>
 
@@ -814,7 +813,11 @@ export const DriveMediaManagementWorkflow = () => {
               {removedExisting.length > 0 ? (
                 <div>
                   <Text strong>Files to remove</Text>
-                  <Space direction="vertical" size={4} style={{ display: "flex", marginTop: 4 }}>
+                  <Space
+                    direction="vertical"
+                    size={4}
+                    style={{ display: "flex", marginTop: 4 }}
+                  >
                     {removedExisting.map((draft) => (
                       <Text key={draft.id}>
                         {draft.media?.fileName ?? draft.id}
@@ -827,7 +830,11 @@ export const DriveMediaManagementWorkflow = () => {
               {changedExisting.length > 0 ? (
                 <div>
                   <Text strong>Files to update</Text>
-                  <Space direction="vertical" size={4} style={{ display: "flex", marginTop: 4 }}>
+                  <Space
+                    direction="vertical"
+                    size={4}
+                    style={{ display: "flex", marginTop: 4 }}
+                  >
                     {changedExisting.map((draft) => (
                       <Space key={draft.id} size={6} wrap>
                         <Text>{draft.media?.fileName ?? draft.id}</Text>
@@ -854,7 +861,11 @@ export const DriveMediaManagementWorkflow = () => {
               {newDrafts.length > 0 ? (
                 <div>
                   <Text strong>New files</Text>
-                  <Space direction="vertical" size={4} style={{ display: "flex", marginTop: 4 }}>
+                  <Space
+                    direction="vertical"
+                    size={4}
+                    style={{ display: "flex", marginTop: 4 }}
+                  >
                     {newDrafts.map((draft) => (
                       <Space key={draft.uid} size={6} wrap>
                         <Tag>{draft.attachmentType}</Tag>
