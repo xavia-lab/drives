@@ -50,7 +50,6 @@ const DATA_TABLES = [
   'datacenters',
   'physical_drive_media',
   'media',
-  'qr_links',
 ];
 
 async function main() {
