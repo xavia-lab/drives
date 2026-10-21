@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { QRCodeStorageService } from './qrcode-storage.service';
 import { QRCodeGeneratorService } from './qrcode-generator.service';
-import { ContentAddressableStorageService } from '../../storage/services/content-addressable-storage.service';
+import { ContentStoreService } from '../../content-store/services/content-store.service';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
 describe('QRCodeStorageService', () => {
   let service: QRCodeStorageService;
   let generator: QRCodeGeneratorService;
-  let cas: ContentAddressableStorageService;
+  let cas: ContentStoreService;
 
   const mockUrl = 'https://mywebsite.com';
   const mockSvg = '<svg>mock</svg>';
@@ -26,7 +26,7 @@ describe('QRCodeStorageService', () => {
           useValue: { generate: vi.fn() },
         },
         {
-          provide: ContentAddressableStorageService,
+          provide: ContentStoreService,
           useValue: { upload: vi.fn() },
         },
       ],
@@ -34,9 +34,7 @@ describe('QRCodeStorageService', () => {
 
     service = module.get<QRCodeStorageService>(QRCodeStorageService);
     generator = module.get<QRCodeGeneratorService>(QRCodeGeneratorService);
-    cas = module.get<ContentAddressableStorageService>(
-      ContentAddressableStorageService,
-    );
+    cas = module.get<ContentStoreService>(ContentStoreService);
 
     // 🚀 Mocking Date to ensure metadata consistency across Vitest execution contexts
     vi.useFakeTimers().setSystemTime(new Date('2024-01-01'));

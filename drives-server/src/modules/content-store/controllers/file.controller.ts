@@ -7,7 +7,7 @@ import {
   Header,
   Res,
 } from '@nestjs/common';
-import { ContentAddressableStorageService } from '../services/content-addressable-storage.service';
+import { ContentStoreService } from '../services/content-store.service';
 import { Public } from '../../../common/decorators/public.decorator';
 
 // Define a safe platform-agnostic interface layout for the response parameter
@@ -18,7 +18,7 @@ interface PlatformResponse {
 
 @Controller('files')
 export class FileController {
-  constructor(private readonly cas: ContentAddressableStorageService) {}
+  constructor(private readonly cas: ContentStoreService) {}
 
   @Public()
   @Get(':fileId')

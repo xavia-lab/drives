@@ -7,15 +7,15 @@ import {
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IStorageProvider } from '../interfaces/storage-provider.interface';
-import { S3StorageConfig } from '../interfaces/s3-storage-config.interface';
+import { ContentStoreProvider } from '../interfaces/content-store-provider.interface';
+import { S3ContentStoreConfig } from '../interfaces/content-store-config.interface';
 
-export class S3StorageProvider implements IStorageProvider {
+export class S3ContentStoreProvider implements ContentStoreProvider {
   private client: S3Client;
   private bucket: string;
 
   // 2. Apply the interface to the constructor parameters
-  constructor(config: S3StorageConfig) {
+  constructor(config: S3ContentStoreConfig) {
     this.bucket = config.bucket;
     this.client = new S3Client({
       region: config.region,
@@ -24,7 +24,7 @@ export class S3StorageProvider implements IStorageProvider {
         accessKeyId: config.key,
         secretAccessKey: config.secret,
       },
-      forcePathStyle: true,
+      forcePathStyle: config.forcePathStyle ?? true,
     });
   }
 
