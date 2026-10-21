@@ -29,10 +29,10 @@ import { CerbosGuard } from '../../../common/guards/cerbos.guard';
 import { Serialize } from '../../../common/interceptors/serialize.interceptor';
 import { PhysicalServerResponseDto } from '../dto/response/physical-server-response.dto';
 import { PaginatedResponse } from '../../pagination/interfaces/paginated-response';
-import { Public } from '../../../common/decorators/public.decorator';
 
 import { InvalidateCache } from '../../cache/cache.decorators';
 import { CACHE_TAGS } from '../../cache/cache.tags';
+import { CheckPolicy } from '../../../common/decorators/check-policy.decorator';
 @ApiTags('physical-servers')
 @Controller('physical-servers')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -42,7 +42,7 @@ export class PhysicalServerController {
   constructor(private readonly physicalServerService: PhysicalServerService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'physical-servers')
   @ApiOperation({ summary: 'Get all Physical Servers with pagination' })
   @ApiQuery({ type: QueryPhysicalServerDto })
   @ApiResponse({
@@ -56,7 +56,7 @@ export class PhysicalServerController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'physical-servers')
   @ApiOperation({ summary: 'Get Physical Server by ID' })
   @ApiParam({
     name: 'id',
@@ -79,8 +79,8 @@ export class PhysicalServerController {
   }
 
   @Post()
+  @CheckPolicy('create', 'physical-servers')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Create a new Physical Server node' })
   @ApiResponse({
     status: 201,
@@ -101,8 +101,8 @@ export class PhysicalServerController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'physical-servers')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Update Physical Server details' })
   @ApiParam({
     name: 'id',
@@ -133,8 +133,8 @@ export class PhysicalServerController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'physical-servers')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @Public()
   @ApiOperation({ summary: 'Delete a Physical Server' })
   @ApiParam({
     name: 'id',

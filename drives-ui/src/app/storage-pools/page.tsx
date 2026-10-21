@@ -10,6 +10,7 @@ import {
   getDefaultFilter,
   FilterDropdown,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table, Tag } from "antd";
 import { LinkedLabel } from "@components/linked-label";
@@ -17,7 +18,7 @@ import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 
 export default function StoragePoolList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -29,8 +30,11 @@ export default function StoragePoolList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -56,6 +60,7 @@ export default function StoragePoolList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("poolName", filters) || null}
           dataIndex="poolName"
           title={"Pool Name"}
           sorter={true}
@@ -95,6 +100,7 @@ export default function StoragePoolList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           key="currentHost"
           title={"Current Host"}
           width={240}
@@ -120,6 +126,7 @@ export default function StoragePoolList() {
           }}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="encryptionEnabled"
           title={"Encryption"}
           width={110}
@@ -133,6 +140,7 @@ export default function StoragePoolList() {
           }
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

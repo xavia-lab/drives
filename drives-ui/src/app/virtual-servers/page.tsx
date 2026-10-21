@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table, Tag } from "antd";
 import type { TableProps } from "antd";
@@ -18,7 +19,7 @@ import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function VirtualServerList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -58,8 +59,11 @@ export default function VirtualServerList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} onChange={handleTableChange} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -77,6 +81,7 @@ export default function VirtualServerList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("hostname", filters) || null}
           dataIndex="hostname"
           title={"Hostname"}
           sorter={true}
@@ -119,6 +124,7 @@ export default function VirtualServerList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("type", filters, "in") || null}
           dataIndex="type"
           title={"Type"}
           width={120}
@@ -170,6 +176,7 @@ export default function VirtualServerList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("allocatedVcpus", filters) || null}
           dataIndex="allocatedVcpus"
           title={"vCPUs"}
           width={90}
@@ -187,6 +194,9 @@ export default function VirtualServerList() {
           )}
         />
         <Table.Column
+          filteredValue={
+            getDefaultFilter("allocatedMemoryValue", filters) || null
+          }
           dataIndex="allocatedMemoryValue"
           title={"Allocated Memory"}
           width={160}
@@ -210,6 +220,7 @@ export default function VirtualServerList() {
           }
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="isActive"
           title={"Active"}
           width={90}
@@ -221,6 +232,7 @@ export default function VirtualServerList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="passthroughSlots"
           title={"Passthrough"}
           width={120}
@@ -230,6 +242,7 @@ export default function VirtualServerList() {
           }
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

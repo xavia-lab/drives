@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
@@ -17,7 +18,7 @@ import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function InterfaceList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -33,8 +34,11 @@ export default function InterfaceList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -60,6 +64,7 @@ export default function InterfaceList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("name", filters) || null}
           dataIndex="name"
           title={"Name"}
           sorter={true}
@@ -110,6 +115,7 @@ export default function InterfaceList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("linkGeneration", filters) || null}
           dataIndex="linkGeneration"
           title={"Link Generation"}
           align={"right"}
@@ -123,6 +129,7 @@ export default function InterfaceList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("throughput", filters) || null}
           dataIndex="throughput"
           title={"Throughput (Gbps)"}
           align={"right"}
@@ -139,6 +146,7 @@ export default function InterfaceList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="managed"
           title={"Provider"}
           key="managed"
@@ -148,6 +156,7 @@ export default function InterfaceList() {
           render={(managed: boolean) => <ProviderTag managed={managed} />}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

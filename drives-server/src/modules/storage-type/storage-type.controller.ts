@@ -29,9 +29,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { StorageTypeResponseDto } from './dto/response/storage-type-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('storage-types')
 @Controller('storage-types')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class StorageTypeController {
   constructor(private readonly StorageTypeService: StorageTypeService) {}
 
   @Get()
+  @CheckPolicy('list', 'storage-types')
   @Cacheable({ tags: ['storage-types'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
   @ApiQuery({ type: QueryStorageTypeDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class StorageTypeController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'storage-types')
   @Cacheable({ tags: ['storage-types'] })
-  @Public()
   @ApiOperation({ summary: 'Get StorageType by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -82,8 +82,8 @@ export class StorageTypeController {
   }
 
   @Post()
+  @CheckPolicy('create', 'storage-types')
   @InvalidateCache('storage-types')
-  @Public()
   @ApiOperation({ summary: 'Create a new StorageType' })
   @ApiResponse({
     status: 201,
@@ -97,8 +97,8 @@ export class StorageTypeController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'storage-types')
   @InvalidateCache('storage-types')
-  @Public()
   @ApiOperation({ summary: 'Update a StorageType' })
   @ApiParam({
     name: 'id',
@@ -129,8 +129,8 @@ export class StorageTypeController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'storage-types')
   @InvalidateCache('storage-types')
-  @Public()
   @ApiOperation({ summary: 'Delete a StorageType' })
   @ApiParam({
     name: 'id',

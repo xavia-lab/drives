@@ -12,7 +12,6 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { Public } from '../../common/decorators/public.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -34,6 +33,7 @@ import { VendorResponseDto } from './dto/response/vendor-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('vendors')
 @Controller('vendors')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -43,9 +43,8 @@ export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
   @Get()
+  @CheckPolicy('list', 'vendors')
   @Cacheable({ tags: ['vendors'] })
-  @Public()
-  // @CheckPolicy('list', 'vendors')
   @ApiOperation({ summary: 'Get all vendors with pagination' })
   @ApiQuery({ type: QueryVendorDto })
   @ApiResponse({
@@ -59,9 +58,8 @@ export class VendorController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'vendors')
   @Cacheable({ tags: ['vendors'] })
-  @Public()
-  // @CheckPolicy('show', 'vendors')
   @ApiOperation({ summary: 'Get Vendor by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -86,9 +84,8 @@ export class VendorController {
   }
 
   @Post()
+  @CheckPolicy('create', 'vendors')
   @InvalidateCache('vendors')
-  @Public()
-  // @CheckPolicy('create', 'vendors')
   @ApiOperation({ summary: 'Create a new vendor' })
   @ApiResponse({
     status: 201,
@@ -100,9 +97,8 @@ export class VendorController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'vendors')
   @InvalidateCache('vendors')
-  @Public()
-  // @CheckPolicy('edit', 'vendors')
   @ApiOperation({ summary: 'Update a vendor' })
   @ApiParam({
     name: 'id',
@@ -130,9 +126,8 @@ export class VendorController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'vendors')
   @InvalidateCache('vendors')
-  @Public()
-  // @CheckPolicy('delete', 'vendors')
   @ApiOperation({ summary: 'Delete a vendor' })
   @ApiParam({
     name: 'id',

@@ -20,7 +20,6 @@ import { DriveLifecycleTimelineResponseDto } from './dto/response/drive-lifecycl
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
-import { Public } from '../../common/decorators/public.decorator';
 import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { RequestUser } from '../../common/decorators/request-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
@@ -37,8 +36,8 @@ export class DriveLifecycleController {
   ) {}
 
   @Get(':id/lifecycle')
+  @CheckPolicy('show', 'drive-lifecycle-events')
   @Cacheable({ tags: [CACHE_TAGS.PHYSICAL_DRIVES], ttlMs: 30_000 })
-  @Public()
   @Serialize(DriveLifecycleTimelineResponseDto)
   @ApiOperation({
     summary:

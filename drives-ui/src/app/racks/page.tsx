@@ -10,13 +10,14 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function RackList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -28,8 +29,11 @@ export default function RackList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -55,6 +59,7 @@ export default function RackList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("name", filters) || null}
           dataIndex="name"
           title={"Name"}
           sorter={true}
@@ -104,6 +109,7 @@ export default function RackList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("totalRackUnits", filters) || null}
           dataIndex="totalRackUnits"
           title={"Total Rack Units"}
           width={150}
@@ -128,6 +134,7 @@ export default function RackList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

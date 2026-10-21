@@ -29,9 +29,9 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CpuModelResponseDto } from './dto/response/cpu-model-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('cpu-models')
 @Controller('cpu-models')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class CpuModelController {
   constructor(private readonly cpuModelService: CpuModelService) {}
 
   @Get()
+  @CheckPolicy('list', 'cpu-models')
   @Cacheable({ tags: ['cpu-models'] })
-  @Public()
   @ApiOperation({ summary: 'Get all CPU Models with pagination' })
   @ApiQuery({ type: QueryCpuModelDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class CpuModelController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'cpu-models')
   @Cacheable({ tags: ['cpu-models'] })
-  @Public()
   @ApiOperation({ summary: 'Get CPU Model by ID' })
   @ApiParam({
     name: 'id',
@@ -80,8 +80,8 @@ export class CpuModelController {
   }
 
   @Post()
+  @CheckPolicy('create', 'cpu-models')
   @InvalidateCache('cpu-models')
-  @Public()
   @ApiOperation({ summary: 'Create a new CPU model' })
   @ApiResponse({
     status: 201,
@@ -95,8 +95,8 @@ export class CpuModelController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'cpu-models')
   @InvalidateCache('cpu-models')
-  @Public()
   @ApiOperation({ summary: 'Update a CPU model' })
   @ApiParam({
     name: 'id',
@@ -121,8 +121,8 @@ export class CpuModelController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'cpu-models')
   @InvalidateCache('cpu-models')
-  @Public()
   @ApiOperation({ summary: 'Delete a CPU model' })
   @ApiParam({
     name: 'id',

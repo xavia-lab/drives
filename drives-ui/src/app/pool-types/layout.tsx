@@ -1,6 +1,8 @@
 import authOptions from "@app/api/auth/[...nextauth]/options";
 import { Header } from "@components/header";
 import { Footer } from "@components/footer";
+import { AppSider } from "@components/app-sider";
+import { ResourceRouteGuard } from "@components/resource-route-guard";
 import { ThemedLayout } from "@refinedev/antd";
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
@@ -14,8 +16,8 @@ export default async function Layout({ children }: React.PropsWithChildren) {
   }
 
   return (
-    <ThemedLayout Header={Header} Footer={Footer}>
-      {children}
+    <ThemedLayout Header={Header} Footer={Footer} Sider={AppSider}>
+      <ResourceRouteGuard>{children}</ResourceRouteGuard>
     </ThemedLayout>
   );
 }

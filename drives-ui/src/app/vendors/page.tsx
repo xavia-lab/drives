@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
@@ -18,7 +19,7 @@ import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function VendorList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -34,8 +35,11 @@ export default function VendorList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -61,6 +65,7 @@ export default function VendorList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("name", filters) || null}
           dataIndex="name"
           title={"Name"}
           sorter={true}
@@ -72,6 +77,7 @@ export default function VendorList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="isManufacturer"
           title={"Manufacturer"}
           width={140}
@@ -87,6 +93,7 @@ export default function VendorList() {
           }
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="isRetailer"
           title={"Retailer"}
           width={120}
@@ -140,6 +147,7 @@ export default function VendorList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="managed"
           title={"Provider"}
           key="managed"
@@ -149,6 +157,7 @@ export default function VendorList() {
           render={(managed: boolean) => <ProviderTag managed={managed} />}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

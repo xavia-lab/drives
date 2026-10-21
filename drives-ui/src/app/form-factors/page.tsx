@@ -9,12 +9,13 @@ import {
   getDefaultSortOrder,
   FilterDropdown,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Space, Table } from "antd";
 import { ProviderTag } from "@components/provider-tag";
 
 export default function FormFactorList() {
-  const { tableProps, sorters } = useTable({
+  const { searchFormProps, tableProps, sorters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -23,6 +24,8 @@ export default function FormFactorList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
           dataIndex="displayKey"

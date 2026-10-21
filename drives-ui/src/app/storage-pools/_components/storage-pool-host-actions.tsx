@@ -1,6 +1,6 @@
 "use client";
 
-import { useApiUrl, useCustomMutation } from "@refinedev/core";
+import { useApiUrl, useCan, useCustomMutation } from "@refinedev/core";
 import { LookupSelect } from "@components/lookup-select";
 import { App, Button, Form, Input, Modal, Radio, Space } from "antd";
 import { ExportOutlined, ImportOutlined } from "@ant-design/icons";
@@ -32,6 +32,14 @@ export const StoragePoolHostActions = ({
   const [open, setOpen] = useState(false);
   const [hostType, setHostType] = useState<HostType>("physical");
   const [submitting, setSubmitting] = useState(false);
+  const { data: canImport } = useCan({
+    resource: "storage-pools",
+    action: "import",
+  });
+  const { data: canExport } = useCan({
+    resource: "storage-pools",
+    action: "export",
+  });
 
   const handleImport = async () => {
     try {
@@ -76,13 +84,17 @@ export const StoragePoolHostActions = ({
     });
   };
 
+  if (!canImport?.can && !canExport?.can) {
+    return null;
+  }
+
   return (
     <>
       <Space>
         <Button
           type="primary"
           icon={<ImportOutlined />}
-          disabled={isAttached}
+          disabled={isAttached || !canImport?.can}
           onClick={() => setOpen(true)}
         >
           Import
@@ -90,7 +102,7 @@ export const StoragePoolHostActions = ({
         <Button
           danger
           icon={<ExportOutlined />}
-          disabled={!isAttached}
+          disabled={!isAttached || !canExport?.can}
           onClick={handleExport}
         >
           Export

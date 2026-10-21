@@ -14,6 +14,7 @@ import { QrLinkResponseDto } from '../dto/response/qr-link-response.dto';
 import { Serialize } from '../../../common/interceptors/serialize.interceptor';
 import { LookupQrLinkDto } from '../dto/lookup-qr-link.dto';
 
+import { CheckPolicy } from '../../../common/decorators/check-policy.decorator';
 @Controller('qr-resolver')
 export class QrController {
   constructor(private readonly qrLinkService: QRLinkService) {}
@@ -23,6 +24,7 @@ export class QrController {
    * GET /qr-resolver/lookup?resourceType=products&resourceId=123
    */
   @Get('lookup')
+  @CheckPolicy('lookup', 'qr-resolver')
   @Serialize(QrLinkResponseDto)
   async lookup(
     @Query(ValidationPipe) query: LookupQrLinkDto,
@@ -65,6 +67,7 @@ export class QrController {
    * POST /qr-resolver/generate
    */
   @Post('generate')
+  @CheckPolicy('create', 'qr-resolver')
   @Serialize(QrLinkResponseDto)
   async generate(
     @Body() body: { resourceType: string; resourceId: string },

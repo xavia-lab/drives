@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table, Tooltip } from "antd";
 import type { TableProps } from "antd";
@@ -18,7 +19,7 @@ import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function PhysicalServerList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -59,8 +60,11 @@ export default function PhysicalServerList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} onChange={handleTableChange} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -78,6 +82,7 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("hostname", filters) || null}
           dataIndex="hostname"
           title={"Hostname"}
           sorter={true}
@@ -89,6 +94,7 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="cpus"
           title={"CPUs"}
           width={120}
@@ -109,6 +115,7 @@ export default function PhysicalServerList() {
           }}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("memoryValue", filters) || null}
           dataIndex="memoryValue"
           title={"Memory"}
           width={140}
@@ -185,6 +192,7 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("rackUnitPosition", filters) || null}
           dataIndex="rackUnitPosition"
           title={"Rack Unit Position"}
           width={140}
@@ -202,6 +210,7 @@ export default function PhysicalServerList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="slots"
           title={"Slots"}
           width={90}
@@ -211,6 +220,7 @@ export default function PhysicalServerList() {
           }
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

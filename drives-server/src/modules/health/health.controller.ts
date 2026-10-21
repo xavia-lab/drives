@@ -41,6 +41,7 @@ export class HealthController {
     };
   }
 
+  @Public()
   @Get('/db')
   @ApiOperation({ summary: 'Database health check' })
   async checkDatabase() {

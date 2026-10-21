@@ -3,21 +3,7 @@ resourcePolicy:
   version: "default"
   resource: "audit-logs"
   rules:
-    # 1. Admin can record and read the compliance history
     - actions: ["create", "show", "list"]
       effect: EFFECT_ALLOW
       roles:
         - admin
-
-    # 2. Operators can record their own actions
-    - actions: ["create"]
-      effect: EFFECT_ALLOW
-      roles:
-        - owner
-
-    # 3. Read-only viewers
-    - actions: ["show", "list"]
-      effect: EFFECT_ALLOW
-      roles:
-        - owner
-        - viewer

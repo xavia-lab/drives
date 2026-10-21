@@ -29,9 +29,9 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PoolTypeResponseDto } from './dto/response/pool-type-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('pool-types')
 @Controller('pool-types')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class PoolTypeController {
   constructor(private readonly poolTypeService: PoolTypeService) {}
 
   @Get()
+  @CheckPolicy('list', 'pool-types')
   @Cacheable({ tags: ['pool-types'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Pool Types with pagination' })
   @ApiQuery({ type: QueryPoolTypeDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class PoolTypeController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'pool-types')
   @Cacheable({ tags: ['pool-types'] })
-  @Public()
   @ApiOperation({ summary: 'Get Pool Type by ID' })
   @ApiParam({
     name: 'id',
@@ -80,8 +80,8 @@ export class PoolTypeController {
   }
 
   @Post()
+  @CheckPolicy('create', 'pool-types')
   @InvalidateCache('pool-types')
-  @Public()
   @ApiOperation({ summary: 'Create a new Pool Type' })
   @ApiResponse({
     status: 201,
@@ -95,8 +95,8 @@ export class PoolTypeController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'pool-types')
   @InvalidateCache('pool-types')
-  @Public()
   @ApiOperation({ summary: 'Update a Pool Type' })
   @ApiParam({
     name: 'id',
@@ -127,8 +127,8 @@ export class PoolTypeController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'pool-types')
   @InvalidateCache('pool-types')
-  @Public()
   @ApiOperation({ summary: 'Delete a Pool Type' })
   @ApiParam({
     name: 'id',

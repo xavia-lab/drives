@@ -29,9 +29,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { BusProtocolResponseDto } from './dto/response/bus-protocol-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('bus-protocols')
 @Controller('bus-protocols')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,9 +41,8 @@ export class BusProtocolController {
   constructor(private readonly BusProtocolService: BusProtocolService) {}
 
   @Get()
+  @CheckPolicy('list', 'bus-protocols')
   @Cacheable({ tags: ['bus-protocols'] })
-  @Public()
-  // @CheckPolicy('list', 'bus-protocols')
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
   @ApiQuery({ type: QueryBusProtocolDto })
   @ApiResponse({
@@ -57,9 +56,8 @@ export class BusProtocolController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'bus-protocols')
   @Cacheable({ tags: ['bus-protocols'] })
-  @Public()
-  // @CheckPolicy('show', 'bus-protocols')
   @ApiOperation({ summary: 'Get BusProtocol by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -84,9 +82,8 @@ export class BusProtocolController {
   }
 
   @Post()
+  @CheckPolicy('create', 'bus-protocols')
   @InvalidateCache('bus-protocols')
-  @Public()
-  // @CheckPolicy('create', 'bus-protocols')
   @ApiOperation({ summary: 'Create a new BusProtocol' })
   @ApiResponse({
     status: 201,
@@ -100,9 +97,8 @@ export class BusProtocolController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'bus-protocols')
   @InvalidateCache('bus-protocols')
-  @Public()
-  // @CheckPolicy('edit', 'bus-protocols')
   @ApiOperation({ summary: 'Update a BusProtocol' })
   @ApiParam({
     name: 'id',
@@ -133,9 +129,8 @@ export class BusProtocolController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'bus-protocols')
   @InvalidateCache('bus-protocols')
-  @Public()
-  // @CheckPolicy('delete', 'bus-protocols')
   @ApiOperation({ summary: 'Delete a BusProtocol' })
   @ApiParam({
     name: 'id',
