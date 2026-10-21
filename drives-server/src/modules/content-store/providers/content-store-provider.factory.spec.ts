@@ -9,6 +9,7 @@ import { S3ContentStoreProvider } from './s3-content-store.provider';
 
 const localConfig: ContentStoreConfig = {
   driver: 'local',
+  gc: { enabled: true, graceMs: 86_400_000, batchSize: 500 },
   local: {
     root: '/tmp/drives-content-store',
     tmpMaxAgeMs: 3_600_000,
@@ -19,6 +20,7 @@ const localConfig: ContentStoreConfig = {
 
 const s3Config: ContentStoreConfig = {
   driver: 's3',
+  gc: { enabled: true, graceMs: 86_400_000, batchSize: 500 },
   local: {
     root: '/tmp/drives-content-store',
     tmpMaxAgeMs: 3_600_000,

@@ -40,6 +40,16 @@ describe('LocalContentStoreProvider', () => {
     ]);
   });
 
+  it('reports content objects with their modification time', async () => {
+    await provider.put('objects/with-time', Buffer.from('data'));
+
+    const objects = await provider.listDetailed('objects/');
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0].key).toBe('objects/with-time');
+    expect(objects[0].lastModified).toBeInstanceOf(Date);
+  });
+
   it('returns an empty list for a missing prefix', async () => {
     await expect(provider.list('does-not-exist/')).resolves.toEqual([]);
   });

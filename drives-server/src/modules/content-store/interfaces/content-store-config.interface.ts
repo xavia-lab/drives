@@ -17,6 +17,11 @@ export interface LocalContentStoreConfig {
 
 export interface ContentStoreConfig {
   driver: ContentStoreDriver;
+  gc: {
+    enabled: boolean;
+    graceMs: number;
+    batchSize: number;
+  };
   local: LocalContentStoreConfig;
   s3: {
     accessKeyId?: string;

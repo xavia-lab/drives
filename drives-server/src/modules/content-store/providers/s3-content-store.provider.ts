@@ -7,7 +7,10 @@ import {
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { InternalServerErrorException } from '@nestjs/common';
-import { ContentStoreProvider } from '../interfaces/content-store-provider.interface';
+import {
+  ContentStoreObject,
+  ContentStoreProvider,
+} from '../interfaces/content-store-provider.interface';
 import { S3ContentStoreConfig } from '../interfaces/content-store-config.interface';
 
 export class S3ContentStoreProvider implements ContentStoreProvider {
@@ -71,12 +74,19 @@ export class S3ContentStoreProvider implements ContentStoreProvider {
   }
 
   async list(prefix: string): Promise<string[]> {
+    return (await this.listDetailed(prefix)).map((object) => object.key);
+  }
+
+  async listDetailed(prefix: string): Promise<ContentStoreObject[]> {
     const res = await this.client.send(
       new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix }),
     );
 
-    if (!res.Contents) return [];
-
-    return res.Contents.map((c) => c.Key).filter((key): key is string => !!key);
+    return (res.Contents ?? [])
+      .filter((entry): entry is typeof entry & { Key: string } => !!entry.Key)
+      .map((entry) => ({
+        key: entry.Key,
+        lastModified: entry.LastModified ?? null,
+      }));
   }
 }

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ExchangeRate } from './entities/exchange-rate.entity';
 import { Currency } from '../currency/entities/currency.entity';
 import { ExchangeRateService } from './exchange-rate.service';
@@ -10,10 +9,7 @@ import { ExchangeRateHousekeepingService } from './exchange-rate-housekeeping.se
 import { ExchangeRateScheduler } from './exchange-rate.scheduler';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([ExchangeRate, Currency]),
-    ScheduleModule.forRoot(),
-  ],
+  imports: [SequelizeModule.forFeature([ExchangeRate, Currency])],
   providers: [
     ExchangeRateService,
     ExchangeRateLockService,

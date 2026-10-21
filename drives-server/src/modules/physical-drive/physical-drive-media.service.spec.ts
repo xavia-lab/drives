@@ -27,7 +27,10 @@ describe('PhysicalDriveMediaService', () => {
     update: ReturnType<typeof vi.fn>;
     destroy: ReturnType<typeof vi.fn>;
   };
-  let mediaService: { trackUpload: ReturnType<typeof vi.fn> };
+  let mediaService: {
+    prepareUpload: ReturnType<typeof vi.fn>;
+    findOrCreateMedia: ReturnType<typeof vi.fn>;
+  };
   let sequelize: { transaction: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
@@ -40,7 +43,15 @@ describe('PhysicalDriveMediaService', () => {
       destroy: vi.fn().mockResolvedValue(1),
     };
     mediaService = {
-      trackUpload: vi.fn().mockResolvedValue({
+      prepareUpload: vi.fn().mockResolvedValue({
+        fileId: 'hash-1',
+        mediaType: 'IMAGE',
+        fileName: 'photo.png',
+        mimeType: 'image/png',
+        fileSize: 10,
+        metadata: null,
+      }),
+      findOrCreateMedia: vi.fn().mockResolvedValue({
         media: { id: 'media-1' },
         isNew: true,
       }),

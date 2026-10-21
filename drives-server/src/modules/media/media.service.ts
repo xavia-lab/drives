@@ -1,10 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Transaction, UniqueConstraintError } from 'sequelize';
 import { InjectModel } from '@nestjs/sequelize';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginationQueryDto } from '../pagination/dto/pagination-query.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 import { ContentStoreService } from '../content-store/services/content-store.service';
 import { Media, MediaType } from './entities/media.entity';
+
+export interface PreparedMediaUpload {
+  fileId: string;
+  mediaType: MediaType;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  metadata: Record<string, unknown> | null;
+}
 
 export interface MediaUploadOptions {
   mediaType?: MediaType;
@@ -33,6 +43,76 @@ export class MediaService {
   }
 
   /**
+   * Writes the bytes to the content store without touching the database. The
+   * returned descriptor can be turned into a media row inside a caller-owned
+   * transaction, keeping content I/O outside the DB transaction.
+   */
+  async prepareUpload(
+    file: Express.Multer.File,
+    options: MediaUploadOptions = {},
+  ): Promise<PreparedMediaUpload> {
+    const metadata = options.metadata ?? null;
+    const { fileId } = await this.contentStore.upload(
+      file.buffer,
+      file.mimetype,
+      {
+        ...(metadata ?? {}),
+        originalName: file.originalname,
+      },
+    );
+
+    return {
+      fileId,
+      mediaType: options.mediaType ?? this.inferMediaType(file.mimetype),
+      fileName: file.originalname,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      metadata,
+    };
+  }
+
+  /**
+   * Finds or creates the media row for an already-stored content object.
+   * Pass the caller's transaction when this must be atomic with attachments.
+   */
+  async findOrCreateMedia(
+    upload: PreparedMediaUpload,
+    transaction?: Transaction,
+  ): Promise<{ media: Media; isNew: boolean }> {
+    const existing = await this.mediaModel.findOne({
+      where: { fileId: upload.fileId },
+      transaction,
+    });
+    if (existing) {
+      return { media: existing, isNew: false };
+    }
+
+    try {
+      const media = await this.mediaModel.create(
+        {
+          fileId: upload.fileId,
+          mediaType: upload.mediaType,
+          fileName: upload.fileName,
+          mimeType: upload.mimeType,
+          fileSize: upload.fileSize,
+          metadata: upload.metadata,
+        },
+        { transaction },
+      );
+      return { media, isNew: true };
+    } catch (error) {
+      if (error instanceof UniqueConstraintError) {
+        const raced = await this.mediaModel.findOne({
+          where: { fileId: upload.fileId },
+          transaction,
+        });
+        if (raced) return { media: raced, isNew: false };
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Stores the file in the content store and records the media row that tracks
    * it. Content is deduplicated by SHA-256, so uploading the same bytes twice
    * returns the existing media record.
@@ -41,30 +121,8 @@ export class MediaService {
     file: Express.Multer.File,
     options: MediaUploadOptions = {},
   ): Promise<{ media: Media; isNew: boolean }> {
-    const { fileId } = await this.contentStore.upload(
-      file.buffer,
-      file.mimetype,
-      {
-        ...options.metadata,
-        originalName: file.originalname,
-      },
-    );
-
-    const existing = await this.findByFileId(fileId);
-    if (existing) {
-      return { media: existing, isNew: false };
-    }
-
-    const media = await this.mediaModel.create({
-      fileId,
-      mediaType: options.mediaType ?? this.inferMediaType(file.mimetype),
-      fileName: file.originalname,
-      mimeType: file.mimetype,
-      fileSize: file.size,
-      metadata: options.metadata ?? null,
-    });
-
-    return { media, isNew: true };
+    const upload = await this.prepareUpload(file, options);
+    return this.findOrCreateMedia(upload);
   }
 
   async delete(id: string): Promise<boolean> {

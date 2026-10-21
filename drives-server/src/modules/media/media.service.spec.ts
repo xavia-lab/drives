@@ -76,6 +76,7 @@ describe('MediaService', () => {
         fileSize: 13,
         metadata: { caption: 'Front view' },
       }),
+      expect.any(Object),
     );
   });
 
@@ -99,6 +100,7 @@ describe('MediaService', () => {
 
     expect(mediaModel.create).toHaveBeenCalledWith(
       expect.objectContaining({ mediaType: MediaType.CERTIFICATE }),
+      expect.any(Object),
     );
   });
 
