@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { PhysicalDriveController } from './physical-drive.controller';
+import { PhysicalDriveMediaController } from './physical-drive-media.controller';
 import { PhysicalDriveService } from './physical-drive.service';
+import { PhysicalDriveMediaService } from './physical-drive-media.service';
 import { PhysicalDrive } from './entities/physical-drive.entity';
 import { PhysicalDriveLocation } from './entities/physical-drive-location.entity';
 import { PhysicalDriveMedia } from './entities/physical-drive-media.entity';
@@ -11,6 +13,7 @@ import { Currency } from '../currency/entities/currency.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { ServerSlotAllocationModule } from '../server-slot-allocation/server-slot-allocation.module';
 import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecycle-event.module';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
@@ -25,9 +28,10 @@ import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecy
     ]),
     ServerSlotAllocationModule,
     DriveLifecycleEventModule,
+    MediaModule,
   ],
-  controllers: [PhysicalDriveController],
-  providers: [PhysicalDriveService],
+  controllers: [PhysicalDriveController, PhysicalDriveMediaController],
+  providers: [PhysicalDriveService, PhysicalDriveMediaService],
   exports: [PhysicalDriveService],
 })
 export class PhysicalDriveModule {}

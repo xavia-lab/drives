@@ -24,6 +24,7 @@ import {
   PhysicalDriveLifecycleTimeline,
   type DriveLifecycleTimeline,
 } from "@app/physical-drives/_components/physical-drive-lifecycle-timeline";
+import { PhysicalDriveMediaCard } from "@app/physical-drives/_components/physical-drive-media-card";
 
 const { Text } = Typography;
 const currencyFormatter = new CurrencyFormatter();
@@ -201,6 +202,8 @@ export default function PhysicalDriveShow() {
             </Card>
           </Col>
         </Row>
+
+        <PhysicalDriveMediaCard driveId={record?.id as string | undefined} />
 
         <Row justify="center" gutter={32}>
           <Col style={{ textAlign: "center" }}>

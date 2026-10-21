@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCustomMutation, useList, useNotification } from "@refinedev/core";
+import {
+  useCustomMutation,
+  useList,
+  useNotification,
+} from "@refinedev/core";
 import {
   Alert,
+  App,
+  Button,
+  Card,
+  Checkbox,
   Col,
   DatePicker,
   Descriptions,
@@ -15,12 +23,18 @@ import {
   Row,
   Select,
   Space,
+  Tag,
   Typography,
+  Upload,
 } from "antd";
+import type { UploadProps } from "antd";
 import {
+  DeleteOutlined,
   EnvironmentOutlined,
   FileSearchOutlined,
   HddOutlined,
+  InboxOutlined,
+  PaperClipOutlined,
   ShoppingCartOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -30,6 +44,7 @@ import {
   type WorkflowValues,
 } from "@components/workflow";
 import { CurrencyFormatter } from "@utils/currency-formatter";
+import { BinaryService } from "@providers/binary-data-provider";
 
 const { Text } = Typography;
 
@@ -80,6 +95,44 @@ type AcquisitionFormValues = {
   locationNotes?: string;
 };
 
+type MediaAttachmentType =
+  | "PICTURE"
+  | "INVOICE"
+  | "DOCUMENT"
+  | "CERTIFICATE"
+  | "OTHER";
+
+type MediaDraft = {
+  uid: string;
+  file: File;
+  attachmentType: MediaAttachmentType;
+  notes: string;
+  isPrimary: boolean;
+};
+
+const MAX_FILES = 20;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+const ATTACHMENT_TYPE_OPTIONS: Array<{
+  label: string;
+  value: MediaAttachmentType;
+}> = [
+  { label: "Picture", value: "PICTURE" },
+  { label: "Invoice", value: "INVOICE" },
+  { label: "Document", value: "DOCUMENT" },
+  { label: "Certificate", value: "CERTIFICATE" },
+  { label: "Other", value: "OTHER" },
+];
+
+const inferAttachmentType = (mimeType: string): MediaAttachmentType =>
+  mimeType.startsWith("image/") ? "PICTURE" : "DOCUMENT";
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 // Date fields store plain `YYYY-MM-DD` strings; these props belong on the
 // `Form.Item` (not the `DatePicker`) so antd converts to/from Dayjs correctly.
 const dateFieldProps = {
@@ -93,8 +146,77 @@ const dateFieldProps = {
 export const DriveAcquisitionWorkflow = () => {
   const [form] = Form.useForm<AcquisitionFormValues>();
   const router = useRouter();
+  const { message } = App.useApp();
   const { open } = useNotification();
   const { mutateAsync: acquireDrive } = useCustomMutation();
+  const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
+
+  const addFiles = (files: File[]) => {
+    setMediaDrafts((current) => {
+      const next = [...current];
+
+      for (const file of files) {
+        if (next.length >= MAX_FILES) {
+          message.warning(`You can attach up to ${MAX_FILES} files`);
+          break;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          message.warning(`${file.name} is larger than 25 MB`);
+          continue;
+        }
+        if (
+          next.some(
+            (draft) =>
+              draft.file.name === file.name &&
+              draft.file.size === file.size &&
+              draft.file.lastModified === file.lastModified,
+          )
+        ) {
+          continue;
+        }
+
+        next.push({
+          uid: `${file.name}-${file.size}-${file.lastModified}-${Math.random()
+            .toString(16)
+            .slice(2)}`,
+          file,
+          attachmentType: inferAttachmentType(file.type),
+          notes: "",
+          isPrimary: false,
+        });
+      }
+
+      return next;
+    });
+  };
+
+  const updateDraft = (uid: string, patch: Partial<MediaDraft>) => {
+    setMediaDrafts((current) =>
+      current.map((draft) =>
+        draft.uid === uid ? { ...draft, ...patch } : draft,
+      ),
+    );
+  };
+
+  const removeDraft = (uid: string) => {
+    setMediaDrafts((current) =>
+      current.filter((draft) => draft.uid !== uid),
+    );
+  };
+
+  const makePrimary = (uid: string) => {
+    setMediaDrafts((current) =>
+      current.map((draft) => ({
+        ...draft,
+        isPrimary: draft.uid === uid,
+      })),
+    );
+  };
+
+  const beforeUpload: UploadProps["beforeUpload"] = (file) => {
+    addFiles([file]);
+    return false;
+  };
 
   const { query: vendorsQuery } = useList<VendorRecord>({
     resource: "vendors",
@@ -487,6 +609,126 @@ export const DriveAcquisitionWorkflow = () => {
       ),
     },
     {
+      key: "media",
+      title: "Media",
+      description: "Optional photos & documents",
+      icon: <PaperClipOutlined />,
+      fields: [],
+      content: () => (
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <Alert
+            type="info"
+            showIcon
+            message="Attach files (optional)"
+            description="Drag and drop or browse for photos, invoices, certificates or other documents. You can add notes and mark one file as the primary attachment."
+          />
+          <Upload.Dragger
+            multiple
+            showUploadList={false}
+            beforeUpload={beforeUpload}
+            disabled={mediaDrafts.length >= MAX_FILES}
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">
+              Drop files here or click to browse
+            </p>
+            <p className="ant-upload-hint">
+              Up to {MAX_FILES} files, 25 MB each.
+            </p>
+          </Upload.Dragger>
+
+          {mediaDrafts.length === 0 ? (
+            <Text type="secondary">
+              No files selected. This step can be skipped.
+            </Text>
+          ) : (
+            <Space direction="vertical" size={8} style={{ display: "flex" }}>
+              {mediaDrafts.map((draft) => (
+                <Card
+                  key={draft.uid}
+                  size="small"
+                  title={
+                    <Space size={8} wrap>
+                      <Text strong>{draft.file.name}</Text>
+                      <Text type="secondary">
+                        {formatFileSize(draft.file.size)}
+                      </Text>
+                      {draft.isPrimary ? (
+                        <Tag color="gold">Primary</Tag>
+                      ) : null}
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      danger
+                      size="small"
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeDraft(draft.uid)}
+                    >
+                      Remove
+                    </Button>
+                  }
+                >
+                  <Space
+                    direction="vertical"
+                    size={8}
+                    style={{ display: "flex" }}
+                  >
+                    <Row gutter={16}>
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label="Attachment type"
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Select
+                            value={draft.attachmentType}
+                            options={ATTACHMENT_TYPE_OPTIONS}
+                            onChange={(attachmentType) =>
+                              updateDraft(draft.uid, { attachmentType })
+                            }
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={16}>
+                        <Form.Item label="Notes" style={{ marginBottom: 0 }}>
+                          <Input.TextArea
+                            rows={2}
+                            value={draft.notes}
+                            placeholder="Optional: serial close-up, invoice reference, condition notes..."
+                            onChange={(event) =>
+                              updateDraft(draft.uid, {
+                                notes: event.target.value,
+                              })
+                            }
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Checkbox
+                      checked={draft.isPrimary}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          makePrimary(draft.uid);
+                        } else {
+                          updateDraft(draft.uid, { isPrimary: false });
+                        }
+                      }}
+                    >
+                      Mark as primary attachment
+                    </Checkbox>
+                  </Space>
+                </Card>
+              ))}
+            </Space>
+          )}
+        </Space>
+      ),
+    },
+    {
       key: "review",
       title: "Review",
       description: "Confirm & acquire",
@@ -566,6 +808,41 @@ export const DriveAcquisitionWorkflow = () => {
               </Descriptions.Item>
             </Descriptions>
             <Divider style={{ margin: 0 }} />
+            <Text strong>Attachments</Text>
+            {mediaDrafts.length === 0 ? (
+              <Text type="secondary">
+                No files attached. You can skip the media step.
+              </Text>
+            ) : (
+              <Space direction="vertical" size={6} style={{ display: "flex" }}>
+                {mediaDrafts.map((draft) => (
+                  <div
+                    key={draft.uid}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
+                  >
+                    <Space size={6} wrap>
+                      <Tag>{draft.attachmentType}</Tag>
+                      <Text>{draft.file.name}</Text>
+                      {draft.isPrimary ? (
+                        <Tag color="gold">Primary</Tag>
+                      ) : null}
+                    </Space>
+                    <Text
+                      type="secondary"
+                      ellipsis
+                      style={{ maxWidth: "45%", fontSize: 12 }}
+                    >
+                      {draft.notes || "No notes"}
+                    </Text>
+                  </div>
+                ))}
+              </Space>
+            )}
+            <Divider style={{ margin: 0 }} />
             <Text type="secondary">
               This action is atomic: if any step fails, no drive, location or
               lifecycle record is created.
@@ -600,12 +877,37 @@ export const DriveAcquisitionWorkflow = () => {
     const created = response.data as
       { id?: string; label?: string; serialNumber?: string } | undefined;
 
+    let mediaUploadFailed = false;
+    if (created?.id && mediaDrafts.length > 0) {
+      try {
+        await BinaryService.put(
+          `/api/proxy/physical-drives/${created.id}/media`,
+          mediaDrafts.map((draft) => draft.file),
+          {
+            add: JSON.stringify(
+              mediaDrafts.map((draft) => ({
+                attachmentType: draft.attachmentType,
+                notes: draft.notes.trim() || undefined,
+                isPrimary: draft.isPrimary,
+              })),
+            ),
+          },
+        );
+      } catch {
+        mediaUploadFailed = true;
+      }
+    }
+
     open?.({
-      type: "success",
-      message: "Drive acquired",
-      description: created?.label
-        ? `Drive ${created.label} was added to inventory.`
-        : "The drive was added to inventory.",
+      type: mediaUploadFailed ? "error" : "success",
+      message: mediaUploadFailed
+        ? "Drive acquired, but media upload failed"
+        : "Drive acquired",
+      description: mediaUploadFailed
+        ? "The drive was added to inventory, but one or more files could not be attached. The drive itself was created successfully."
+        : created?.label
+          ? `Drive ${created.label} was added to inventory.`
+          : "The drive was added to inventory.",
       key: "drive-acquisition",
     });
 

@@ -2,6 +2,7 @@ import {
   ApartmentOutlined,
   FileProtectOutlined,
   HddOutlined,
+  PaperClipOutlined,
   SwapOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
@@ -37,6 +38,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
       "Detach drives from a source server and seat them into another server's slots in a single transaction.",
     href: "/workflows/drive-allocation",
     icon: <ApartmentOutlined />,
+    category: "Inventory",
+  },
+  {
+    key: "drive-media-management",
+    title: "Drive Media Management",
+    description:
+      "Review, add and remove photos, invoices and documents attached to a drive in a datacenter.",
+    href: "/workflows/drive-media-management",
+    icon: <PaperClipOutlined />,
     category: "Inventory",
   },
   {
