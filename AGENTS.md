@@ -171,6 +171,14 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
   - `recentActivity` — the 8 newest drive lifecycle and warranty tracking events merged by timestamp, with drive/claim links.
 - The dashboard UI consumes it via `useCustom` in `src/app/dashboard/_components/dashboard-insights.tsx`; all insight cards are presentational and live in the same directory.
 
+### Background tasks UI
+
+- `TasksModule` (`src/modules/tasks`) exposes `GET /api/v1/tasks` and `POST /api/v1/tasks/:key/run`, gated by `@CheckPolicy('list'|'run','tasks')` and the admin-only `drives-policy/policies/tasks.yaml`. The route intentionally lives at `/api/v1/tasks` (not `/api/v1/system/tasks`) because the global prefix excludes `system/*path` for the version-neutral system endpoints.
+- `BackgroundTaskRun` (`entities/background-task-run.entity.ts`, table `background_task_runs`, migration `20260710073000-create-background-task-runs.js`) is an append-only run history: `taskKey`, `triggerType` (`SCHEDULED|MANUAL`), `status` (`RUNNING|SUCCEEDED|FAILED|SKIPPED`), `startedAt`, `finishedAt`, `durationMs`, JSONB `result`, `errorMessage`, optional `triggeredByUserId` and `instanceId`. Indexes on `(task_key, started_at)`, `status` and the trigger user.
+- `TaskRunService` (`TaskRunsModule`, `@Global`) wraps every scheduled and manual run: it inserts `RUNNING`, updates to `SUCCEEDED` (or `SKIPPED` when the job returns `null`), or `FAILED` with the error, and records the duration. The last persisted run per task is the source of truth across restarts; `SchedulerRegistry` still supplies the **next** run and a fallback last-run value. Stale `RUNNING` rows older than 30 minutes are marked `FAILED` at startup.
+- It reports the exchange-rate sync, exchange-rate housekeeping, content-store GC and content-store staging cleanup tasks. Scheduled entrypoints (`ExchangeRateScheduler`, `ContentStoreGcService`, `ContentStoreMaintenanceService`) record through `TaskRunService`; manual runs are attributed to the authenticated user. The staging cleanup exposes its interval state from `ContentStoreMaintenanceService`.
+- The UI page `/system/tasks` (System → Tasks) renders a table with schedule, last run + status/duration, next run, enabled state and a **Run now** button for each task.
+
 ### Audit logs
 
 - `AuditLog` (`src/modules/audit-log`, table `audit_logs`, migration `20260710055000-create-audit-logs.js`) backs Refine's [Audit Log feature](https://refine.dev/core/docs/audit-logs/audit-log-provider/). Registered in `app.module.ts` + `database.module.ts`. Fields: `action` STRING(32) (`create|update|delete`), `resource` STRING(64) (Refine resource name), `resourceId` STRING(64) (target record key), `payload` JSONB `{ previous, current }`, `timestamp` DATE (default now), `userId` UUID nullable. Indexes `audit_logs_resource_target_idx` (`resource, resource_id, timestamp`), `audit_logs_chronological_idx`, `audit_logs_user_idx`.

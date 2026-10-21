@@ -4,6 +4,7 @@ import { SequelizeModule, SequelizeModuleOptions } from '@nestjs/sequelize'; // 
 import { DatabaseService } from './database.service';
 
 import { AuditLog } from '../modules/audit-log/entities/audit-log.entity';
+import { BackgroundTaskRun } from '../modules/tasks/entities/background-task-run.entity';
 import { Role } from '../modules/role/entities/role.entity';
 import { User } from '../modules/user/entities/user.entity';
 
@@ -56,6 +57,7 @@ import { WarrantyClaimEvent } from '../modules/warranty-claim/entities/warranty-
           ...config,
           models: [
             AuditLog,
+            BackgroundTaskRun,
             Media,
             PhysicalDriveMedia,
             QRLink,

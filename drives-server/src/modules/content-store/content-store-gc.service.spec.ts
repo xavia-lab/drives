@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContentStoreGcService } from './content-store-gc.service';
 import { ContentStoreService } from './services/content-store.service';
 import { Media } from '../media/entities/media.entity';
+import { TaskRunService } from '../tasks/task-run.service';
 
 describe('ContentStoreGcService', () => {
   let service: ContentStoreGcService;
@@ -42,9 +43,16 @@ describe('ContentStoreGcService', () => {
       transaction: vi.fn(),
     };
 
+    const taskRunService = {
+      run: vi.fn((_key: string, _trigger: string, work: () => unknown) =>
+        work(),
+      ),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContentStoreGcService,
+        { provide: TaskRunService, useValue: taskRunService },
         { provide: ContentStoreService, useValue: contentStore },
         { provide: getModelToken(Media), useValue: mediaModel },
         { provide: ConfigService, useValue: config },

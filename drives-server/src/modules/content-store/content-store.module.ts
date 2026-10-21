@@ -27,6 +27,10 @@ import { createContentStoreProvider } from './providers/content-store-provider.f
     ContentStoreGcService,
   ],
   controllers: [FileController],
-  exports: [ContentStoreService],
+  exports: [
+    ContentStoreService,
+    ContentStoreMaintenanceService,
+    ContentStoreGcService,
+  ],
 })
 export class ContentStoreModule {}

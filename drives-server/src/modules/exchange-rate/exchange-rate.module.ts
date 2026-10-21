@@ -17,6 +17,10 @@ import { ExchangeRateScheduler } from './exchange-rate.scheduler';
     ExchangeRateHousekeepingService,
     ExchangeRateScheduler,
   ],
-  exports: [ExchangeRateService],
+  exports: [
+    ExchangeRateService,
+    ExchangeRateSyncService,
+    ExchangeRateHousekeepingService,
+  ],
 })
 export class ExchangeRateModule {}
