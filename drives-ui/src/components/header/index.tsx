@@ -2,7 +2,6 @@
 
 import { ColorModeContext, PRIMARY_COLOR_PRESETS } from "@contexts/color-mode";
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
-import { useGetIdentity } from "@refinedev/core";
 import {
   Button,
   Dropdown,
@@ -18,17 +17,10 @@ import UserProfileDisplay from "@components/user-profile-display";
 
 const { useToken } = theme;
 
-type IUser = {
-  id: number;
-  name: string;
-  avatar: string;
-};
-
 export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   sticky = true,
 }) => {
   const { token } = useToken();
-  const { data: user } = useGetIdentity<IUser>();
   const { mode, setMode, primaryColor, setPrimaryColor } =
     useContext(ColorModeContext);
 

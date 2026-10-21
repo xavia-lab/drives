@@ -224,7 +224,7 @@ export const DriveMediaManagementWorkflow = () => {
       Array.isArray(mediaResult?.data)
         ? (mediaResult.data as ExistingAttachment[])
         : [],
-    [mediaResult?.data],
+    [mediaResult],
   );
 
   useEffect(() => {

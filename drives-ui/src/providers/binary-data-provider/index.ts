@@ -29,7 +29,8 @@ const sendMultipart = async (
   Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
 
   // Remove Content-Type to let axios set the boundary for multipart/form-data
-  const { "Content-Type": _, ...restHeaders } = headers;
+  const restHeaders = { ...headers };
+  delete restHeaders["Content-Type"];
 
   return axios.request({ method, url, data: formData, headers: restHeaders });
 };

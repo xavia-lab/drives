@@ -1,5 +1,6 @@
 "use client";
 
+import "@ant-design/v5-patch-for-react-19";
 import { App as AntdApp, theme } from "antd";
 import { useNotificationProvider } from "@refinedev/antd";
 import { Refine } from "@refinedev/core";
@@ -91,7 +92,7 @@ type AppProps = {
 };
 
 const App = (props: React.PropsWithChildren<AppProps>) => {
-  const { data, status } = useSession();
+  const { status } = useSession();
   const to = usePathname();
 
   if (status === "loading") {

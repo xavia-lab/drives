@@ -19,7 +19,7 @@ pnpm --filter @drives/drives-server start:dev   # nest start --watch
 pnpm --filter @drives/drives-ui start:dev       # refine dev (not `next dev`)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `lint --filter='!@drives/drives-ui'` → `build` → `test`. UI lint is excluded because it uses `next lint`, which Next 16 removed — don't rely on it.
+CI (`.github/workflows/ci.yml`) runs `lint` → `build` → `test` for the whole workspace. The UI uses a flat `eslint.config.mjs` with `eslint-config-next`; do not use the removed `next lint` command.
 
 Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` is stale. Server Vitest needs `unplugin-swc` (decorators) — keep the plugin when editing `vitest.config.mts`. Server specs import from `vitest` explicitly; UI uses jsdom + `src/test/setup.ts`.
 

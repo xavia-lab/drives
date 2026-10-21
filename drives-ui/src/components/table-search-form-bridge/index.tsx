@@ -9,5 +9,5 @@ import type { FormProps } from "antd";
  * that instance so rc-field-form does not warn about an orphaned form.
  */
 export const TableSearchFormBridge = (
-  formProps: Omit<FormProps<any>, "children">,
+  formProps: Omit<FormProps<unknown>, "children">,
 ) => <Form {...formProps} style={{ display: "none" }} aria-hidden />;

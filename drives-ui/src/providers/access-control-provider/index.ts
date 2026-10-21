@@ -70,7 +70,10 @@ export const createAccessControlProvider = (): AccessControlProvider => ({
 /**
  * Separate helper to handle data fetching for specific resources
  */
-async function getResourceAttributes(resource: string, params: any) {
+async function getResourceAttributes(
+  resource: string,
+  params?: CanParams["params"],
+) {
   const managedResources = await loadManagedResources();
 
   // If the list is unavailable, assume the resource is managed (fetch + pass the
@@ -83,8 +86,9 @@ async function getResourceAttributes(resource: string, params: any) {
   }
 
   // Use provided data if available (e.g. from a table row)
-  if (params?.data?.managed !== undefined) {
-    return { managed: !!params.data.managed };
+  const providedData = params?.data as { managed?: boolean } | undefined;
+  if (providedData?.managed !== undefined) {
+    return { managed: !!providedData.managed };
   }
 
   // Fetch from API if we have an ID but no data. A missing record is not an

@@ -17,7 +17,7 @@ export const Footer = () => {
       .then((res) => res.json())
       .then((data) => setServerVersion(data.version))
       .catch(() => setServerVersion("?.?.?"));
-  }, []);
+  }, [API_URL]);
 
   return (
     <Layout.Footer

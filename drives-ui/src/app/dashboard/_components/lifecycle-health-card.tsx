@@ -81,19 +81,31 @@ export const LifecycleHealthCard = ({
 }) => {
   const { token } = theme.useToken();
 
-  const colorByState: Record<string, string> = {
-    UNRECEIVED: token.colorTextSecondary,
-    RECEIVED: token.colorPrimary,
-    IN_INVENTORY: token.colorInfo,
-    IN_SERVICE: token.colorSuccess,
-    DEGRADED: token.colorWarning,
-    FAILED: token.colorError,
-    IN_RMA: "#722ed1",
-    RETIRED: token.colorTextTertiary,
-    SCRAPPED: token.colorTextQuaternary,
-    REPLACED: "#13c2c2",
-    LOST: "#cf1322",
-  };
+  const colorByState = useMemo<Record<string, string>>(
+    () => ({
+      UNRECEIVED: token.colorTextSecondary,
+      RECEIVED: token.colorPrimary,
+      IN_INVENTORY: token.colorInfo,
+      IN_SERVICE: token.colorSuccess,
+      DEGRADED: token.colorWarning,
+      FAILED: token.colorError,
+      IN_RMA: "#722ed1",
+      RETIRED: token.colorTextTertiary,
+      SCRAPPED: token.colorTextQuaternary,
+      REPLACED: "#13c2c2",
+      LOST: "#cf1322",
+    }),
+    [
+      token.colorTextSecondary,
+      token.colorPrimary,
+      token.colorInfo,
+      token.colorSuccess,
+      token.colorWarning,
+      token.colorError,
+      token.colorTextTertiary,
+      token.colorTextQuaternary,
+    ],
+  );
 
   const rows = useMemo<BarRow[]>(
     () =>

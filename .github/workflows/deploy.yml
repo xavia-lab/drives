@@ -54,7 +54,7 @@ jobs:
 
       # 🚀 Split tasks to filter out the frontend lint run without skipping any test specs
       - name: Run Workspace Linting (Excluding UI)
-        run: pnpm turbo run lint --filter='!@drives/drives-ui'
+        run: pnpm turbo run lint
 
       - name: Run Global Test Suite Verification
         run: pnpm turbo run test

@@ -1,6 +1,10 @@
 "use client";
 
-import { CustomResponse, CustomParams } from "@refinedev/core";
+import {
+  CustomResponse,
+  CustomParams,
+  type LogicalFilter,
+} from "@refinedev/core";
 import type { DataProvider } from "@refinedev/core";
 import { getSession } from "next-auth/react";
 
@@ -24,7 +28,7 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
  * Variable to hold the current refresh promise.
  * If multiple requests fail, they will all wait for this single promise.
  */
-let refreshPromise: Promise<any> | null = null;
+let refreshPromise: ReturnType<typeof getSession> | null = null;
 
 const authenticatedFetch = async (
   url: string,
@@ -65,7 +69,7 @@ const authenticatedFetch = async (
 };
 
 export const dataProvider: DataProvider = {
-  getOne: async ({ resource, id, meta }) => {
+  getOne: async ({ resource, id }) => {
     const response = await authenticatedFetch(`${API_URL}/${resource}/${id}`);
 
     if (response.status < 200 || response.status > 299) throw response;
@@ -75,7 +79,7 @@ export const dataProvider: DataProvider = {
     return { data: responseJson };
   },
 
-  getMany: async ({ resource, ids, meta }) => {
+  getMany: async ({ resource, ids }) => {
     const params = new URLSearchParams();
 
     if (ids) {
@@ -93,7 +97,7 @@ export const dataProvider: DataProvider = {
     return { data: responseJson.data };
   },
 
-  update: async ({ resource, id, variables, meta }) => {
+  update: async ({ resource, id, variables }) => {
     const response = await authenticatedFetch(`${API_URL}/${resource}/${id}`, {
       method: "PUT",
       body: JSON.stringify(variables),
@@ -106,7 +110,7 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  getList: async ({ resource, pagination, filters, sorters, meta }) => {
+  getList: async ({ resource, pagination, filters, sorters }) => {
     const params = new URLSearchParams();
 
     console.log(
@@ -140,7 +144,8 @@ export const dataProvider: DataProvider = {
       // for backwards compatibility).
       const conditions = filters
         .filter(
-          (filter): filter is any => "field" in filter && "operator" in filter,
+          (filter): filter is LogicalFilter =>
+            "field" in filter && "operator" in filter,
         )
         .map((filter) => ({
           field: filter.field,
@@ -184,7 +189,7 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  deleteOne: async ({ resource, id, variables, meta }) => {
+  deleteOne: async ({ resource, id }) => {
     const response = await authenticatedFetch(`${API_URL}/${resource}/${id}`, {
       method: "DELETE",
     });
@@ -242,7 +247,11 @@ export const dataProvider: DataProvider = {
 
     return { data };
   },
-  custom: async <TData = any, TQuery = any, TPayload = any>({
+  custom: async <
+    TData = unknown,
+    TQuery = Record<string, unknown>,
+    TPayload = unknown,
+  >({
     url,
     method,
     payload, // Used by useCustom

@@ -1,6 +1,7 @@
 import KeycloakProvider from "next-auth/providers/keycloak";
 import jwt from "jsonwebtoken";
 import { NextAuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import { getServerConfig } from "@utils/config";
 
 // Get validated config at the top level
@@ -12,7 +13,7 @@ const {
 } = getServerConfig();
 
 // Define a helper to call Keycloak's token endpoint
-async function refreshAccessToken(token: any) {
+async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
     const url = `${DRIVES_FRONTEND_KEYCLOAK_ISSUER}/protocol/openid-connect/token`;
     const response = await fetch(url, {
@@ -22,7 +23,7 @@ async function refreshAccessToken(token: any) {
         client_id: DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID,
         client_secret: DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET,
         grant_type: "refresh_token",
-        refresh_token: token.refreshToken,
+        refresh_token: token.refreshToken ?? "",
       }),
     });
 
@@ -35,7 +36,7 @@ async function refreshAccessToken(token: any) {
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fallback to old refresh token
     };
-  } catch (error) {
+  } catch {
     return { ...token, error: "RefreshAccessTokenError" };
   }
 }
@@ -66,10 +67,12 @@ const authOptions: NextAuthOptions = {
   ],
   secret: NEXTAUTH_SECRET!,
   callbacks: {
-    async jwt({ token, account, user, profile }) {
+    async jwt({ token, account, user }) {
       // Initial sign in
       if (account && user) {
-        const decodedToken: any = jwt.decode(account.access_token!);
+        const decodedToken = jwt.decode(account.access_token!) as {
+          realm_access?: { roles?: string[] };
+        } | null;
         return {
           ...token, // IMPORTANT: Spread existing token (includes name/email/picture)
           accessToken: account.access_token,
