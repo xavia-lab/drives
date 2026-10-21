@@ -148,16 +148,6 @@ export const CreateWarrantyClaimWorkflow = () => {
     resource: "warranty-claims",
     pagination: { mode: "server", currentPage: 1, pageSize: 250 },
   });
-  const activeClaimDriveIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const claim of claimsQuery.data?.data ?? []) {
-      if (claim.currentStatus !== "CLOSED") {
-        ids.add(claim.physicalDriveId);
-      }
-    }
-    return ids;
-  }, [claimsQuery.data?.data]);
-
   const { options: vendorOptions, isLoading: vendorsLoading } =
     useLookupOptions({
       resource: "vendors",

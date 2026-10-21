@@ -33,6 +33,7 @@ export default function Login() {
         </Button>
         <Typography.Text type="secondary">
           Powered by
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             style={{ padding: "0 5px" }}
             alt="Keycloak"

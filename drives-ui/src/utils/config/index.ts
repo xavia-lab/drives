@@ -26,10 +26,13 @@ export const getServerConfig = () => {
 
 // Extract only public-facing variables for the client
 export const getPublicConfig = () => {
-  const {
-    DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET,
-    NEXTAUTH_SECRET,
-    ...publicEnv
-  } = getServerConfig();
-  return publicEnv;
+  const config = getServerConfig();
+  return {
+    DRIVES_FRONTEND_CERBOS_URL: config.DRIVES_FRONTEND_CERBOS_URL,
+    DRIVES_FRONTEND_API_URL: config.DRIVES_FRONTEND_API_URL,
+    DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID:
+      config.DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID,
+    DRIVES_FRONTEND_KEYCLOAK_ISSUER: config.DRIVES_FRONTEND_KEYCLOAK_ISSUER,
+    NEXTAUTH_URL: config.NEXTAUTH_URL,
+  };
 };

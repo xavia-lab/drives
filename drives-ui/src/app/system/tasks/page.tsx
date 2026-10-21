@@ -59,7 +59,7 @@ export default function TasksPage() {
   const tasks = useMemo<BackgroundTask[]>(
     () =>
       Array.isArray(result?.data) ? (result.data as BackgroundTask[]) : [],
-    [result?.data],
+    [result],
   );
 
   const { mutateAsync: runTask } = useCustomMutation();

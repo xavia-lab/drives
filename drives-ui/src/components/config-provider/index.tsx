@@ -10,7 +10,7 @@ export function ConfigProvider({
   config,
   children,
 }: {
-  config: any;
+  config: ReturnType<typeof getPublicConfig>;
   children: React.ReactNode;
 }) {
   return (

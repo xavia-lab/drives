@@ -274,8 +274,11 @@ export const DriveAllocationWorkflow = () => {
     [mountedSourceDrives, detachedDriveIds],
   );
 
-  const targetFreeDrives = targetBoard?.freeDrives ?? [];
-  const targetSlots = targetBoard?.slots ?? [];
+  const targetFreeDrives = useMemo(
+    () => targetBoard?.freeDrives ?? [],
+    [targetBoard],
+  );
+  const targetSlots = useMemo(() => targetBoard?.slots ?? [], [targetBoard]);
 
   const slotById = useMemo(
     () => new Map(targetSlots.map((slot) => [slot.id, slot])),
