@@ -5,12 +5,19 @@ on:
     branches:
       - master # 🚀 Fires context checks exclusively on deployment merges
     tags:
-      - 'v*' # 🚀 Triggers build when semantic version tags are pushed (e.g., v1.1.1)
+      - 'v*' # Plain semver release tags (e.g. v1.1.1)
+      - '@drives/*@*' # Changesets package tags (e.g. @drives/drives-server@0.0.1)
 
 # 🔐 Grant permissions to write container artifacts directly into your repository package panel
 permissions:
   contents: read
   packages: write
+
+# Three Changesets package tags can point at the same commit. Collapse those
+# tag-triggered runs while keeping the master/branch deployment separate.
+concurrency:
+  group: deploy-${{ github.sha }}-${{ startsWith(github.ref, 'refs/tags/') && 'tag' || 'branch' }}
+  cancel-in-progress: true
 
 jobs:
   validate-and-build:
@@ -30,6 +37,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          ref_name="${GITHUB_REF_NAME}"
+          version=""
+
+          if [[ "$ref_name" =~ ^v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+          elif [[ "$ref_name" =~ ^@drives/[^@]+@([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+          fi
+
+          core="${version%%-*}"
+          major=""
+          minor=""
+          if [[ -n "$core" ]]; then
+            IFS='.' read -r major minor _ <<< "$core"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+          echo "minor=$minor" >> "$GITHUB_OUTPUT"
 
       - name: Install Node.js
         uses: actions/setup-node@v6
@@ -52,8 +83,7 @@ jobs:
       - name: Bind Monorepo Dependency Workspace Maps
         run: pnpm install --frozen-lockfile
 
-      # 🚀 Split tasks to filter out the frontend lint run without skipping any test specs
-      - name: Run Workspace Linting (Excluding UI)
+      - name: Run Workspace Linting
         run: pnpm turbo run lint
 
       - name: Run Global Test Suite Verification
@@ -112,6 +142,30 @@ jobs:
     needs: validate-and-build
     runs-on: ubuntu-latest
     steps:
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          ref_name="${GITHUB_REF_NAME}"
+          version=""
+
+          if [[ "$ref_name" =~ ^v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+          elif [[ "$ref_name" =~ ^@drives/[^@]+@([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+          fi
+
+          core="${version%%-*}"
+          major=""
+          minor=""
+          if [[ -n "$core" ]]; then
+            IFS='.' read -r major minor _ <<< "$core"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+          echo "minor=$minor" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx Engines
         uses: docker/setup-buildx-action@v4
 
@@ -123,17 +177,18 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # 🏷️ GENERATE AUTHORITATIVE GLOBAL TARGET LABELS (v1, v1.1, v1.1.1, latest)
+      # Package-scoped Changesets tags are normalized to the same v-prefixed labels.
       - name: Extract Metadata for Policy Registry
         id: meta-policy
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}/drives-policy
           tags: |
+            type=raw,value=v${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.version != '' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,enable=true
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
 
       - name: Extract Metadata for Backend Server
         id: meta-server
@@ -141,11 +196,11 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/drives-server
           tags: |
+            type=raw,value=v${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.version != '' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,enable=true
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
 
       - name: Extract Metadata for Frontend UI
         id: meta-ui
@@ -153,11 +208,11 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/drives-ui
           tags: |
+            type=raw,value=v${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.version != '' }}
+            type=raw,value=v${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.version != '' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,enable=true
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
 
       # 🔗 CREATE AND PUSH MULTI-ARCH MANIFEST MAPS
       - name: Finalize Multi-Arch Manifest for Policy Registry
