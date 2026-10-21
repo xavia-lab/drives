@@ -3,6 +3,7 @@
 import { Card, Col, Row, Space, Tag, Typography, theme } from "antd";
 import { ArrowRightOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import { useCan } from "@refinedev/core";
 import type { WorkflowDefinition } from "./types";
 
 const { Text, Title } = Typography;
@@ -24,6 +25,14 @@ export const WorkflowLauncher = ({
 }: WorkflowLauncherProps) => {
   const { token } = theme.useToken();
   const router = useRouter();
+  const { data: canRunWorkflows, isLoading: canLoading } = useCan({
+    resource: "workflows",
+    action: "run",
+  });
+
+  if (canLoading || !canRunWorkflows?.can) {
+    return null;
+  }
 
   return (
     <Card

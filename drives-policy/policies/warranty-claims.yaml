@@ -4,14 +4,18 @@ resourcePolicy:
   resource: "warranty-claims"
   rules:
     # 1. Admin can manage claim headers and open new claims.
-    - actions: ["create", "show", "list", "edit", "delete"]
+    - actions: ["create", "show", "list", "edit", "delete", "initiate"]
       effect: EFFECT_ALLOW
       roles:
         - admin
 
     # 2. Viewer is read-only
+    - actions: ["show", "list", "initiate"]
+      effect: EFFECT_ALLOW
+      roles:
+        - user
+
     - actions: ["show", "list"]
       effect: EFFECT_ALLOW
       roles:
-        - owner
         - viewer

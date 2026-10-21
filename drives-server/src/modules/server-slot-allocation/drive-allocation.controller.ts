@@ -35,7 +35,7 @@ export class DriveAllocationController {
 
   @Post('allocations')
   @InvalidateCache(CACHE_TAGS.PHYSICAL_DRIVES, CACHE_TAGS.DASHBOARD)
-  @CheckPolicy('save', 'server-slot-allocations')
+  @CheckPolicy('allocate', 'server-slot-allocations')
   @ApiOperation({
     summary:
       'Drive Allocation workflow: detach drives from a source server and/or seat drives in a target server in one transaction',

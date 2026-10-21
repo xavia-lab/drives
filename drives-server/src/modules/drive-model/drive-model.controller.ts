@@ -29,9 +29,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { DriveModelResponseDto } from './dto/response/drive-model-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('drive-models')
 @Controller('drive-models')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class DriveModelController {
   constructor(private readonly driveModelService: DriveModelService) {}
 
   @Get()
+  @CheckPolicy('list', 'drive-models')
   @Cacheable({ tags: ['drive-models'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryDriveModelDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class DriveModelController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'drive-models')
   @Cacheable({ tags: ['drive-models'] })
-  @Public()
   @ApiOperation({ summary: 'Get DriveModel by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -82,8 +82,8 @@ export class DriveModelController {
   }
 
   @Post()
+  @CheckPolicy('create', 'drive-models')
   @InvalidateCache('drive-models')
-  @Public()
   @ApiOperation({ summary: 'Create a new drive-model' })
   @ApiResponse({
     status: 201,
@@ -97,8 +97,8 @@ export class DriveModelController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'drive-models')
   @InvalidateCache('drive-models')
-  @Public()
   @ApiOperation({ summary: 'Update a drive-model' })
   @ApiParam({
     name: 'id',
@@ -126,8 +126,8 @@ export class DriveModelController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'drive-models')
   @InvalidateCache('drive-models')
-  @Public()
   @ApiOperation({ summary: 'Delete a drive-model' })
   @ApiParam({
     name: 'id',

@@ -22,10 +22,10 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { WarrantyClaimEventResponseDto } from './dto/response/warranty-claim-event-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 // Append-only ledger: events are created through the nested
 // `POST /warranty-claims/:id/tracking` endpoint, never updated or deleted here.
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('warranty-claim-events')
 @Controller('warranty-claim-events')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -37,7 +37,7 @@ export class WarrantyClaimEventController {
   ) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'warranty-claim-events')
   @ApiOperation({ summary: 'Get all warranty claim events with pagination' })
   @ApiQuery({ type: QueryWarrantyClaimEventDto })
   @ApiResponse({
@@ -51,7 +51,7 @@ export class WarrantyClaimEventController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'warranty-claim-events')
   @ApiOperation({ summary: 'Get a warranty claim event by ID' })
   @ApiParam({
     name: 'id',

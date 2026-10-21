@@ -28,9 +28,9 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CountryResponseDto } from './dto/response/country-response.dto';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('countries')
 @Controller('countries')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,9 +40,8 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   @Get()
+  @CheckPolicy('list', 'countries')
   @Cacheable({ tags: ['countries'] })
-  @Public()
-  // @CheckPolicy('list', 'countries')
   @ApiOperation({ summary: 'Get all countries with pagination' })
   @ApiQuery({ type: QueryCountryDto })
   @ApiResponse({
@@ -54,9 +53,8 @@ export class CountryController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'countries')
   @Cacheable({ tags: ['countries'] })
-  @Public()
-  // @CheckPolicy('show', 'countries')
   @ApiOperation({ summary: 'Get country by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -78,9 +76,8 @@ export class CountryController {
   }
 
   @Post()
+  @CheckPolicy('create', 'countries')
   @InvalidateCache('countries')
-  @Public()
-  // @CheckPolicy('create', 'countries')
   @ApiOperation({ summary: 'Create a new country' })
   @ApiResponse({ status: 201, description: 'Country created successfully' })
   @ApiResponse({ status: 409, description: 'Country already exists' })
@@ -89,9 +86,8 @@ export class CountryController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'countries')
   @InvalidateCache('countries')
-  @Public()
-  // @CheckPolicy('edit', 'countries')
   @ApiOperation({ summary: 'Update a country' })
   @ApiParam({
     name: 'id',
@@ -119,9 +115,8 @@ export class CountryController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'countries')
   @InvalidateCache('countries')
-  @Public()
-  // @CheckPolicy('delete', 'countries')
   @ApiOperation({ summary: 'Delete a country' })
   @ApiParam({
     name: 'id',

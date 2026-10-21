@@ -28,10 +28,10 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { CurrencyResponseDto } from './dto/response/currency-response.dto';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
 import { CACHE_TAGS } from '../cache/cache.tags';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('currencies')
 @Controller('currencies')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,9 +41,8 @@ export class CurrencyController {
   constructor(private readonly currencyService: CurrencyService) {}
 
   @Get()
+  @CheckPolicy('list', 'currencies')
   @Cacheable({ tags: ['currencies'] })
-  @Public()
-  // @CheckPolicy('list', 'currencies')
   @ApiOperation({ summary: 'Get all currencies with pagination' })
   @ApiQuery({ type: QueryCurrencyDto })
   @ApiResponse({
@@ -55,9 +54,8 @@ export class CurrencyController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'currencies')
   @Cacheable({ tags: ['currencies'] })
-  @Public()
-  // @CheckPolicy('show', 'currencies')
   @ApiOperation({ summary: 'Get currency by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -79,9 +77,8 @@ export class CurrencyController {
   }
 
   @Post()
+  @CheckPolicy('create', 'currencies')
   @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
-  @Public()
-  // @CheckPolicy('create', 'currencies')
   @ApiOperation({ summary: 'Create a new currency' })
   @ApiResponse({ status: 201, description: 'Currency created successfully' })
   @ApiResponse({ status: 409, description: 'Currency already exists' })
@@ -92,9 +89,8 @@ export class CurrencyController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'currencies')
   @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
-  @Public()
-  // @CheckPolicy('edit', 'currencies')
   @ApiOperation({ summary: 'Update a currency' })
   @ApiParam({
     name: 'id',
@@ -122,9 +118,8 @@ export class CurrencyController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'currencies')
   @InvalidateCache(CACHE_TAGS.CURRENCIES, CACHE_TAGS.DASHBOARD)
-  @Public()
-  // @CheckPolicy('delete', 'currencies')
   @ApiOperation({ summary: 'Delete a currency' })
   @ApiParam({
     name: 'id',

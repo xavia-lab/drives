@@ -29,9 +29,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { InterfaceResponseDto } from './dto/response/interface-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('interfaces')
 @Controller('interfaces')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class InterfaceController {
   constructor(private readonly interfaceService: InterfaceService) {}
 
   @Get()
+  @CheckPolicy('list', 'interfaces')
   @Cacheable({ tags: ['interfaces'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Quantity Units with pagination' })
   @ApiQuery({ type: QueryInterfaceDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class InterfaceController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'interfaces')
   @Cacheable({ tags: ['interfaces'] })
-  @Public()
   @ApiOperation({ summary: 'Get Interface by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -82,8 +82,8 @@ export class InterfaceController {
   }
 
   @Post()
+  @CheckPolicy('create', 'interfaces')
   @InvalidateCache('interfaces')
-  @Public()
   @ApiOperation({ summary: 'Create a new interface' })
   @ApiResponse({
     status: 201,
@@ -97,8 +97,8 @@ export class InterfaceController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'interfaces')
   @InvalidateCache('interfaces')
-  @Public()
   @ApiOperation({ summary: 'Update a interface' })
   @ApiParam({
     name: 'id',
@@ -126,8 +126,8 @@ export class InterfaceController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'interfaces')
   @InvalidateCache('interfaces')
-  @Public()
   @ApiOperation({ summary: 'Delete a interface' })
   @ApiParam({
     name: 'id',

@@ -29,8 +29,8 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { LogicalVdevResponseDto } from './dto/response/logical-vdev-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('logical-vdevs')
 @Controller('logical-vdevs')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,7 +40,7 @@ export class LogicalVdevController {
   constructor(private readonly logicalVdevService: LogicalVdevService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'logical-vdevs')
   @ApiOperation({ summary: 'Get all Logical Vdevs with pagination' })
   @ApiQuery({ type: QueryLogicalVdevDto })
   @ApiResponse({
@@ -54,7 +54,7 @@ export class LogicalVdevController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'logical-vdevs')
   @ApiOperation({ summary: 'Get Logical Vdev by ID' })
   @ApiParam({
     name: 'id',
@@ -77,7 +77,7 @@ export class LogicalVdevController {
   }
 
   @Post()
-  @Public()
+  @CheckPolicy('create', 'logical-vdevs')
   @ApiOperation({ summary: 'Create a new logical vdev redundancy setup' })
   @ApiResponse({
     status: 201,
@@ -97,7 +97,7 @@ export class LogicalVdevController {
   }
 
   @Put(':id')
-  @Public()
+  @CheckPolicy('edit', 'logical-vdevs')
   @ApiOperation({ summary: 'Update logical vdev array properties' })
   @ApiParam({
     name: 'id',
@@ -129,7 +129,7 @@ export class LogicalVdevController {
   }
 
   @Delete(':id')
-  @Public()
+  @CheckPolicy('delete', 'logical-vdevs')
   @ApiOperation({
     summary: 'Purge a logical vdev from target inventory database indexes',
   })

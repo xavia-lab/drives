@@ -29,9 +29,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { FormFactorResponseDto } from './dto/response/form-factor-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 import { Cacheable, InvalidateCache } from '../cache/cache.decorators';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('form-factors')
 @Controller('form-factors')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -41,8 +41,8 @@ export class FormFactorController {
   constructor(private readonly FormFactorService: FormFactorService) {}
 
   @Get()
+  @CheckPolicy('list', 'form-factors')
   @Cacheable({ tags: ['form-factors'] })
-  @Public()
   @ApiOperation({ summary: 'Get all Storage Types with pagination' })
   @ApiQuery({ type: QueryFormFactorDto })
   @ApiResponse({
@@ -56,8 +56,8 @@ export class FormFactorController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'form-factors')
   @Cacheable({ tags: ['form-factors'] })
-  @Public()
   @ApiOperation({ summary: 'Get FormFactor by ID' })
   // 2. Updated Swagger documentation metadata type hint
   @ApiParam({
@@ -82,8 +82,8 @@ export class FormFactorController {
   }
 
   @Post()
+  @CheckPolicy('create', 'form-factors')
   @InvalidateCache('form-factors')
-  @Public()
   @ApiOperation({ summary: 'Create a new FormFactor' })
   @ApiResponse({
     status: 201,
@@ -97,8 +97,8 @@ export class FormFactorController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'form-factors')
   @InvalidateCache('form-factors')
-  @Public()
   @ApiOperation({ summary: 'Update a FormFactor' })
   @ApiParam({
     name: 'id',
@@ -129,8 +129,8 @@ export class FormFactorController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'form-factors')
   @InvalidateCache('form-factors')
-  @Public()
   @ApiOperation({ summary: 'Delete a FormFactor' })
   @ApiParam({
     name: 'id',

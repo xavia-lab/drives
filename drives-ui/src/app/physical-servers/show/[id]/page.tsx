@@ -1,7 +1,7 @@
 "use client";
 
 import { DateField, Show } from "@refinedev/antd";
-import { useShow } from "@refinedev/core";
+import { useCan, useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { AttachedStoragePools } from "@components/attached-storage-pools";
 import { useLookupOptions } from "@hooks/use-lookup-options";
@@ -32,6 +32,10 @@ type ServerSlotRecord = {
 export default function PhysicalServerShow() {
   const { result: record, query } = useShow({});
   const { isLoading } = query;
+  const { data: canManageSlots } = useCan({
+    resource: "server-slot-allocations",
+    action: "save",
+  });
 
   const { options: physicalCpuOptions } = useLookupOptions({
     resource: "physical-cpus",
@@ -153,11 +157,13 @@ export default function PhysicalServerShow() {
         <Card
           title={"Server Slots"}
           extra={
-            <Link href={`/physical-servers/assign/${record?.id}`}>
-              <Button type="primary" icon={<DeploymentUnitOutlined />}>
-                Assign Drives
-              </Button>
-            </Link>
+            canManageSlots?.can ? (
+              <Link href={`/physical-servers/assign/${record?.id}`}>
+                <Button type="primary" icon={<DeploymentUnitOutlined />}>
+                  Assign Drives
+                </Button>
+              </Link>
+            ) : undefined
           }
         >
           {slots.length > 0 ? (

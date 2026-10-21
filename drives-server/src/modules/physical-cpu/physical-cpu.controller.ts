@@ -29,8 +29,8 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { PhysicalCpuResponseDto } from './dto/response/physical-cpu-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('physical-cpus')
 @Controller('physical-cpus')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,7 +40,7 @@ export class PhysicalCpuController {
   constructor(private readonly physicalCpuService: PhysicalCpuService) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'physical-cpus')
   @ApiOperation({ summary: 'Get all physical CPUs with pagination' })
   @ApiQuery({ type: QueryPhysicalCpuDto })
   @ApiResponse({
@@ -54,7 +54,7 @@ export class PhysicalCpuController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'physical-cpus')
   @ApiOperation({ summary: 'Get PhysicalCpu by ID' })
   @ApiParam({
     name: 'id',
@@ -77,7 +77,7 @@ export class PhysicalCpuController {
   }
 
   @Post()
-  @Public()
+  @CheckPolicy('create', 'physical-cpus')
   @ApiOperation({ summary: 'Create a new physical-cpu' })
   @ApiResponse({
     status: 201,
@@ -91,7 +91,7 @@ export class PhysicalCpuController {
   }
 
   @Put(':id')
-  @Public()
+  @CheckPolicy('edit', 'physical-cpus')
   @ApiOperation({ summary: 'Update a physical-cpu' })
   @ApiParam({
     name: 'id',
@@ -122,7 +122,7 @@ export class PhysicalCpuController {
   }
 
   @Delete(':id')
-  @Public()
+  @CheckPolicy('delete', 'physical-cpus')
   @ApiOperation({ summary: 'Delete a physical-cpu' })
   @ApiParam({
     name: 'id',

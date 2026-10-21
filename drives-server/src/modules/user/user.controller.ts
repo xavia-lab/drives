@@ -27,6 +27,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { KeycloakRoles } from '../../common/decorators/keycloak-roles.decorator';
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 import { NotFoundException } from '@nestjs/common';
 import { QueryUserDto } from './dto/query-user.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
@@ -43,6 +44,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
+  @CheckPolicy('list', 'users')
   @KeycloakRoles('admin', 'view-users')
   @ApiOperation({ summary: 'Get all users with pagination' })
   @ApiQuery({ type: QueryUserDto })
@@ -57,6 +59,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @CheckPolicy('show', 'users')
   @KeycloakRoles('admin', 'view-users')
   @ApiOperation({ summary: 'Get User by ID' })
   @ApiResponse({
@@ -73,6 +76,7 @@ export class UserController {
   }
 
   @Get('me')
+  @CheckPolicy('me', 'users')
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({
     status: 200,
@@ -91,6 +95,7 @@ export class UserController {
   }
 
   @Get('stats')
+  @CheckPolicy('show', 'users')
   @KeycloakRoles('admin')
   @ApiOperation({ summary: 'Get user statistics' })
   @ApiResponse({
@@ -107,6 +112,7 @@ export class UserController {
   }
 
   @Post()
+  @CheckPolicy('create', 'users')
   @KeycloakRoles('admin', 'create-users')
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
@@ -116,6 +122,7 @@ export class UserController {
   }
 
   @Put(':id')
+  @CheckPolicy('edit', 'users')
   @KeycloakRoles('admin', 'edit-users')
   @ApiOperation({ summary: 'Update a user' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
@@ -128,6 +135,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @CheckPolicy('delete', 'users')
   @KeycloakRoles('admin', 'delete-users')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user' })
@@ -138,6 +146,7 @@ export class UserController {
   }
 
   @Put(':id/deactivate')
+  @CheckPolicy('edit', 'users')
   @KeycloakRoles('admin')
   @ApiOperation({ summary: 'Deactivate a user' })
   @ApiResponse({ status: 200, description: 'User deactivated successfully' })
@@ -147,6 +156,7 @@ export class UserController {
   }
 
   @Put(':id/activate')
+  @CheckPolicy('edit', 'users')
   @KeycloakRoles('admin')
   @ApiOperation({ summary: 'Activate a user' })
   @ApiResponse({ status: 200, description: 'User activated successfully' })

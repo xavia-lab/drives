@@ -23,12 +23,12 @@ import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
 import { ServerSlotAllocationResponseDto } from './dto/response/server-slot-allocation-response.dto';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { Public } from '../../common/decorators/public.decorator';
 
 // Read-only projection of the append-only drive <-> slot allocation ledger.
 // Writes are performed exclusively through the slot-assignment board endpoints
 // (`POST /physical-servers/:id/slots/:slotId/mount|unmount`), which enforce the
 // occupancy and datacenter invariants.
+import { CheckPolicy } from '../../common/decorators/check-policy.decorator';
 @ApiTags('server-slot-allocations')
 @Controller('server-slot-allocations')
 @UseGuards(KeycloakAuthGuard, CerbosGuard)
@@ -40,7 +40,7 @@ export class ServerSlotAllocationController {
   ) {}
 
   @Get()
-  @Public()
+  @CheckPolicy('list', 'server-slot-allocations')
   @ApiOperation({
     summary: 'Get all Server Slot Allocations with pagination',
   })
@@ -56,7 +56,7 @@ export class ServerSlotAllocationController {
   }
 
   @Get(':id')
-  @Public()
+  @CheckPolicy('show', 'server-slot-allocations')
   @ApiOperation({ summary: 'Get Server Slot Allocation ledger record by ID' })
   @ApiParam({
     name: 'id',

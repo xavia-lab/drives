@@ -2,6 +2,7 @@
 
 const roles = [
   { id: '019f52b6-47c7-74b4-b9dd-734a5356dde4', name: 'admin' },
+  { id: '019f52b6-8f00-7c3a-9e36-4a2f1b8d6c21', name: 'user' },
   { id: '019f52b6-b6c9-7d97-9c2f-30e6d489ec3d', name: 'viewer' },
 ];
 
