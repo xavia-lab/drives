@@ -1,9 +1,8 @@
 {
   "name": "@drives/policy",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
   "author": "",
-  "private": true,
   "scripts": {
     "version-packages": "changeset version",
     "release": "changeset publish",
@@ -12,5 +11,6 @@
   "devDependencies": {
     "@changesets/cli": "latest",
     "turbo": "latest"
-  }
+  },
+  "license": "Apache-2.0"
 }

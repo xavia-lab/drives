@@ -1,10 +1,9 @@
 {
   "name": "@drives/drives-server",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A Nest.JS based API backend!",
   "author": "Rehan Mahmood",
-  "private": true,
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "build": "nest build",
     "build:image": "task build-server",
