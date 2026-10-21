@@ -87,16 +87,16 @@ async function getResourceAttributes(resource: string, params: any) {
     return { managed: !!params.data.managed };
   }
 
-  // Fetch from API if we have an ID but no data
+  // Fetch from API if we have an ID but no data. A missing record is not an
+  // error here: lists can outlive a deleted/reseeded row, and the fetch is only
+  // used to decide whether the row is managed. Fail closed so a transient 404
+  // cannot expose edit/delete actions on a managed row.
   if (params?.id) {
     try {
       const { data } = await dataProvider.getOne({ resource, id: params.id });
       return { managed: !!data?.managed };
-    } catch (error) {
-      console.error(
-        `AccessControl: Failed to fetch ${resource}/${params.id}`,
-        error,
-      );
+    } catch {
+      return { managed: true };
     }
   }
 

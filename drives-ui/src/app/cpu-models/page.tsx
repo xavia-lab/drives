@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { EnumTag } from "@components/enum-tag";
@@ -21,7 +22,7 @@ import {
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
 export default function CpuModelList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -38,8 +39,11 @@ export default function CpuModelList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -65,6 +69,7 @@ export default function CpuModelList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("name", filters) || null}
           dataIndex="name"
           title={"Name"}
           sorter={true}
@@ -151,6 +156,7 @@ export default function CpuModelList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="physicalCores"
           title={"Physical Cores"}
           width={150}
@@ -159,6 +165,7 @@ export default function CpuModelList() {
           defaultSortOrder={getDefaultSortOrder("physicalCores", sorters)}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="threads"
           title={"Threads"}
           width={120}
@@ -167,6 +174,7 @@ export default function CpuModelList() {
           defaultSortOrder={getDefaultSortOrder("threads", sorters)}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="tdpWatts"
           title={"TDP (Watts)"}
           width={130}
@@ -176,6 +184,7 @@ export default function CpuModelList() {
           render={(value) => value ?? "-"}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

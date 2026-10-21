@@ -29,7 +29,7 @@ export default async function RootLayout({
   const config = getPublicConfig();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head title="script">
         <script
           dangerouslySetInnerHTML={{

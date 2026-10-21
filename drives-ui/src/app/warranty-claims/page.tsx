@@ -10,6 +10,7 @@ import {
   getDefaultSortOrder,
   useTable,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Select, Space, Table, Typography } from "antd";
 import { LinkedLabel } from "@components/linked-label";
@@ -22,7 +23,7 @@ import {
 const { Text } = Typography;
 
 export default function WarrantyClaimList() {
-  const { tableProps, sorters } = useTable({
+  const { searchFormProps, tableProps, sorters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -31,6 +32,8 @@ export default function WarrantyClaimList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
           dataIndex="displayKey"

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, Form, Input, Space } from "antd";
-import type { FormProps } from "antd";
+import type { FormInstance, FormProps } from "antd";
 
 const NAME_RULES = [
   { required: true, message: "Name is required" },
@@ -23,10 +23,16 @@ const SYMBOL_RULES = [
   { max: 4, message: "Symbol cannot exceed 4 characters" },
 ];
 
-export const CurrencyForm = ({ formProps }: { formProps: FormProps }) => (
+export const CurrencyForm = ({
+  form,
+  formProps,
+}: {
+  form: FormInstance;
+  formProps: FormProps;
+}) => (
   <Space direction="vertical" size="middle" style={{ display: "flex" }}>
     <Card title={"Currency Information"}>
-      <Form {...formProps} layout="vertical">
+      <Form {...formProps} form={form} layout="vertical">
         <Form.Item label={"Name"} name={["name"]} rules={NAME_RULES}>
           <Input maxLength={32} style={{ textTransform: "capitalize" }} />
         </Form.Item>

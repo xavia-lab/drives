@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 import React from "react";
 import { Footer } from "@components/footer";
+import { AppSider } from "@components/app-sider";
 import { ResourceRouteGuard } from "@components/resource-route-guard";
 
 export default async function Layout({ children }: React.PropsWithChildren) {
@@ -15,7 +16,7 @@ export default async function Layout({ children }: React.PropsWithChildren) {
   }
 
   return (
-    <ThemedLayout Header={Header} Footer={Footer}>
+    <ThemedLayout Header={Header} Footer={Footer} Sider={AppSider}>
       <ResourceRouteGuard>{children}</ResourceRouteGuard>
     </ThemedLayout>
   );

@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Input, InputNumber, Select, Space, Table } from "antd";
 import { LinkedLabel } from "@components/linked-label";
@@ -19,7 +20,7 @@ import { CurrencyFormatter } from "@utils/currency-formatter";
 const currencyFormatter = new CurrencyFormatter();
 
 export default function PhysicalCpuList() {
-  const { tableProps, sorters, filters } = useTable({
+  const { searchFormProps, tableProps, sorters, filters } = useTable({
     sorters: {
       initial: [{ field: "displayKey", order: "asc" }],
     },
@@ -37,8 +38,11 @@ export default function PhysicalCpuList() {
 
   return (
     <List>
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -64,6 +68,7 @@ export default function PhysicalCpuList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("label", filters) || null}
           dataIndex="label"
           title={"Label"}
           width={220}
@@ -77,6 +82,7 @@ export default function PhysicalCpuList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("serialNumber", filters) || null}
           dataIndex="serialNumber"
           title={"Serial Number"}
           width={180}
@@ -163,6 +169,7 @@ export default function PhysicalCpuList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="acquisitionCost"
           title={"Acquisition Cost"}
           width={160}
@@ -180,6 +187,7 @@ export default function PhysicalCpuList() {
           }}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="purchaseDate"
           title={"Purchase Date"}
           width={140}
@@ -188,6 +196,7 @@ export default function PhysicalCpuList() {
           render={(value) => value ?? "-"}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="warrantyExpiryDate"
           title={"Warranty Expiry"}
           width={150}
@@ -196,6 +205,7 @@ export default function PhysicalCpuList() {
           render={(value) => value ?? "-"}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}

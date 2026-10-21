@@ -4,11 +4,11 @@ import { Create, useForm } from "@refinedev/antd";
 import { CurrencyForm } from "@app/currencies/_components/currency-form";
 
 export default function CurrencyCreate() {
-  const { formProps, saveButtonProps } = useForm({});
+  const { form, formProps, saveButtonProps } = useForm({});
 
   return (
     <Create saveButtonProps={saveButtonProps}>
-      <CurrencyForm formProps={formProps} />
+      <CurrencyForm form={form} formProps={formProps} />
     </Create>
   );
 }

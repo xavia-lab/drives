@@ -10,6 +10,7 @@ import {
   FilterDropdown,
   getDefaultFilter,
 } from "@refinedev/antd";
+import { TableSearchFormBridge } from "@components/table-search-form-bridge";
 import type { BaseRecord } from "@refinedev/core";
 import { Button, Input, InputNumber, Select, Space, Table, Tag } from "antd";
 import { ClearOutlined } from "@ant-design/icons";
@@ -20,12 +21,13 @@ import { CurrencyFormatter } from "@utils/currency-formatter";
 const currencyFormatter = new CurrencyFormatter();
 
 export default function PhysicalDriveList() {
-  const { tableProps, sorters, filters, setFilters } = useTable({
-    sorters: {
-      initial: [{ field: "displayKey", order: "asc" }],
-    },
-    syncWithLocation: true,
-  });
+  const { searchFormProps, tableProps, sorters, filters, setFilters } =
+    useTable({
+      sorters: {
+        initial: [{ field: "displayKey", order: "asc" }],
+      },
+      syncWithLocation: true,
+    });
 
   const { options: driveModelOptions, isLoading: driveModelLoading } =
     useLookupOptions({ resource: "drive-models", optionLabel: "title" });
@@ -49,8 +51,11 @@ export default function PhysicalDriveList() {
         </Button>
       }
     >
+      <TableSearchFormBridge {...searchFormProps} />
+
       <Table {...tableProps} rowKey="id">
         <Table.Column
+          filteredValue={getDefaultFilter("displayKey", filters) || null}
           dataIndex="displayKey"
           title={"#"}
           width={70}
@@ -76,6 +81,7 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("label", filters) || null}
           dataIndex="label"
           title={"Label"}
           width={220}
@@ -89,6 +95,7 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("serialNumber", filters) || null}
           dataIndex="serialNumber"
           title={"Serial Number"}
           width={180}
@@ -177,6 +184,7 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="acquisitionCost"
           title={"Acquisition Cost"}
           width={160}
@@ -194,6 +202,7 @@ export default function PhysicalDriveList() {
           }}
         />
         <Table.Column
+          filteredValue={getDefaultFilter("worldwideNameWwn", filters) || null}
           dataIndex="worldwideNameWwn"
           title={"WWN"}
           width={200}
@@ -207,6 +216,7 @@ export default function PhysicalDriveList() {
           )}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="purchaseDate"
           title={"Purchase Date"}
           width={140}
@@ -215,6 +225,7 @@ export default function PhysicalDriveList() {
           render={(value) => value ?? "-"}
         />
         <Table.Column
+          filteredValue={null}
           dataIndex="warrantyExpiryDate"
           title={"Warranty Expiry"}
           width={150}
@@ -267,6 +278,7 @@ export default function PhysicalDriveList() {
           }}
         />
         <Table.Column
+          filteredValue={null}
           title={"Actions"}
           dataIndex="actions"
           width={150}
