@@ -148,7 +148,7 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 
 ### Content store
 
-- `ContentStoreModule` (`src/modules/content-store`, `@Global`) is the storage abstraction behind `ContentStoreService` (SHA-256 content-addressed objects + JSON sidecar metadata). The public file endpoint remains `GET /files/:fileId` (immutable cache headers), used by QR codes and other generated assets.
+- `ContentStoreModule` (`src/modules/content-store`, `@Global`) is the storage abstraction behind `ContentStoreService` (SHA-256 content-addressed objects + JSON sidecar metadata). The public file endpoint remains `GET /files/:fileId` (immutable cache headers), used by generated assets and file previews.
 - `ContentStoreProvider` (`interfaces/content-store-provider.interface.ts`) defines `put/get/exists/delete/list`. Two implementations:
   - `S3ContentStoreProvider` — existing S3-compatible object storage (`AWS_*` env vars; `forcePathStyle` defaults true).
   - `LocalContentStoreProvider` — filesystem/mounted-directory storage for single-node/small deployments. Writes are staged in `<root>/.tmp` and atomically renamed into place, keys are guarded against absolute paths/traversal, and `list` walks the requested prefix while ignoring staging files. The root defaults to `data/content-store` and is gitignored. `ContentStoreMaintenanceService` sweeps stale `.tmp` files at startup and every 6h (`DRIVES_BACKEND_CONTENT_STORE_TMP_MAX_AGE_MS`, default 1h, and `DRIVES_BACKEND_CONTENT_STORE_CLEANUP_INTERVAL_MS`, default 6h); active staging files younger than the max age are never touched.
@@ -193,8 +193,8 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 - `user` has read access to inventory plus the guided workflows, but **no direct create/edit/delete** and no direct custom actions. Workflow-only actions: `physical-drives:acquire|relocate|manage-media`, `warranty-claims:initiate`, `warranty-claim-events:track`, `server-slot-allocations:allocate`, and UI `workflows:run`.
 - Admin-only direct custom actions: `physical-drives:locate`, `drive-lifecycle-events:create`, `server-slot-allocations:mount|unmount|save`, `storage-pools:import|export`, `tasks:*`, `audit-logs:*`.
 - `viewer` is read-only (`list`/`show`) and cannot run workflows. Reference-data lists/shows remain readable.
-- Public allowlist: all `/health*`, `/system/status`, `/system/version`, `/files/:fileId`, `/qr-resolver/:shortId`, `/metadata/managed-resources`. The UI `/system/status` page is also public (no session redirect); `/system/tasks` remains admin-only.
-- Never combine `@Public()` with `@CheckPolicy()`: a public route skips user attachment, so Cerbos cannot evaluate it. Protected controllers use `@CheckPolicy(action, resource)`; policies live in `drives-policy/policies/` (notably `workflows.yaml`, `warranty-claim-events.yaml`, `users.yaml`, `qr-resolver.yaml`).
+- Public allowlist: all `/health*`, `/system/status`, `/system/version`, `/files/:fileId`, `/metadata/managed-resources`. The UI `/system/status` page is also public (no session redirect); `/system/tasks` remains admin-only.
+- Never combine `@Public()` with `@CheckPolicy()`: a public route skips user attachment, so Cerbos cannot evaluate it. Protected controllers use `@CheckPolicy(action, resource)`; policies live in `drives-policy/policies/` (notably `workflows.yaml`, `warranty-claim-events.yaml`, `users.yaml`).
 - UI enforcement mirrors the backend: Refine's `accessControlProvider` calls `/api/permissions`, `ThemedSider` hides resources without `list`, `CreateButton`/`EditButton` hide without `create`/`edit`, `ResourceRouteGuard` blocks direct create/edit URLs and admin-only pages, `WorkflowAccessGuard` + `WorkflowLauncher` hide workflows without `workflows:run`, and custom actions (locate, attach drives, import/export, warranty tracking) render only when `useCan` allows them. The backend remains the authority.
 
 ### Database
@@ -208,7 +208,7 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 
 ## Frontend (`drives-ui`)
 
-- `src/proxy.ts` is Next 16's renamed middleware: rewrites `/api/proxy/*` to `DRIVES_FRONTEND_API_URL`, serves `/api/health`, and resolves `/qrl/*` QR links via the backend.
+- `src/proxy.ts` is Next 16's renamed middleware: rewrites `/api/proxy/*` to `DRIVES_FRONTEND_API_URL` and serves `/api/health`.
 - Data access goes through `src/providers/data-provider` → `/api/proxy` (auth via NextAuth session token; auto-retries on 401/403). REST resources map 1:1 to backend routes.
 - Every resource layout passes `Sider={AppSider}` (`src/components/app-sider.tsx`). It replaces Refine’s `ThemedSider` with an antd `Menu items`-based sider (the default still uses deprecated `Menu.Item`/`Menu.SubMenu` children) while keeping permission-filtered menu entries, collapse state, mobile drawer and logout.
 - Dashboard charts use **Recharts** (`recharts`) in `src/app/dashboard/_components/`, rendered inside antd `Card`s and colored from `theme.useToken()` + the AntV categorical palette so both light/dark modes stay legible. The lower half of `/dashboard` starts with the presentational "Physical Drive Distribution" donut, followed by the **Warranty Watchlist**, **Fleet Lifecycle Health**, **Slot Utilization**, **RMA Pipeline**, **Capital & Age**, **Datacenter Health Matrix**, **Oldest In-Use Drives** and **Recent Activity** cards fed by `GET /dashboard/summary` (all in the same directory; the old placeholder sales/stock widgets were removed).

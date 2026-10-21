@@ -16,7 +16,6 @@ import { KeycloakAuthGuard } from './common/guards/keycloak.guard';
 import { UserModule } from './modules/user/user.module';
 import { ContentStoreModule } from './modules/content-store/content-store.module';
 import { MediaModule } from './modules/media/media.module';
-import { QRCodeModule } from './modules/qrcode/qrcode.module';
 
 import { BusProtocolModule } from './modules/bus-protocol/bus-protocol.module';
 import { CapacityModule } from './modules/capacity/capacity.module';
@@ -79,7 +78,6 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
     TasksModule,
     DashboardModule,
     ExchangeRateModule,
-    QRCodeModule,
     ContentStoreModule,
     MediaModule,
 

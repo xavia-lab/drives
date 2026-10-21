@@ -100,7 +100,6 @@ async function bootstrap() {
 
   logger.log(`Server is running on port ${port}`);
   logger.log(`Environment: ${configService.get('app.nodeEnv')}`);
-  logger.log(`Public URL: ${configService.get('app.publicUrl')}`);
   logger.log(`Auth enabled: ${configService.get('app.authEnabled')}`);
 }
 

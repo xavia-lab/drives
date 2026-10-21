@@ -45,43 +45,9 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 3. Intercept paths starting with /qrl/
-  if (pathname.startsWith("/qrl/")) {
-    const shortId = pathname.split("/").pop();
-
-    if (!shortId) return NextResponse.next();
-
-    console.log(`Resolving shortId: ${shortId}`);
-
-    try {
-      // Call backend API server URL
-      const qrUrl = `${API_URL}/qr-resolver/${shortId}`;
-      console.log(`Redirecting to: ${qrUrl}`);
-      const response = await fetch(`${qrUrl}`, {
-        headers: { "Content-Type": "application/json" },
-        next: { revalidate: 60 }, // Optional: cache the resolution for 1 minute
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        console.log(`Got backend resolution: ${JSON.stringify(data)}`);
-
-        // data.targetUri would be something like "/products/G0jv9cFRj5a7QOroeqwUM"
-        return NextResponse.redirect(new URL(data.targetUri, request.url));
-      }
-    } catch (error) {
-      console.error("QR Resolution failed:", error);
-    }
-
-    // If ID not found or backend fails, show 404
-    return NextResponse.rewrite(new URL("/404", request.url));
-  }
-
   return NextResponse.next();
 }
 
-// 4. Update Matcher to include both QR routes and Health check
 export const config = {
-  matcher: ["/qrl/:path*", "/api/proxy/:path*", "/api/health"],
+  matcher: ["/api/proxy/:path*", "/api/health"],
 };
