@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import keycloakConfig from './config/keycloak.config';
-import storageConfig from './config/storage.config';
+import contentStoreConfig from './config/content-store.config';
 import exchangeRateConfig from './config/exchange-rate.config';
 import cacheConfig from './config/cache.config';
 import { CacheModule } from './modules/cache/cache.module';
@@ -13,7 +13,7 @@ import { DatabaseModule } from './database/database.module';
 import { KeycloakModule } from './modules/keycloak/keycloak.module';
 import { KeycloakAuthGuard } from './common/guards/keycloak.guard';
 import { UserModule } from './modules/user/user.module';
-import { StorageModule } from './modules/storage/storage.module';
+import { ContentStoreModule } from './modules/content-store/content-store.module';
 import { QRCodeModule } from './modules/qrcode/qrcode.module';
 
 import { BusProtocolModule } from './modules/bus-protocol/bus-protocol.module';
@@ -56,7 +56,7 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
         appConfig,
         databaseConfig,
         keycloakConfig,
-        storageConfig,
+        contentStoreConfig,
         exchangeRateConfig,
         cacheConfig,
       ],
@@ -73,7 +73,7 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
     DashboardModule,
     ExchangeRateModule,
     QRCodeModule,
-    StorageModule,
+    ContentStoreModule,
 
     BusProtocolModule,
     CapacityModule,

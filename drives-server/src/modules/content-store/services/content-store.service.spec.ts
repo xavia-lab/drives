@@ -1,12 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentAddressableStorageService } from './content-addressable-storage.service';
+import { ContentStoreService } from './content-store.service';
 import { InternalServerErrorException } from '@nestjs/common';
-import { type IStorageProvider } from '../interfaces/storage-provider.interface';
+import {
+  CONTENT_STORE_PROVIDER,
+  type ContentStoreProvider,
+} from '../interfaces/content-store-provider.interface';
 import { describe, it, expect, beforeEach, vi, type Mocked } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
-describe('ContentAddressableStorageService', () => {
-  let service: ContentAddressableStorageService;
-  let storageMock: Mocked<IStorageProvider>; // 🚀 Swapped out legacy jest.Mocked mapping for Vitest Mocked utility
+describe('ContentStoreService', () => {
+  let service: ContentStoreService;
+  let storageMock: Mocked<ContentStoreProvider>; // 🚀 Swapped out legacy jest.Mocked mapping for Vitest Mocked utility
 
   const testBuffer = Buffer.from('nest-storage-test');
   // SHA-256 for "nest-storage-test"
@@ -25,17 +28,15 @@ describe('ContentAddressableStorageService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ContentAddressableStorageService,
+        ContentStoreService,
         {
-          provide: 'STORAGE_PROVIDER',
+          provide: CONTENT_STORE_PROVIDER,
           useValue: storageMock,
         },
       ],
     }).compile();
 
-    service = module.get<ContentAddressableStorageService>(
-      ContentAddressableStorageService,
-    );
+    service = module.get<ContentStoreService>(ContentStoreService);
   });
 
   describe('upload', () => {
@@ -135,17 +136,20 @@ describe('ContentAddressableStorageService', () => {
 
   describe('listHashes', () => {
     it('should filter out .json files and return only hashes', async () => {
+      const first = 'a'.repeat(64);
+      const second = 'b'.repeat(64);
       const mockFiles = [
-        `${prefix}abc123`,
-        `${prefix}abc123.json`,
-        `${prefix}def456`,
-        `${prefix}def456.json`,
+        `${prefix}${first}`,
+        `${prefix}${first}.json`,
+        `${prefix}${second}`,
+        `${prefix}${second}.json`,
+        `${prefix}not-a-hash`,
       ];
       storageMock.list.mockResolvedValue(mockFiles);
 
       const result = await service.listHashes();
 
-      expect(result).toEqual(['abc123', 'def456']);
+      expect(result).toEqual([first, second]);
     });
   });
 });

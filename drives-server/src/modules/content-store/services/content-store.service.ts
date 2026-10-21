@@ -4,14 +4,18 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { type IStorageProvider } from '../interfaces/storage-provider.interface';
+import {
+  CONTENT_STORE_PROVIDER,
+  type ContentStoreProvider,
+} from '../interfaces/content-store-provider.interface';
 
 @Injectable()
-export class ContentAddressableStorageService {
+export class ContentStoreService {
   private readonly prefix = 'objects/';
 
   constructor(
-    @Inject('STORAGE_PROVIDER') private readonly storage: IStorageProvider,
+    @Inject(CONTENT_STORE_PROVIDER)
+    private readonly storage: ContentStoreProvider,
   ) {}
 
   async uploadFile(
@@ -86,8 +90,10 @@ export class ContentAddressableStorageService {
 
   async listHashes(): Promise<string[]> {
     const files = await this.storage.list(this.prefix);
+
     return files
-      .filter((f) => !f.endsWith('.json'))
-      .map((f) => f.replace(this.prefix, ''));
+      .filter((file) => file.startsWith(this.prefix))
+      .map((file) => file.slice(this.prefix.length))
+      .filter((fileId) => /^[a-f0-9]{64}$/.test(fileId));
   }
 }

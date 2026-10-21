@@ -138,6 +138,15 @@ Tests use **Vitest everywhere** (not Jest). `drives-server/test/jest-e2e.json` i
 - Config (`src/config/cache.config.ts`): `DRIVES_BACKEND_CACHE_ENABLED`, `DRIVES_BACKEND_VALKEY_URL`, `DRIVES_BACKEND_CACHE_KEY_PREFIX`, `DRIVES_BACKEND_CACHE_DEFAULT_TTL_MS`, `DRIVES_BACKEND_CACHE_COMMAND_TIMEOUT_MS`, `DRIVES_BACKEND_CACHE_CONNECT_TIMEOUT_MS`, `DRIVES_BACKEND_CACHE_MAX_RESPONSE_BYTES`.
 - Local Valkey runs via `docker compose up -d valkey` (`valkey/valkey:8.0-alpine`, port 6379, `allkeys-lru`). Production should use a managed/persistent Valkey with auth/TLS and set the URL accordingly. Future waves can cache slot-assignment boards and other read-heavy resources with multi-tag invalidation.
 
+### Content store
+
+- `ContentStoreModule` (`src/modules/content-store`, `@Global`) is the storage abstraction behind `ContentStoreService` (SHA-256 content-addressed objects + JSON sidecar metadata). The public file endpoint remains `GET /files/:fileId` (immutable cache headers), used by QR codes and other generated assets.
+- `ContentStoreProvider` (`interfaces/content-store-provider.interface.ts`) defines `put/get/exists/delete/list`. Two implementations:
+  - `S3ContentStoreProvider` — existing S3-compatible object storage (`AWS_*` env vars; `forcePathStyle` defaults true).
+  - `LocalContentStoreProvider` — filesystem/mounted-directory storage for single-node/small deployments. Writes are staged in `<root>/.tmp` and atomically renamed into place, keys are guarded against absolute paths/traversal, and `list` walks the requested prefix while ignoring staging files. The root defaults to `data/content-store` and is gitignored. `ContentStoreMaintenanceService` sweeps stale `.tmp` files at startup and every 6h (`DRIVES_BACKEND_CONTENT_STORE_TMP_MAX_AGE_MS`, default 1h, and `DRIVES_BACKEND_CONTENT_STORE_CLEANUP_INTERVAL_MS`, default 6h); active staging files younger than the max age are never touched.
+- Driver selection (`src/config/content-store.config.ts`): `DRIVES_BACKEND_CONTENT_STORE_DRIVER=s3|local` (default `s3`), `DRIVES_BACKEND_CONTENT_STORE_LOCAL_PATH` for the local root, and optional `DRIVES_BACKEND_CONTENT_STORE_S3_*` overrides (falls back to `AWS_*`). The provider factory validates incomplete configuration at startup. For multiple API replicas, use S3 or a shared mounted filesystem; a node-local directory is not shared across replicas.
+- `ContentStoreService` deduplicates by hash (`isNew: false` when the object already exists), stores `objects/<sha256>` + `objects/<sha256>.json`, and deletes both. `QRCodeStorageService` now injects `ContentStoreService` directly.
+
 ### Dashboard analytics
 
 - `DashboardModule` (`src/modules/dashboard`) is a read-only aggregation module (no model/migration/policy of its own). It imports the physical-drive, lifecycle, warranty-claim and slot-allocation modules and exposes one public endpoint: `GET /dashboard/summary` (`@Public()`, serialized by `DashboardSummaryResponseDto`).

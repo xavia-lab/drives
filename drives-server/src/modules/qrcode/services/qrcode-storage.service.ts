@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QRCodeGeneratorService } from './qrcode-generator.service';
-import { ContentAddressableStorageService } from '../../storage/services/content-addressable-storage.service';
+import { ContentStoreService } from '../../content-store/services/content-store.service';
 import { QRStorageResult } from '../interfaces/qrcode-interfaces';
 
 @Injectable()
@@ -9,7 +9,7 @@ export class QRCodeStorageService {
   constructor(
     private readonly config: ConfigService,
     private readonly generator: QRCodeGeneratorService,
-    private readonly cas: ContentAddressableStorageService,
+    private readonly cas: ContentStoreService,
   ) {}
 
   /**

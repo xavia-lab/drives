@@ -1,4 +1,4 @@
-import { S3StorageProvider } from './s3-storage.provider';
+import { S3ContentStoreProvider } from './s3-content-store.provider';
 import {
   S3Client,
   PutObjectCommand,
@@ -11,8 +11,8 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, vi } from 'vitest'; // 🚀 Pure ESM imports from Vitest
 
-describe('S3StorageProvider', () => {
-  let provider: S3StorageProvider;
+describe('S3ContentStoreProvider', () => {
+  let provider: S3ContentStoreProvider;
   const s3Mock = mockClient(S3Client);
 
   const config = {
@@ -25,7 +25,7 @@ describe('S3StorageProvider', () => {
 
   beforeEach(() => {
     s3Mock.reset();
-    provider = new S3StorageProvider(config);
+    provider = new S3ContentStoreProvider({ ...config, forcePathStyle: true });
   });
 
   describe('put', () => {
