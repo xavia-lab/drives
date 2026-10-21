@@ -6,7 +6,7 @@ pnpm + Turborepo monorepo for a storage-drive inventory app. Workspaces (dirs !=
 - `drives-ui` → `@drives/drives-ui` — Next.js 16 + Refine + Ant Design
 - `drives-policy` → `@drives/policy` — Cerbos authorization policies (YAML, no build)
 
-Node 24 / pnpm 11.14.0 are pinned (`packageManager`, `.node-version`). Use `pnpm`, never `npm`; the root `README.md` is stale (`server` dir / npm instructions).
+Node 24 / pnpm 12.14.0 are pinned (`packageManager`, `.node-version`). Use `pnpm`, never `npm`; the root `README.md` is stale (`server` dir / npm instructions).
 
 ## Commands (run from root)
 

@@ -49,7 +49,7 @@ The project is a pnpm + Turborepo monorepo with a NestJS API, a Next.js/Refine f
 ## Requirements
 
 - Node.js **24** (pinned in `.node-version`)
-- pnpm **11.14.0** (pinned via `packageManager`)
+- pnpm **12.14.0** (pinned via `packageManager`)
 - Docker with Compose, for local PostgreSQL/Valkey/Cerbos
 
 ```bash
