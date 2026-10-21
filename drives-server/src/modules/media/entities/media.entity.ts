@@ -1,5 +1,6 @@
-import { Table, Column, DataType } from 'sequelize-typescript';
+import { Table, Column, DataType, HasMany } from 'sequelize-typescript';
 import { BaseModel } from '../../../shared/entities/base.model';
+import { PhysicalDriveMedia } from '../../physical-drive/entities/physical-drive-media.entity';
 
 export enum MediaType {
   IMAGE = 'IMAGE',
@@ -73,19 +74,16 @@ export class Media extends BaseModel {
     allowNull: true,
     comment: 'Image metadata (dimensions, alt text, caption, etc.)',
   })
-  declare metadata: Record<string, any>;
+  declare metadata: Record<string, unknown> | null;
 
-  declare readonly deletedAt: Date; // Kept locally to complement the paranoid model lifecycle hooks
+  declare readonly deletedAt: Date | null;
 
-  // Associations (Keep string-based or update when mapping bridge tables to UUIDv7)
-  // @BelongsToMany(() => Product, () => ProductMedia)
-  // declare products: Product[];
-
-  // @BelongsToMany(() => PurchaseOrder, () => PurchaseOrderMedia)
-  // declare purchaseOrders: PurchaseOrder[];
-
-  // @BelongsToMany(() => Allocation, () => AllocationMedia)
-  // declare allocations: Allocation[];
+  @HasMany(() => PhysicalDriveMedia, {
+    foreignKey: 'mediaId',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  declare physicalDriveAttachments: PhysicalDriveMedia[];
 }
 
 // Updated creation attributes type helper (id is optionally accepted for client-side testing/generation)

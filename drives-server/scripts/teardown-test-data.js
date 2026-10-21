@@ -48,15 +48,14 @@ const DATA_TABLES = [
   'drive_models',
   'cpu_models',
   'datacenters',
+  'physical_drive_media',
   'media',
   'qr_links',
 ];
 
 async function main() {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Refusing to teardown test data while NODE_ENV=production',
-    );
+    throw new Error('Refusing to teardown test data while NODE_ENV=production');
   }
 
   const sequelize = new Sequelize(config);

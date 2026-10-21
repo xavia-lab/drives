@@ -8,6 +8,7 @@ import { Role } from '../modules/role/entities/role.entity';
 import { User } from '../modules/user/entities/user.entity';
 
 import { Media } from '../modules/media/entities/media.entity';
+import { PhysicalDriveMedia } from '../modules/physical-drive/entities/physical-drive-media.entity';
 import { QRLink } from '../modules/qrcode/entities/qr-link.entity';
 
 import { BusProtocol } from 'src/modules/bus-protocol/entities/bus-protocol.entity';
@@ -56,6 +57,7 @@ import { WarrantyClaimEvent } from '../modules/warranty-claim/entities/warranty-
           models: [
             AuditLog,
             Media,
+            PhysicalDriveMedia,
             QRLink,
             User,
             Role,

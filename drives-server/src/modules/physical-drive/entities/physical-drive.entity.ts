@@ -14,6 +14,7 @@ import { Vendor } from '../../vendor/entities/vendor.entity';
 import { Currency } from '../../currency/entities/currency.entity';
 import { Capacity } from '../../capacity/entities/capacity.entity';
 import { PhysicalDriveLocation } from './physical-drive-location.entity';
+import { PhysicalDriveMedia } from './physical-drive-media.entity';
 
 // Define an explicit validation options interface to destroy the implicit any parameters check cascade
 interface HookValidationOptions {
@@ -112,6 +113,9 @@ export class PhysicalDrive extends BaseModel {
   // the latest row rather than stored on this record.
   @HasMany(() => PhysicalDriveLocation, { as: 'locations' })
   declare locations: PhysicalDriveLocation[];
+
+  @HasMany(() => PhysicalDriveMedia)
+  declare media: PhysicalDriveMedia[];
 
   // --- Lifecycle Hook: Automated Enterprise Asset Label Generator ---
   @BeforeValidate
