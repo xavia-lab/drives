@@ -1,11 +1,14 @@
-# Use a specific version instead of latest for production stability
-FROM ghcr.io/cerbos/cerbos:0.53.0
+# syntax=docker/dockerfile:1.7
 
-# Copy your configuration file
+FROM ghcr.io/cerbos/cerbos:0.56.0
+
+# Production images should not send anonymous telemetry.
+ENV CERBOS_NO_TELEMETRY=1
+
 COPY ./drives-policy/cerbos.yaml /etc/cerbos/config.yaml
-
-# Copy your policies directory
 COPY ./drives-policy/policies /policies
 
-# Cerbos expects the config via the --config flag
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/cerbos", "healthcheck", "--config=/etc/cerbos/config.yaml"]
+
 ENTRYPOINT ["/cerbos", "server", "--config=/etc/cerbos/config.yaml"]

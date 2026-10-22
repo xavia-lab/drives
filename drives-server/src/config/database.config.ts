@@ -7,6 +7,11 @@ export default registerAs('database', (): SequelizeModuleOptions => {
 
   const portValue = process.env.DRIVES_BACKEND_DATABASE_PORT || '5432';
 
+  // PostgreSQL SSL is opt-in. Keeping `ssl: false` explicit also prevents
+  // `PGSSLMODE` in the environment from silently forcing TLS when the database
+  // (for example the bundled Docker Postgres) does not support it.
+  const sslEnabled = process.env.DB_SSL === 'true';
+
   // 1. Define Common/Base Settings
   const baseConfig: Partial<SequelizeModuleOptions> = {
     username: process.env.DRIVES_BACKEND_DATABASE_USERNAME,
@@ -19,6 +24,9 @@ export default registerAs('database', (): SequelizeModuleOptions => {
     dialect:
       (process.env.DRIVES_BACKEND_DATABASE_DIALECT as Dialect) || 'postgres',
     autoLoadModels: true,
+    dialectOptions: {
+      ssl: sslEnabled ? { require: true, rejectUnauthorized: false } : false,
+    },
   };
 
   // 2. Define Environment Specific Overrides
@@ -39,12 +47,6 @@ export default registerAs('database', (): SequelizeModuleOptions => {
       ...baseConfig,
       synchronize: false, // Critical for production safety
       logging: false,
-      dialectOptions: {
-        ssl:
-          process.env.DB_SSL === 'true'
-            ? { require: true, rejectUnauthorized: false }
-            : false,
-      },
       pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
     },
   };

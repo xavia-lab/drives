@@ -86,6 +86,8 @@ DRIVES_BACKEND_DATABASE_PASSWORD=change-me
 DRIVES_BACKEND_PORT=5000
 DRIVES_BACKEND_CERBOS_URL=localhost:3593
 DRIVES_BACKEND_AUTH_ENABLED=false
+# Set to true only when PostgreSQL is configured for TLS:
+DB_SSL=false
 ```
 
 Minimal frontend configuration:

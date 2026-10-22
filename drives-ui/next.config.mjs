@@ -15,7 +15,7 @@ const nextConfig = {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
   },
   turbopack: {
-    root: path.join(__dirname, "../../"),
+    root: path.join(__dirname, ".."),
   },
 };
 
