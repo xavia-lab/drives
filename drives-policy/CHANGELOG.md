@@ -1,5 +1,11 @@
 # drives-policy
 
+## 0.0.4
+
+### Patch Changes
+
+- Fix the heathchecks in docker images.
+
 ## 0.0.3
 
 ### Patch Changes
