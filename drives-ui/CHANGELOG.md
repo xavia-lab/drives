@@ -1,5 +1,11 @@
 # @drives/drives-ui
 
+## 0.0.3
+
+### Patch Changes
+
+- Optimised for production Docker images for all apps.
+
 ## 0.0.2
 
 ### Patch Changes
