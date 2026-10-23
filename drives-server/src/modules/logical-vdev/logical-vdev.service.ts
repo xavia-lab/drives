@@ -3,12 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Op, Transaction, WhereOptions } from 'sequelize';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
+import { Op, Sequelize, Transaction, WhereOptions } from 'sequelize';
 import { LogicalVdev, VdevClass } from './entities/logical-vdev.entity';
 import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
+import {
+  LogicalVdevEvent,
+  VdevConfigAction,
+} from './entities/logical-vdev-event.entity';
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
 import { QueryLogicalVdevDto } from './dto/query-logical-vdev.dto';
@@ -27,6 +32,12 @@ export class LogicalVdevService {
     private readonly storagePoolModel: typeof StoragePool,
     @InjectModel(VdevProfile)
     private readonly vdevProfileModel: typeof VdevProfile,
+    @InjectModel(PoolType)
+    private readonly poolTypeModel: typeof PoolType,
+    @InjectModel(LogicalVdevEvent)
+    private readonly vdevEventModel: typeof LogicalVdevEvent,
+    @InjectConnection()
+    private readonly sequelize: Sequelize,
     private readonly paginationService: PaginationService,
     private readonly capacityService: VdevCapacityService,
   ) {}
@@ -116,23 +127,46 @@ export class LogicalVdevService {
     return vdev;
   }
 
-  async create(createDto: CreateLogicalVdevDto): Promise<LogicalVdev> {
-    await this.assertPoolExists(createDto.storagePoolId);
-    const profile = await this.assertProfileExists(
-      createDto.redundancyProfileId,
-    );
-    await this.assertUniqueName(createDto.storagePoolId, createDto.vdevName);
+  async create(
+    createDto: CreateLogicalVdevDto,
+    performedByUserId?: string | null,
+  ): Promise<LogicalVdev> {
+    const created = await this.sequelize.transaction(async (transaction) => {
+      await this.assertPoolExists(createDto.storagePoolId);
+      const profile = await this.assertProfileExists(
+        createDto.redundancyProfileId,
+      );
+      await this.assertProfileCompatible(createDto.storagePoolId, profile);
+      await this.assertUniqueName(createDto.storagePoolId, createDto.vdevName);
 
-    const created = await this.logicalVdevModel.create({
-      ...(createDto.id ? { id: createDto.id } : {}),
-      storagePoolId: createDto.storagePoolId,
-      redundancyProfileId: createDto.redundancyProfileId,
-      vdevName: createDto.vdevName,
-      vdevClass: createDto.vdevClass ?? VdevClass.DATA,
-      sortOrder: createDto.sortOrder ?? 0,
-      notes: createDto.notes ?? null,
-      profileSnapshot: profile.toJSON(),
-    } as Partial<LogicalVdev>);
+      const vdev = await this.logicalVdevModel.create(
+        {
+          ...(createDto.id ? { id: createDto.id } : {}),
+          storagePoolId: createDto.storagePoolId,
+          redundancyProfileId: createDto.redundancyProfileId,
+          vdevName: createDto.vdevName,
+          vdevClass: createDto.vdevClass ?? VdevClass.DATA,
+          sortOrder: createDto.sortOrder ?? 0,
+          notes: createDto.notes ?? null,
+          profileSnapshot: profile.toJSON(),
+        } as Partial<LogicalVdev>,
+        { transaction },
+      );
+
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.CREATE,
+          beforeSnapshot: null,
+          afterSnapshot: vdev.toJSON<Record<string, unknown>>(),
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+
+      return vdev;
+    });
 
     return this.findOne(created.id);
   }
@@ -140,11 +174,13 @@ export class LogicalVdevService {
   async update(
     id: string,
     updateDto: UpdateLogicalVdevDto,
+    performedByUserId?: string | null,
   ): Promise<LogicalVdev> {
     const vdev = await this.logicalVdevModel.findByPk(id);
     if (!vdev) {
       throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
     }
+    const beforeSnapshot = vdev.toJSON<Record<string, unknown>>();
 
     let nextProfile: VdevProfile | null = null;
     if (updateDto.redundancyProfileId) {
@@ -184,14 +220,45 @@ export class LogicalVdevService {
       update.sortOrder = updateDto.sortOrder;
     if (updateDto.notes !== undefined) update.notes = updateDto.notes;
     if (nextProfile) {
+      await this.assertProfileCompatible(
+        updateDto.storagePoolId ?? vdev.storagePoolId,
+        nextProfile,
+      );
       update.profileSnapshot = nextProfile.toJSON();
+    } else if (
+      updateDto.storagePoolId &&
+      updateDto.storagePoolId !== vdev.storagePoolId
+    ) {
+      const currentProfile = await this.assertProfileExists(
+        vdev.redundancyProfileId,
+      );
+      await this.assertProfileCompatible(
+        updateDto.storagePoolId,
+        currentProfile,
+      );
     }
 
-    await vdev.update(update);
+    await this.sequelize.transaction(async (transaction) => {
+      await vdev.update(update, { transaction });
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.UPDATE,
+          beforeSnapshot,
+          afterSnapshot: vdev.toJSON<Record<string, unknown>>(),
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+    });
     return this.findOne(id);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(
+    id: string,
+    performedByUserId?: string | null,
+  ): Promise<boolean> {
     const vdev = await this.logicalVdevModel.findByPk(id);
     if (!vdev) {
       throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
@@ -206,8 +273,42 @@ export class LogicalVdevService {
       );
     }
 
-    await vdev.destroy();
+    const beforeSnapshot = vdev.toJSON<Record<string, unknown>>();
+    await this.sequelize.transaction(async (transaction) => {
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.DELETE,
+          beforeSnapshot,
+          afterSnapshot: null,
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+      await vdev.destroy({ transaction });
+    });
     return true;
+  }
+
+  async getConfigHistory(id: string): Promise<LogicalVdevEvent[]> {
+    await this.assertVdevExists(id);
+    return this.vdevEventModel.findAll({
+      where: { logicalVdevId: id },
+      order: [
+        ['eventTimestamp', 'DESC'],
+        ['displayKey', 'DESC'],
+      ],
+    });
+  }
+
+  private async assertVdevExists(id: string): Promise<void> {
+    const exists = await this.logicalVdevModel.findByPk(id, {
+      attributes: ['id'],
+    });
+    if (!exists) {
+      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+    }
   }
 
   async getPoolMemberDriveIds(
@@ -276,6 +377,37 @@ export class LogicalVdevService {
     }
   }
 
+  private async assertProfileCompatible(
+    storagePoolId: string,
+    profile: VdevProfile,
+  ): Promise<void> {
+    const pool = await this.storagePoolModel.findByPk(storagePoolId);
+    if (!pool) {
+      throw new NotFoundException(
+        `StoragePool with ID ${storagePoolId} not found`,
+      );
+    }
+    const poolType = await this.poolTypeModel.findByPk(pool.poolTypeId);
+    if (!poolType) {
+      throw new NotFoundException(
+        `PoolType with ID ${pool.poolTypeId} not found`,
+      );
+    }
+    const allowedByType: Record<string, string[]> = {
+      ZFS: ['ZFS', 'GENERIC'],
+      BTRFS: ['BTRFS', 'GENERIC'],
+      CEPH_OSD_POOL: ['CEPH', 'GENERIC'],
+      MDRAID: ['MDRAID', 'GENERIC'],
+      RAW_JBOD: ['GENERIC'],
+    };
+    const allowed = allowedByType[poolType.name] ?? ['GENERIC'];
+    if (!allowed.includes(profile.technology)) {
+      throw new ConflictException(
+        `Vdev profile ${profile.code} (${profile.technology}) is not compatible with pool type ${poolType.name}`,
+      );
+    }
+  }
+
   private async assertProfileExists(id: string): Promise<VdevProfile> {
     const profile = await this.vdevProfileModel.findByPk(id);
     if (!profile) {
@@ -290,7 +422,7 @@ export class LogicalVdevService {
     exceptId?: string,
   ): Promise<void> {
     const existing = await this.logicalVdevModel.findOne({
-      where: { storagePoolId, vdevName },
+      where: { storagePoolId, vdevName: { [Op.iLike]: vdevName } },
     });
     if (existing && existing.id !== exceptId) {
       throw new ConflictException(

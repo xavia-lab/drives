@@ -243,6 +243,15 @@ describe('StoragePoolService', () => {
       );
     });
 
+    it('rejects a duplicate pool name regardless of case', async () => {
+      mockStoragePoolModel.findOne.mockResolvedValue({ id: 'other-pool' });
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockStoragePoolModel.create).not.toHaveBeenCalled();
+    });
+
     it('throws BadRequestException when both host kinds are supplied', async () => {
       await expect(
         service.create({

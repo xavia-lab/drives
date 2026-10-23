@@ -6,6 +6,8 @@ import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
 import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
+import { DriveModel } from '../drive-model/entities/drive-model.entity';
+import { Capacity } from '../capacity/entities/capacity.entity';
 import { LogicalDiskController } from './logical-disk.controller';
 import { VdevMembershipController } from './vdev-membership.controller';
 import { VdevMoveController } from './vdev-move.controller';
@@ -14,6 +16,7 @@ import { LogicalDiskService } from './logical-disk.service';
 import { VdevMembershipService } from './vdev-membership.service';
 import { LogicalVdevModule } from '../logical-vdev/logical-vdev.module';
 import { StorageTopologyModule } from '../storage-topology/storage-topology.module';
+import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecycle-event.module';
 
 @Module({
   imports: [
@@ -24,9 +27,12 @@ import { StorageTopologyModule } from '../storage-topology/storage-topology.modu
       VdevProfile,
       PhysicalDrive,
       StoragePool,
+      DriveModel,
+      Capacity,
     ]),
     LogicalVdevModule,
     StorageTopologyModule,
+    DriveLifecycleEventModule,
   ],
   controllers: [
     LogicalDiskController,

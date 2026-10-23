@@ -87,6 +87,22 @@ export class StoragePoolService {
   }
 
   // Private helper to check foreign key constraints concurrently and aggregate errors
+  private async assertPoolNameAvailable(
+    poolName: string,
+    exceptId?: string,
+    transaction?: Transaction,
+  ): Promise<void> {
+    const existing = await this.storagePoolModel.findOne({
+      where: { poolName: { [Op.iLike]: poolName } },
+      transaction,
+    });
+    if (existing && existing.id !== exceptId) {
+      throw new ConflictException(
+        `StoragePool with name "${poolName}" already exists`,
+      );
+    }
+  }
+
   private async validateForeignKeys(
     ids: {
       poolTypeId?: string;
@@ -271,6 +287,11 @@ export class StoragePoolService {
 
       // 2. Validate targeted foreign key references exist concurrently
       await this.validateForeignKeys(createDto, transaction);
+      await this.assertPoolNameAvailable(
+        createDto.poolName,
+        undefined,
+        transaction,
+      );
 
       // 3. Persist the pool row itself (no host columns any more)
       const pool = await this.storagePoolModel.create(
@@ -312,6 +333,9 @@ export class StoragePoolService {
     }
 
     await this.validateForeignKeys({ poolTypeId: updateDto.poolTypeId });
+    if (updateDto.poolName) {
+      await this.assertPoolNameAvailable(updateDto.poolName, id);
+    }
 
     const updateData: Partial<StoragePool> = {};
     if (updateDto.poolName !== undefined)

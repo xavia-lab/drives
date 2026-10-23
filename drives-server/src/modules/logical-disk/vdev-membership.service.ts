@@ -12,13 +12,21 @@ import {
   LogicalDiskEvent,
   VdevMembershipAction,
 } from './entities/logical-disk-event.entity';
-import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
+import {
+  LogicalVdev,
+  VdevClass,
+} from '../logical-vdev/entities/logical-vdev.entity';
 import {
   VdevCapacityMode,
   VdevProfile,
 } from '../vdev-profile/entities/vdev-profile.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
+import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
+import { DriveModel } from '../drive-model/entities/drive-model.entity';
+import { Capacity } from '../capacity/entities/capacity.entity';
 import { StorageTopologyService } from '../storage-topology/storage-topology.service';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { isTerminalState } from '../drive-lifecycle-event/drive-lifecycle-state-machine';
 import {
   VdevCapacityService,
   type VdevCapacity,
@@ -45,10 +53,13 @@ export class VdevMembershipService {
     private readonly vdevProfileModel: typeof VdevProfile,
     @InjectModel(PhysicalDrive)
     private readonly physicalDriveModel: typeof PhysicalDrive,
+    @InjectModel(StoragePool)
+    private readonly storagePoolModel: typeof StoragePool,
     @InjectConnection()
     private readonly sequelize: Sequelize,
     private readonly topology: StorageTopologyService,
     private readonly capacity: VdevCapacityService,
+    private readonly lifecycleService: DriveLifecycleEventService,
   ) {}
 
   async getMembers(vdevId: string): Promise<LogicalDisk[]> {
@@ -207,9 +218,11 @@ export class VdevMembershipService {
       }
 
       await this.assertAccessible(vdev, driveIds, transaction);
+      this.assertSpareRoles(vdev, dto.members);
       await this.lockDrivesAndCurrent(driveIds, transaction);
       await this.assertDrivesExist(driveIds, transaction);
       await this.assertDriveNotAssigned(driveIds, transaction);
+      await this.assertDrivesNotTerminal(driveIds, transaction);
 
       const currentCount = await this.logicalDiskModel.count({
         where: { logicalVdevId: vdevId },
@@ -263,6 +276,11 @@ export class VdevMembershipService {
             performedByUserId: performedByUserId ?? null,
             correlationId,
             notes: dto.notes ?? null,
+            contextMetadata: await this.eventContext(
+              vdev,
+              member.physicalDriveId,
+              transaction,
+            ),
           },
           transaction,
         );
@@ -280,7 +298,7 @@ export class VdevMembershipService {
     notes?: string,
   ): Promise<LogicalDisk[]> {
     return this.sequelize.transaction(async (transaction) => {
-      await this.lockVdev(vdevId, transaction);
+      const vdev = await this.lockVdev(vdevId, transaction);
       const current = await this.logicalDiskModel.findOne({
         where: { logicalVdevId: vdevId, physicalDriveId },
         transaction,
@@ -292,6 +310,11 @@ export class VdevMembershipService {
         );
       }
 
+      const currentContext = await this.eventContext(
+        vdev,
+        physicalDriveId,
+        transaction,
+      );
       await current.destroy({ transaction });
       await this.appendEvent(
         {
@@ -306,6 +329,7 @@ export class VdevMembershipService {
           performedByUserId: performedByUserId ?? null,
           correlationId: randomUUID(),
           notes: notes ?? null,
+          contextMetadata: currentContext,
         },
         transaction,
       );
@@ -371,6 +395,20 @@ export class VdevMembershipService {
       );
 
       await this.lockDrivesAndCurrent(driveIds, transaction);
+      await this.assertDrivesNotTerminal(driveIds, transaction);
+      for (const move of dto.moves) {
+        const target = targetById.get(move.targetVdevId);
+        if (target) {
+          this.assertSpareRoles(target, [
+            {
+              physicalDriveId: move.physicalDriveId,
+              memberRole:
+                move.memberRole ??
+                snapshotByDrive.get(move.physicalDriveId)?.memberRole,
+            },
+          ]);
+        }
+      }
       const currentRows = await this.logicalDiskModel.findAll({
         where: { physicalDriveId: driveIds },
         transaction,
@@ -500,7 +538,10 @@ export class VdevMembershipService {
 
         await this.appendEvent(
           {
-            action: VdevMembershipAction.MOVE,
+            action:
+              fromVdevId === target.id
+                ? VdevMembershipAction.UPDATE
+                : VdevMembershipAction.MOVE,
             physicalDriveId: move.physicalDriveId,
             logicalVdevId: target.id,
             fromVdevId,
@@ -513,8 +554,16 @@ export class VdevMembershipService {
             correlationId,
             notes: dto.reason ?? null,
             contextMetadata: {
-              sourceStoragePoolId: source.storagePoolId,
-              targetStoragePoolId: target.storagePoolId,
+              source: await this.eventContext(
+                source,
+                move.physicalDriveId,
+                transaction,
+              ),
+              target: await this.eventContext(
+                target,
+                move.physicalDriveId,
+                transaction,
+              ),
               hostType: host.type,
               hostServerId: host.serverId,
             },
@@ -612,9 +661,15 @@ export class VdevMembershipService {
 
       for (const vdev of vdevs) {
         const profile = vdev.redundancyProfile;
-        const count = desired.filter(
-          (entry) => entry.vdevId === vdev.id,
-        ).length;
+        const entries = desired.filter((entry) => entry.vdevId === vdev.id);
+        this.assertSpareRoles(
+          vdev,
+          entries.map((entry) => ({
+            physicalDriveId: entry.physicalDriveId,
+            memberRole: entry.memberRole,
+          })),
+        );
+        const count = entries.length;
         if (profile?.maxMembers != null && count > profile.maxMembers) {
           throw new ConflictException(
             `Vdev ${vdev.id} accepts at most ${profile.maxMembers} members`,
@@ -630,6 +685,10 @@ export class VdevMembershipService {
       const currentByDrive = new Map(
         current.map((row) => [row.physicalDriveId, row]),
       );
+      await this.assertDrivesNotTerminal(
+        [...desiredDriveIds].filter((id) => !currentByDrive.has(id)),
+        transaction,
+      );
       const desiredByDrive = new Map(
         desired.map((entry) => [entry.physicalDriveId, entry]),
       );
@@ -641,6 +700,14 @@ export class VdevMembershipService {
         (row) => !desiredByDrive.has(row.physicalDriveId),
       );
       for (const row of toRemove) {
+        const sourceVdev = vdevById.get(row.logicalVdevId);
+        const context = sourceVdev
+          ? await this.eventContext(
+              sourceVdev,
+              row.physicalDriveId,
+              transaction,
+            )
+          : null;
         await row.destroy({ transaction });
         await this.appendEvent(
           {
@@ -655,6 +722,7 @@ export class VdevMembershipService {
             performedByUserId: performedByUserId ?? null,
             correlationId,
             notes: dto.notes ?? null,
+            contextMetadata: context,
           },
           transaction,
         );
@@ -700,6 +768,11 @@ export class VdevMembershipService {
               performedByUserId: performedByUserId ?? null,
               correlationId,
               notes: dto.notes ?? null,
+              contextMetadata: await this.eventContext(
+                vdevById.get(entry.vdevId)!,
+                entry.physicalDriveId,
+                transaction,
+              ),
             },
             transaction,
           );
@@ -731,6 +804,8 @@ export class VdevMembershipService {
           },
           { transaction },
         );
+        const sourceVdev = vdevById.get(fromVdevId);
+        const targetVdev = vdevById.get(entry.vdevId)!;
         await this.appendEvent(
           {
             action: isMove
@@ -747,6 +822,20 @@ export class VdevMembershipService {
             performedByUserId: performedByUserId ?? null,
             correlationId,
             notes: dto.notes ?? null,
+            contextMetadata: {
+              source: sourceVdev
+                ? await this.eventContext(
+                    sourceVdev,
+                    entry.physicalDriveId,
+                    transaction,
+                  )
+                : null,
+              target: await this.eventContext(
+                targetVdev,
+                entry.physicalDriveId,
+                transaction,
+              ),
+            },
           },
           transaction,
         );
@@ -807,6 +896,71 @@ export class VdevMembershipService {
     if (!profile || profile.capacityMode !== VdevCapacityMode.MIRROR_GROUPS)
       return null;
     return Math.floor(memberIndex / Math.max(2, profile.mirrorCopies || 2));
+  }
+
+  private async eventContext(
+    vdev: LogicalVdev,
+    physicalDriveId: string,
+    transaction: Transaction,
+  ): Promise<Record<string, unknown>> {
+    const [pool, host, drive] = await Promise.all([
+      this.storagePoolModel.findByPk(vdev.storagePoolId, { transaction }),
+      this.topology.getCurrentHost(vdev.storagePoolId, transaction),
+      this.physicalDriveModel.findByPk(physicalDriveId, {
+        transaction,
+        include: [{ model: DriveModel, include: [Capacity] }],
+      }),
+    ]);
+    const capacity = drive?.driveModel?.capacity;
+    return {
+      storagePoolId: vdev.storagePoolId,
+      storagePoolName: pool?.poolName ?? null,
+      vdevId: vdev.id,
+      vdevName: vdev.vdevName,
+      vdevClass: vdev.vdevClass,
+      hostType: host?.type ?? null,
+      hostServerId: host?.serverId ?? null,
+      hostHostname: host?.hostname ?? null,
+      driveCapacityBytes: capacity?.absoluteCapacity ?? null,
+    };
+  }
+
+  private assertSpareRoles(
+    vdev: LogicalVdev,
+    members: Array<{
+      physicalDriveId: string;
+      memberRole?: VdevMemberRole;
+    }>,
+  ): void {
+    if (vdev.vdevClass === VdevClass.SPARE) return;
+    const invalid = members.filter(
+      (member) => member.memberRole === VdevMemberRole.SPARE,
+    );
+    if (invalid.length > 0) {
+      throw new ConflictException(
+        'Spare drives must be attached to a SPARE-class vdev, not a data vdev',
+      );
+    }
+  }
+
+  private async assertDrivesNotTerminal(
+    driveIds: string[],
+    transaction: Transaction,
+  ): Promise<void> {
+    if (driveIds.length === 0) return;
+    const lifecycle = await this.lifecycleService.getCurrentLifecycleMap(
+      driveIds,
+      transaction,
+    );
+    const terminal = driveIds.filter((driveId) => {
+      const state = lifecycle.get(driveId)?.state;
+      return state ? isTerminalState(state) : false;
+    });
+    if (terminal.length > 0) {
+      throw new ConflictException(
+        `Physical drive(s) ${terminal.join(', ')} are in a terminal lifecycle state and cannot be attached to a vdev`,
+      );
+    }
   }
 
   private async lockDrivesAndCurrent(

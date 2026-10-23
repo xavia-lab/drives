@@ -23,8 +23,13 @@ const profile = (mode: VdevCapacityMode, extra: Partial<VdevProfile> = {}) =>
     ...extra,
   }) as VdevProfile;
 
-const member = (size: number, role = VdevMemberRole.DATA) =>
+const member = (
+  size: number,
+  role = VdevMemberRole.DATA,
+  physicalDriveId = 'drive-1',
+) =>
   ({
+    physicalDriveId,
     memberRole: role,
     physicalDrive: {
       driveModel: { capacity: { absoluteCapacity: size } },
@@ -34,13 +39,16 @@ const member = (size: number, role = VdevMemberRole.DATA) =>
 describe('VdevCapacityService', () => {
   let service: VdevCapacityService;
   let findAll: ReturnType<typeof vi.fn>;
+  let getCurrentLifecycleMap: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     findAll = vi.fn();
+    getCurrentLifecycleMap = vi.fn().mockResolvedValue(new Map());
     service = new VdevCapacityService(
       {} as never,
       { findAll } as never,
       {} as never,
+      { getCurrentLifecycleMap } as never,
     );
   });
 
@@ -108,6 +116,42 @@ describe('VdevCapacityService', () => {
     expect(result.rawBytes).toBe(32 * TB);
     expect(result.spareCount).toBe(1);
     expect(result.usableBytes).toBe(16 * TB);
+  });
+
+  it('derives ONLINE health when every member is in service', async () => {
+    getCurrentLifecycleMap.mockResolvedValue(
+      new Map([
+        ['drive-1', { state: 'IN_SERVICE' }],
+        ['drive-2', { state: 'IN_SERVICE' }],
+      ]),
+    );
+    const result = await calculate(profile(VdevCapacityMode.SUM), [
+      member(16 * TB, VdevMemberRole.DATA, 'drive-1'),
+      member(16 * TB, VdevMemberRole.DATA, 'drive-2'),
+    ]);
+    expect(result.health).toBe('ONLINE');
+  });
+
+  it('derives DEGRADED health when a member has failed', async () => {
+    getCurrentLifecycleMap.mockResolvedValue(
+      new Map([['drive-1', { state: 'FAILED' }]]),
+    );
+    const result = await calculate(profile(VdevCapacityMode.SUM), [
+      member(16 * TB, VdevMemberRole.DATA, 'drive-1'),
+      member(16 * TB, VdevMemberRole.DATA, 'drive-2'),
+    ]);
+    expect(result.health).toBe('DEGRADED');
+  });
+
+  it('derives FAILED health when a member is terminal', async () => {
+    getCurrentLifecycleMap.mockResolvedValue(
+      new Map([['drive-1', { state: 'LOST' }]]),
+    );
+    const result = await calculate(profile(VdevCapacityMode.SUM), [
+      member(16 * TB, VdevMemberRole.DATA, 'drive-1'),
+      member(16 * TB, VdevMemberRole.DATA, 'drive-2'),
+    ]);
+    expect(result.health).toBe('FAILED');
   });
 
   it('returns unknown capacity instead of zero when a member size is missing', async () => {

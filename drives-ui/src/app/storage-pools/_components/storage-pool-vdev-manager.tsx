@@ -23,14 +23,17 @@ import {
   Row,
   Select,
   Space,
+  Spin,
   Statistic,
   Tag,
+  Timeline,
   Tooltip,
   Typography,
   theme,
 } from "antd";
 import {
   DatabaseOutlined,
+  HistoryOutlined,
   PlusOutlined,
   ReloadOutlined,
   SaveOutlined,
@@ -76,6 +79,20 @@ interface VdevCapacity {
   usableBytes: number | null;
   formula: string;
   estimated: boolean;
+  health:
+    "PLANNED" | "INCOMPLETE" | "ONLINE" | "DEGRADED" | "FAILED" | "UNKNOWN";
+  memberStates: Record<string, string>;
+}
+
+interface VdevConfigEvent {
+  id: string;
+  displayKey: number;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  beforeSnapshot: Record<string, unknown> | null;
+  afterSnapshot: Record<string, unknown> | null;
+  eventTimestamp: string;
+  performedByUserId: string | null;
+  notes: string | null;
 }
 
 interface VdevRecord {
@@ -134,6 +151,15 @@ const formatBytes = (bytes: number | null | undefined) => {
   return `${(bytes / 1000 ** index).toFixed(2)} ${units[index]}`;
 };
 
+const healthColor: Record<VdevCapacity["health"], string> = {
+  PLANNED: "default",
+  INCOMPLETE: "orange",
+  ONLINE: "green",
+  DEGRADED: "gold",
+  FAILED: "red",
+  UNKNOWN: "default",
+};
+
 const vdevClassColor: Record<VdevClass, string> = {
   DATA: "blue",
   LOG: "purple",
@@ -178,6 +204,7 @@ export const StoragePoolVdevManager = ({
   const [draft, setDraft] = useState<Draft | null>(null);
   const lastVdevSignature = useRef("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [historyVdev, setHistoryVdev] = useState<VdevRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -194,6 +221,14 @@ export const StoragePoolVdevManager = ({
     method: "get",
     queryOptions: {
       enabled: Boolean(poolId),
+      refetchOnWindowFocus: false,
+    },
+  });
+  const historyQuery = useCustom<VdevConfigEvent[]>({
+    url: `${apiUrl}/logical-vdevs/${historyVdev?.id ?? ""}/config-history`,
+    method: "get",
+    queryOptions: {
+      enabled: Boolean(historyVdev),
       refetchOnWindowFocus: false,
     },
   });
@@ -564,10 +599,20 @@ export const StoragePoolVdevManager = ({
                           {cap.isComplete ? "Complete" : "Incomplete"}
                         </Tag>
                       ) : null}
+                      {cap ? (
+                        <Tag color={healthColor[cap.health]}>{cap.health}</Tag>
+                      ) : null}
                     </Space>
                   }
                   extra={
                     <Space>
+                      <Tooltip title="View configuration history">
+                        <Button
+                          size="small"
+                          icon={<HistoryOutlined />}
+                          onClick={() => setHistoryVdev(vdev)}
+                        />
+                      </Tooltip>
                       {canCreateVdev?.can ? (
                         <Popconfirm
                           title="Delete this vdev?"
@@ -775,6 +820,67 @@ export const StoragePoolVdevManager = ({
           </Form.Item>
         </Form>
       </Modal>
+
+      <Modal
+        open={Boolean(historyVdev)}
+        title={`Configuration history${historyVdev ? ` — ${historyVdev.vdevName}` : ""}`}
+        footer={null}
+        width={680}
+        onCancel={() => setHistoryVdev(null)}
+        destroyOnHidden
+      >
+        {historyQuery.query.isLoading ? (
+          <Spin />
+        ) : (historyQuery.result?.data ?? []).length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No configuration events recorded"
+          />
+        ) : (
+          <Timeline
+            items={(historyQuery.result?.data ?? []).map((event) => ({
+              color:
+                event.action === "DELETE"
+                  ? "red"
+                  : event.action === "CREATE"
+                    ? "green"
+                    : "blue",
+              children: (
+                <Space direction="vertical" size={2}>
+                  <Space wrap>
+                    <Tag>{event.action}</Tag>
+                    <Text type="secondary">
+                      {new Date(event.eventTimestamp).toLocaleString()}
+                    </Text>
+                  </Space>
+                  <Text>
+                    {snapshotSummary(
+                      event.afterSnapshot ?? event.beforeSnapshot,
+                    )}
+                  </Text>
+                  {event.notes ? (
+                    <Text type="secondary">{event.notes}</Text>
+                  ) : null}
+                </Space>
+              ),
+            }))}
+          />
+        )}
+      </Modal>
     </Card>
   );
+};
+
+const snapshotSummary = (snapshot: Record<string, unknown> | null) => {
+  if (!snapshot) return "No snapshot";
+  const profile = snapshot.profileSnapshot as
+    { code?: string; technology?: string } | undefined;
+  return [
+    snapshot.vdevName as string | undefined,
+    snapshot.vdevClass as string | undefined,
+    profile?.code,
+    profile?.technology,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 };

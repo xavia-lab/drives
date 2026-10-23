@@ -13,6 +13,8 @@ import {
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { DriveModel } from '../drive-model/entities/drive-model.entity';
 import { Capacity } from '../capacity/entities/capacity.entity';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { DriveLifecycleState } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 
 export interface VdevCapacity {
   memberCount: number;
@@ -28,6 +30,9 @@ export interface VdevCapacity {
   smallestMemberBytes: number | null;
   formula: string;
   estimated: boolean;
+  health:
+    'PLANNED' | 'INCOMPLETE' | 'ONLINE' | 'DEGRADED' | 'FAILED' | 'UNKNOWN';
+  memberStates: Record<string, string>;
 }
 
 @Injectable()
@@ -39,6 +44,7 @@ export class VdevCapacityService {
     private readonly logicalDiskModel: typeof LogicalDisk,
     @InjectModel(VdevProfile)
     private readonly vdevProfileModel: typeof VdevProfile,
+    private readonly lifecycleService: DriveLifecycleEventService,
   ) {}
 
   private capacityOf(member: LogicalDisk): number | null {
@@ -57,6 +63,7 @@ export class VdevCapacityService {
   private calculateFor(
     profile: VdevProfile,
     members: LogicalDisk[],
+    lifecycleByDrive: Map<string, { state: DriveLifecycleState }>,
   ): VdevCapacity {
     const dataMembers = members.filter(
       (member) => member.memberRole === VdevMemberRole.DATA,
@@ -112,6 +119,34 @@ export class VdevCapacityService {
       }
     }
 
+    const memberStates: Record<string, string> = {};
+    for (const member of members) {
+      const state = lifecycleByDrive.get(member.physicalDriveId)?.state;
+      if (state) memberStates[member.physicalDriveId] = state;
+    }
+    const states = Object.values(memberStates);
+    let health: VdevCapacity['health'] = 'UNKNOWN';
+    if (dataMembers.length === 0) {
+      health = 'PLANNED';
+    } else if (dataMembers.length < profile.minMembers) {
+      health = 'INCOMPLETE';
+    } else if (
+      states.some((state) =>
+        ['FAILED', 'RETIRED', 'DEGRADED', 'IN_RMA'].includes(state),
+      )
+    ) {
+      health = 'DEGRADED';
+    } else if (
+      states.some((state) => ['SCRAPPED', 'REPLACED', 'LOST'].includes(state))
+    ) {
+      health = 'FAILED';
+    } else if (
+      states.length > 0 &&
+      states.every((state) => state === 'IN_SERVICE')
+    ) {
+      health = 'ONLINE';
+    }
+
     return {
       memberCount: members.length,
       dataMemberCount: dataMembers.length,
@@ -128,6 +163,8 @@ export class VdevCapacityService {
       estimated:
         profile.capacityMode === VdevCapacityMode.PARITY ||
         profile.capacityMode === VdevCapacityMode.MIRROR_GROUPS,
+      health,
+      memberStates,
     };
   }
 
@@ -172,7 +209,11 @@ export class VdevCapacityService {
       throw new Error(`VdevProfile ${vdev.redundancyProfileId} not found`);
     }
     const members = await this.getMembers(vdev.id, transaction);
-    return this.calculateFor(profile, members);
+    const lifecycleByDrive = await this.lifecycleService.getCurrentLifecycleMap(
+      members.map((member) => member.physicalDriveId),
+      transaction,
+    );
+    return this.calculateFor(profile, members, lifecycleByDrive);
   }
 
   async calculateMany(
@@ -200,6 +241,10 @@ export class VdevCapacityService {
       list.push(member);
       membersByVdev.set(member.logicalVdevId, list);
     }
+    const lifecycleByDrive = await this.lifecycleService.getCurrentLifecycleMap(
+      [...new Set(members.map((member) => member.physicalDriveId))],
+      transaction,
+    );
 
     for (const vdev of vdevs) {
       const profile =
@@ -208,7 +253,11 @@ export class VdevCapacityService {
       if (!profile) continue;
       result.set(
         vdev.id,
-        this.calculateFor(profile, membersByVdev.get(vdev.id) ?? []),
+        this.calculateFor(
+          profile,
+          membersByVdev.get(vdev.id) ?? [],
+          lifecycleByDrive,
+        ),
       );
     }
 
