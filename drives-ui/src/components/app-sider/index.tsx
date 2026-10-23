@@ -2,14 +2,7 @@
 
 import { useContext, useMemo } from "react";
 import type { ComponentType, CSSProperties } from "react";
-import {
-  useIsExistAuthentication,
-  useLink,
-  useLogout,
-  useMenu,
-  useTranslate,
-  useWarnAboutChange,
-} from "@refinedev/core";
+import { useLink, useMenu } from "@refinedev/core";
 import type { TreeMenuItem } from "@refinedev/core";
 import { ThemedTitle, useThemedLayoutContext } from "@refinedev/antd";
 import { useQueries } from "@tanstack/react-query";
@@ -26,7 +19,6 @@ import type { MenuProps } from "antd";
 import {
   BarsOutlined,
   LeftOutlined,
-  LogoutOutlined,
   RightOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
@@ -63,11 +55,7 @@ export const AppSider = ({
   } = useThemedLayoutContext();
   const direction = useContext(ConfigProvider.ConfigContext)?.direction;
   const LinkComponent = useLink();
-  const translate = useTranslate();
   const { menuItems, selectedKey, defaultOpenKeys } = useMenu({});
-  const isExistAuthentication = useIsExistAuthentication();
-  const { mutate: mutateLogout } = useLogout();
-  const { warnWhen, setWarnWhen } = useWarnAboutChange();
   const breakpoint = Grid.useBreakpoint();
   const isMobile =
     typeof breakpoint.lg === "undefined" ? false : !breakpoint.lg;
@@ -139,35 +127,7 @@ export const AppSider = ({
     return result;
   };
 
-  const handleLogout = () => {
-    if (warnWhen) {
-      const confirm = window.confirm(
-        translate(
-          "warnWhenUnsavedChanges",
-          "Are you sure you want to leave? You have unsaved changes.",
-        ),
-      );
-      if (!confirm) {
-        return;
-      }
-      setWarnWhen(false);
-    }
-    mutateLogout();
-  };
-
-  const items: NonNullable<MenuProps["items"]> = [
-    ...buildItems(menuItems),
-    ...(isExistAuthentication
-      ? [
-          {
-            key: "logout",
-            icon: <LogoutOutlined />,
-            label: translate("buttons.logout", "Logout"),
-            onClick: handleLogout,
-          },
-        ]
-      : []),
-  ];
+  const items = buildItems(menuItems);
 
   const renderMenu = () => (
     <Menu
