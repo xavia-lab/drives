@@ -90,6 +90,20 @@ export class PhysicalCpuController {
     return this.physicalCpuService.create(createPhysicalCpuDto);
   }
 
+  @Post('acquisitions')
+  @CheckPolicy('acquire', 'physical-cpus')
+  @ApiOperation({ summary: 'Acquire a physical CPU from the guided workflow' })
+  @ApiResponse({
+    status: 201,
+    description: 'PhysicalCpu acquired successfully',
+  })
+  @ApiResponse({ status: 409, description: 'PhysicalCpu already exists' })
+  async acquire(
+    @Body() createPhysicalCpuDto: CreatePhysicalCpuDto,
+  ): Promise<PhysicalCpu> {
+    return this.physicalCpuService.create(createPhysicalCpuDto);
+  }
+
   @Put(':id')
   @CheckPolicy('edit', 'physical-cpus')
   @ApiOperation({ summary: 'Update a physical-cpu' })

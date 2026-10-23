@@ -4,14 +4,20 @@ resourcePolicy:
   resource: "cpu-models"
   rules:
     # 1. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list", "edit", "delete"]
+    - actions:
+        ["create", "create-workflow", "show", "list", "edit", "delete"]
       effect: EFFECT_ALLOW
       roles:
         - admin
 
-    # 2. Viewer
-    - actions: ["show", "list"]
+    # 2. Workflow operators can create models from the guided acquisition flow
+    - actions: ["create-workflow", "show", "list"]
       effect: EFFECT_ALLOW
       roles:
         - user
+
+    # 3. Viewer is read-only
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
         - viewer

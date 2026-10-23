@@ -94,6 +94,23 @@ export class CpuModelController {
     return this.cpuModelService.create(createCpuModelDto);
   }
 
+  @Post('workflows')
+  @CheckPolicy('create-workflow', 'cpu-models')
+  @InvalidateCache('cpu-models')
+  @ApiOperation({
+    summary: 'Create a CPU model from the CPU-acquisition workflow',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'CPU Model created successfully',
+  })
+  @ApiResponse({ status: 409, description: 'CPU Model name already exists' })
+  async createForWorkflow(
+    @Body() createCpuModelDto: CreateCpuModelDto,
+  ): Promise<CpuModel> {
+    return this.cpuModelService.create(createCpuModelDto);
+  }
+
   @Put(':id')
   @CheckPolicy('edit', 'cpu-models')
   @InvalidateCache('cpu-models')
