@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import {
   VdevCapacityMode,
   VdevTechnology,
@@ -17,7 +17,12 @@ export class VdevProfileResponseDto {
   @Expose() mirrorCopies: number;
   @Expose() stripeWidth: number | null;
   @Expose() capacityMode: VdevCapacityMode;
-  @Expose() metadata: Record<string, unknown> | null;
+  @Expose()
+  @Transform(({ obj }) => {
+    const value = obj as { metadata?: Record<string, unknown> | null };
+    return value.metadata;
+  })
+  metadata: Record<string, unknown> | null;
   @Expose() managed: boolean;
   @Expose() sortOrder: number;
   @Expose() createdAt: Date;

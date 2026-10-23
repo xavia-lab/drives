@@ -172,6 +172,19 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   },
                 },
                 {
+                  name: "vdev-profiles",
+                  list: "/vdev-profiles",
+                  create: "/vdev-profiles/create",
+                  edit: "/vdev-profiles/edit/:id",
+                  show: "/vdev-profiles/show/:id",
+                  meta: {
+                    canDelete: true,
+                    label: "Vdev Profiles",
+                    parent: "storage",
+                    icon: <TagsOutlined />,
+                  },
+                },
+                {
                   name: "pool-types",
                   list: "/pool-types",
                   create: "/pool-types/create",
