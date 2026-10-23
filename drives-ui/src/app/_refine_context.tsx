@@ -14,6 +14,7 @@ import routerProvider from "@refinedev/nextjs-router";
 
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ColorModeContextProvider } from "@contexts/color-mode";
+import { DynamicFavicon } from "@components/dynamic-favicon";
 import { dataProvider } from "@providers/data-provider";
 import { auditLogProvider } from "@providers/audit-log-provider";
 import "@refinedev/antd/dist/reset.css";
@@ -113,6 +114,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
             defaultMode={defaultMode}
             defaultPrimaryColor={defaultPrimaryColor}
           >
+            <DynamicFavicon />
             <Refine
               routerProvider={routerProvider}
               dataProvider={dataProvider}
