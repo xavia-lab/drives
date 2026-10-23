@@ -2,10 +2,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   Length,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -31,6 +33,18 @@ export class MoveVdevMemberDto {
   @IsOptional()
   @IsEnum(VdevMemberRole)
   memberRole?: VdevMemberRole;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  memberIndex?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  groupIndex?: number;
 }
 
 export class MoveVdevMembersDto {

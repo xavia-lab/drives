@@ -149,6 +149,8 @@ export class VdevCapacityService {
       include: this.memberIncludes(),
       order: [
         ['memberRole', 'ASC'],
+        ['groupIndex', 'ASC'],
+        ['memberIndex', 'ASC'],
         ['displayKey', 'ASC'],
       ],
       transaction,
@@ -159,7 +161,9 @@ export class VdevCapacityService {
     vdev: LogicalVdev,
     transaction?: Transaction,
   ): Promise<VdevCapacity> {
+    const snapshot = vdev.profileSnapshot as unknown as VdevProfile | null;
     const profile =
+      snapshot ??
       vdev.redundancyProfile ??
       (await this.vdevProfileModel.findByPk(vdev.redundancyProfileId, {
         transaction,
@@ -198,7 +202,9 @@ export class VdevCapacityService {
     }
 
     for (const vdev of vdevs) {
-      const profile = vdev.redundancyProfile as VdevProfile | undefined;
+      const profile =
+        (vdev.profileSnapshot as unknown as VdevProfile | null) ??
+        vdev.redundancyProfile;
       if (!profile) continue;
       result.set(
         vdev.id,

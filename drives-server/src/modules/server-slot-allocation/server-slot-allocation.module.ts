@@ -14,6 +14,7 @@ import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { User } from '../user/entities/user.entity';
 import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecycle-event.module';
+import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecy
       Rack,
       Datacenter,
       User,
+      LogicalDisk,
     ]),
     DriveLifecycleEventModule,
   ],

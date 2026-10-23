@@ -65,6 +65,12 @@ export class LogicalDiskEvent extends BaseModel {
   })
   declare eventTimestamp: Date;
 
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'member_index' })
+  declare memberIndex: number | null;
+
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'group_index' })
+  declare groupIndex: number | null;
+
   @Column({
     type: DataType.STRING(32),
     allowNull: true,

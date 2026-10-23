@@ -15,6 +15,7 @@ import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { PhysicalDriveLocation } from '../physical-drive/entities/physical-drive-location.entity';
+import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { Rack } from '../rack/entities/rack.entity';
 import { Datacenter } from '../datacenter/entities/datacenter.entity';
 import { PaginationService } from '../pagination/pagination.service';
@@ -34,6 +35,7 @@ describe('ServerSlotAllocationService', () => {
   let mockPhysicalServerModel: Record<string, Mock>;
   let mockPhysicalDriveModel: Record<string, Mock>;
   let mockLocationModel: Record<string, Mock>;
+  let mockLogicalDiskModel: Record<string, Mock>;
   let mockLifecycleService: {
     recordEventInTransaction: Mock;
     getCurrentLifecycleMap: Mock;
@@ -67,6 +69,7 @@ describe('ServerSlotAllocationService', () => {
     mockPhysicalServerModel = { findByPk: vi.fn(), findAll: vi.fn() };
     mockPhysicalDriveModel = { findAll: vi.fn(), findByPk: vi.fn() };
     mockLocationModel = { findAll: vi.fn() };
+    mockLogicalDiskModel = { findAll: vi.fn().mockResolvedValue([]) };
     mockLifecycleService = {
       recordEventInTransaction: vi.fn().mockResolvedValue({}),
       getCurrentLifecycleMap: vi.fn().mockResolvedValue(new Map()),
@@ -99,6 +102,10 @@ describe('ServerSlotAllocationService', () => {
         {
           provide: getModelToken(PhysicalDriveLocation),
           useValue: mockLocationModel,
+        },
+        {
+          provide: getModelToken(LogicalDisk),
+          useValue: mockLogicalDiskModel,
         },
         { provide: getModelToken(Rack), useValue: {} },
         { provide: getModelToken(Datacenter), useValue: {} },

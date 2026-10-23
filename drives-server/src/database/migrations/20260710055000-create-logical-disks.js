@@ -44,6 +44,15 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      member_index: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      group_index: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -62,6 +71,14 @@ module.exports = {
       name: 'logical_disks_logical_vdev_id_idx',
       using: 'btree',
     });
+    await queryInterface.addIndex(
+      'logical_disks',
+      ['logical_vdev_id', 'group_index', 'member_index'],
+      {
+        name: 'logical_disks_vdev_order_idx',
+        using: 'btree',
+      },
+    );
   },
 
   async down(queryInterface) {

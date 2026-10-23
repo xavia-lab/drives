@@ -29,6 +29,11 @@ export enum VdevMemberRole {
       using: 'btree',
       fields: ['logical_vdev_id'],
     },
+    {
+      name: 'logical_disks_vdev_order_idx',
+      using: 'btree',
+      fields: ['logical_vdev_id', 'group_index', 'member_index'],
+    },
   ],
 })
 export class LogicalDisk extends BaseModel {
@@ -54,6 +59,17 @@ export class LogicalDisk extends BaseModel {
     field: 'attached_at',
   })
   declare attachedAt: Date;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'member_index',
+  })
+  declare memberIndex: number;
+
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'group_index' })
+  declare groupIndex: number | null;
 
   @ForeignKey(() => LogicalVdev)
   @Column({ type: DataType.UUID, allowNull: false, field: 'logical_vdev_id' })

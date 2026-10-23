@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
-import { Order, Sequelize, Transaction } from 'sequelize';
+import { Op, Order, Sequelize, Transaction } from 'sequelize';
 import { randomUUID } from 'crypto';
 import { LogicalDisk, VdevMemberRole } from './entities/logical-disk.entity';
 import {
@@ -13,7 +13,10 @@ import {
   VdevMembershipAction,
 } from './entities/logical-disk-event.entity';
 import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
-import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
+import {
+  VdevCapacityMode,
+  VdevProfile,
+} from '../vdev-profile/entities/vdev-profile.entity';
 import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
 import { StorageTopologyService } from '../storage-topology/storage-topology.service';
 import {
@@ -61,6 +64,113 @@ export class VdevMembershipService {
     return this.capacity.calculate(vdev);
   }
 
+  async reconcileProjection(): Promise<{
+    inserted: number;
+    updated: number;
+    removed: number;
+  }> {
+    return this.sequelize.transaction(async (transaction) => {
+      const events = await this.eventModel.findAll({
+        order: [
+          ['physicalDriveId', 'ASC'],
+          ['eventTimestamp', 'ASC'],
+          ['displayKey', 'ASC'],
+        ],
+        transaction,
+      });
+      const latest = new Map<string, LogicalDiskEvent>();
+      for (const event of events) {
+        latest.set(event.physicalDriveId, event);
+      }
+
+      const desired = new Map<
+        string,
+        {
+          vdevId: string;
+          role: VdevMemberRole;
+          path: string | null;
+          memberIndex: number;
+          groupIndex: number | null;
+          attachedAt: Date;
+        }
+      >();
+      for (const [driveId, event] of latest) {
+        if (event.action === VdevMembershipAction.DETACH || !event.toVdevId) {
+          continue;
+        }
+        desired.set(driveId, {
+          vdevId: event.toVdevId,
+          role: event.memberRole ?? VdevMemberRole.DATA,
+          path: event.osDeviceNodePath,
+          memberIndex: event.memberIndex ?? 0,
+          groupIndex: event.groupIndex,
+          attachedAt: event.eventTimestamp,
+        });
+      }
+
+      const current = await this.logicalDiskModel.findAll({
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+        order: [['physicalDriveId', 'ASC']],
+      });
+      const currentByDrive = new Map(
+        current.map((row) => [row.physicalDriveId, row]),
+      );
+      let inserted = 0;
+      let updated = 0;
+      let removed = 0;
+
+      for (const [driveId, row] of desired) {
+        const existing = currentByDrive.get(driveId);
+        if (!existing) {
+          await this.logicalDiskModel.create(
+            {
+              logicalVdevId: row.vdevId,
+              physicalDriveId: driveId,
+              osDeviceNodePath: row.path,
+              memberRole: row.role,
+              memberIndex: row.memberIndex,
+              groupIndex: row.groupIndex,
+              attachedAt: row.attachedAt,
+            } as Partial<LogicalDisk>,
+            { transaction },
+          );
+          inserted += 1;
+          continue;
+        }
+        const changed =
+          existing.logicalVdevId !== row.vdevId ||
+          existing.osDeviceNodePath !== row.path ||
+          existing.memberRole !== row.role ||
+          existing.memberIndex !== row.memberIndex ||
+          existing.groupIndex !== row.groupIndex;
+        if (changed) {
+          await existing.update(
+            {
+              logicalVdevId: row.vdevId,
+              osDeviceNodePath: row.path,
+              memberRole: row.role,
+              memberIndex: row.memberIndex,
+              groupIndex: row.groupIndex,
+              attachedAt: row.attachedAt,
+            },
+            { transaction },
+          );
+          updated += 1;
+        }
+      }
+
+      for (const row of current) {
+        if (!desired.has(row.physicalDriveId)) {
+          await row.destroy({ transaction });
+          removed += 1;
+        }
+      }
+
+      return { inserted, updated, removed };
+    });
+  }
+
   async getHistory(vdevId: string): Promise<LogicalDiskEvent[]> {
     const { Op } = await import('sequelize');
     return this.eventModel.findAll({
@@ -97,6 +207,7 @@ export class VdevMembershipService {
       }
 
       await this.assertAccessible(vdev, driveIds, transaction);
+      await this.lockDrivesAndCurrent(driveIds, transaction);
       await this.assertDrivesExist(driveIds, transaction);
       await this.assertDriveNotAssigned(driveIds, transaction);
 
@@ -113,15 +224,28 @@ export class VdevMembershipService {
         );
       }
 
+      const currentMax = await this.logicalDiskModel.findOne({
+        where: { logicalVdevId: vdevId },
+        attributes: ['memberIndex'],
+        order: [['memberIndex', 'DESC']],
+        transaction,
+      });
       const correlationId = randomUUID();
       const created: LogicalDisk[] = [];
+      let nextIndex = (currentMax?.memberIndex ?? -1) + 1;
       for (const member of dto.members) {
+        const memberIndex = member.memberIndex ?? nextIndex;
+        const groupIndex =
+          member.groupIndex ?? this.groupIndexFor(profile, memberIndex);
+        nextIndex = Math.max(nextIndex, memberIndex) + 1;
         const row = await this.logicalDiskModel.create(
           {
             logicalVdevId: vdevId,
             physicalDriveId: member.physicalDriveId,
             osDeviceNodePath: member.osDeviceNodePath ?? null,
             memberRole: member.memberRole ?? VdevMemberRole.DATA,
+            memberIndex,
+            groupIndex,
             attachedAt: new Date(),
           } as Partial<LogicalDisk>,
           { transaction },
@@ -133,6 +257,8 @@ export class VdevMembershipService {
             logicalVdevId: vdevId,
             toVdevId: vdevId,
             memberRole: member.memberRole ?? VdevMemberRole.DATA,
+            memberIndex,
+            groupIndex,
             osDeviceNodePath: member.osDeviceNodePath ?? null,
             performedByUserId: performedByUserId ?? null,
             correlationId,
@@ -174,6 +300,8 @@ export class VdevMembershipService {
           logicalVdevId: vdevId,
           fromVdevId: vdevId,
           memberRole: current.memberRole,
+          memberIndex: current.memberIndex,
+          groupIndex: current.groupIndex,
           osDeviceNodePath: current.osDeviceNodePath,
           performedByUserId: performedByUserId ?? null,
           correlationId: randomUUID(),
@@ -200,16 +328,15 @@ export class VdevMembershipService {
         );
       }
 
-      const currentRows = await this.logicalDiskModel.findAll({
+      const snapshotRows = await this.logicalDiskModel.findAll({
         where: { physicalDriveId: driveIds },
         transaction,
-        lock: transaction.LOCK.UPDATE,
         order: [['physicalDriveId', 'ASC']],
       });
-      const currentByDrive = new Map(
-        currentRows.map((row) => [row.physicalDriveId, row]),
+      const snapshotByDrive = new Map(
+        snapshotRows.map((row) => [row.physicalDriveId, row]),
       );
-      const missing = driveIds.filter((id) => !currentByDrive.has(id));
+      const missing = driveIds.filter((id) => !snapshotByDrive.has(id));
       if (missing.length > 0) {
         throw new NotFoundException(
           `Physical drive(s) ${missing.join(', ')} are not assigned to a vdev`,
@@ -219,8 +346,17 @@ export class VdevMembershipService {
       const targetIds = this.uniqueDriveIds(
         dto.moves.map((move) => move.targetVdevId),
       );
-      const targetVdevs = await this.lockVdevs(targetIds, transaction);
-      const targetById = new Map(targetVdevs.map((vdev) => [vdev.id, vdev]));
+      const sourceVdevIds = [
+        ...new Set(snapshotRows.map((row) => row.logicalVdevId)),
+      ];
+      const allVdevIds = [...new Set([...targetIds, ...sourceVdevIds])].sort();
+      const lockedVdevs = await this.lockVdevs(allVdevIds, transaction);
+      const vdevById = new Map(lockedVdevs.map((vdev) => [vdev.id, vdev]));
+      const targetById = new Map(
+        targetIds
+          .filter((id) => vdevById.has(id))
+          .map((id) => [id, vdevById.get(id)!]),
+      );
       const missingTargets = targetIds.filter((id) => !targetById.has(id));
       if (missingTargets.length > 0) {
         throw new NotFoundException(
@@ -228,19 +364,40 @@ export class VdevMembershipService {
         );
       }
 
-      const sourceVdevIds = [
-        ...new Set(currentRows.map((row) => row.logicalVdevId)),
-      ];
-      const sourceVdevs = await this.lockVdevs(sourceVdevIds, transaction);
-      const sourceById = new Map(sourceVdevs.map((vdev) => [vdev.id, vdev]));
+      const sourceById = new Map(
+        sourceVdevIds
+          .filter((id) => vdevById.has(id))
+          .map((id) => [id, vdevById.get(id)!]),
+      );
+
+      await this.lockDrivesAndCurrent(driveIds, transaction);
+      const currentRows = await this.logicalDiskModel.findAll({
+        where: { physicalDriveId: driveIds },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+        order: [['physicalDriveId', 'ASC']],
+      });
+      const currentByDrive = new Map(
+        currentRows.map((row) => [row.physicalDriveId, row]),
+      );
+      const changedSource = currentRows.find(
+        (row) => !sourceById.has(row.logicalVdevId),
+      );
+      if (changedSource) {
+        throw new ConflictException(
+          `Physical drive ${changedSource.physicalDriveId} changed vdev concurrently; retry the move`,
+        );
+      }
 
       const sourcePoolIds = new Set(
-        sourceVdevs.map((vdev) => vdev.storagePoolId),
+        [...sourceById.values()].map((vdev) => vdev.storagePoolId),
       );
       const targetPoolIds = new Set(
-        targetVdevs.map((vdev) => vdev.storagePoolId),
+        [...targetById.values()].map((vdev) => vdev.storagePoolId),
       );
-      const pools = [...new Set([...sourcePoolIds, ...targetPoolIds])];
+      const pools: string[] = [
+        ...new Set<string>([...sourcePoolIds, ...targetPoolIds]),
+      ];
       const host = await this.sharedHost(pools, transaction);
 
       const targetCounts = new Map<string, number>();
@@ -252,6 +409,28 @@ export class VdevMembershipService {
           (targetCounts.get(move.targetVdevId) ?? 0) + 1,
         );
       }
+      const targetMemberRows = await this.logicalDiskModel.findAll({
+        where: { logicalVdevId: [...targetCounts.keys()] },
+        attributes: ['logicalVdevId', 'memberIndex'],
+        transaction,
+      });
+      const nextIndexByTarget = new Map<string, number>();
+      for (const row of targetMemberRows) {
+        nextIndexByTarget.set(
+          row.logicalVdevId,
+          Math.max(
+            nextIndexByTarget.get(row.logicalVdevId) ?? -1,
+            row.memberIndex,
+          ),
+        );
+      }
+      for (const targetId of targetCounts.keys()) {
+        nextIndexByTarget.set(
+          targetId,
+          (nextIndexByTarget.get(targetId) ?? -1) + 1,
+        );
+      }
+
       for (const [targetId, incoming] of targetCounts) {
         const target = targetById.get(targetId)!;
         const profile = target.redundancyProfile;
@@ -300,12 +479,20 @@ export class VdevMembershipService {
           move.osDeviceNodePath !== undefined
             ? move.osDeviceNodePath
             : current.osDeviceNodePath;
+        const memberIndex =
+          move.memberIndex ?? nextIndexByTarget.get(target.id) ?? 0;
+        nextIndexByTarget.set(target.id, memberIndex + 1);
+        const groupIndex =
+          move.groupIndex ??
+          this.groupIndexFor(target.redundancyProfile, memberIndex);
 
         await current.update(
           {
             logicalVdevId: target.id,
             osDeviceNodePath: devicePath,
             memberRole: role,
+            memberIndex,
+            groupIndex,
             attachedAt: new Date(),
           },
           { transaction },
@@ -319,6 +506,8 @@ export class VdevMembershipService {
             fromVdevId,
             toVdevId: target.id,
             memberRole: role,
+            memberIndex,
+            groupIndex,
             osDeviceNodePath: devicePath,
             performedByUserId: performedByUserId ?? null,
             correlationId,
@@ -367,6 +556,8 @@ export class VdevMembershipService {
         physicalDriveId: string;
         osDeviceNodePath?: string | null;
         memberRole?: VdevMemberRole;
+        memberIndex?: number;
+        groupIndex?: number;
       }> = [];
       const desiredDriveIds = new Set<string>();
       for (const layout of dto.vdevs) {
@@ -382,6 +573,8 @@ export class VdevMembershipService {
             physicalDriveId: member.physicalDriveId,
             osDeviceNodePath: member.osDeviceNodePath,
             memberRole: member.memberRole,
+            memberIndex: member.memberIndex,
+            groupIndex: member.groupIndex,
           });
         }
       }
@@ -397,6 +590,25 @@ export class VdevMembershipService {
           ),
         ),
       );
+
+      await this.lockDrivesAndCurrent([...desiredDriveIds], transaction);
+      const elsewhere = await this.logicalDiskModel.findAll({
+        where: {
+          physicalDriveId: [...desiredDriveIds],
+          logicalVdevId: { [Op.notIn]: vdevIds },
+        },
+        attributes: ['physicalDriveId', 'logicalVdevId'],
+        transaction,
+      });
+      if (elsewhere.length > 0) {
+        throw new ConflictException(
+          `Physical drive(s) ${elsewhere
+            .map((row) => row.physicalDriveId)
+            .join(
+              ', ',
+            )} are assigned to vdevs outside this pool; use the vdev move operation`,
+        );
+      }
 
       for (const vdev of vdevs) {
         const profile = vdev.redundancyProfile;
@@ -423,6 +635,8 @@ export class VdevMembershipService {
       );
 
       const correlationId = randomUUID();
+      const vdevById = new Map(vdevs.map((vdev) => [vdev.id, vdev]));
+      const nextIndexByVdev = new Map<string, number>();
       const toRemove = current.filter(
         (row) => !desiredByDrive.has(row.physicalDriveId),
       );
@@ -435,6 +649,8 @@ export class VdevMembershipService {
             logicalVdevId: row.logicalVdevId,
             fromVdevId: row.logicalVdevId,
             memberRole: row.memberRole,
+            memberIndex: row.memberIndex,
+            groupIndex: row.groupIndex,
             osDeviceNodePath: row.osDeviceNodePath,
             performedByUserId: performedByUserId ?? null,
             correlationId,
@@ -448,6 +664,15 @@ export class VdevMembershipService {
         const existing = currentByDrive.get(entry.physicalDriveId);
         const role =
           entry.memberRole ?? existing?.memberRole ?? VdevMemberRole.DATA;
+        const memberIndex =
+          entry.memberIndex ?? nextIndexByVdev.get(entry.vdevId) ?? 0;
+        nextIndexByVdev.set(entry.vdevId, memberIndex + 1);
+        const groupIndex =
+          entry.groupIndex ??
+          this.groupIndexFor(
+            vdevById.get(entry.vdevId)?.redundancyProfile,
+            memberIndex,
+          );
         if (!existing) {
           await this.ensureDriveExists(entry.physicalDriveId, transaction);
           await this.logicalDiskModel.create(
@@ -456,6 +681,8 @@ export class VdevMembershipService {
               physicalDriveId: entry.physicalDriveId,
               osDeviceNodePath: entry.osDeviceNodePath ?? null,
               memberRole: role,
+              memberIndex,
+              groupIndex,
               attachedAt: new Date(),
             } as Partial<LogicalDisk>,
             { transaction },
@@ -467,6 +694,8 @@ export class VdevMembershipService {
               logicalVdevId: entry.vdevId,
               toVdevId: entry.vdevId,
               memberRole: role,
+              memberIndex,
+              groupIndex,
               osDeviceNodePath: entry.osDeviceNodePath ?? null,
               performedByUserId: performedByUserId ?? null,
               correlationId,
@@ -484,7 +713,9 @@ export class VdevMembershipService {
         const changed =
           existing.logicalVdevId !== entry.vdevId ||
           existing.osDeviceNodePath !== nextPath ||
-          existing.memberRole !== role;
+          existing.memberRole !== role ||
+          existing.memberIndex !== memberIndex ||
+          existing.groupIndex !== groupIndex;
         if (!changed) continue;
 
         const fromVdevId = existing.logicalVdevId;
@@ -494,6 +725,8 @@ export class VdevMembershipService {
             logicalVdevId: entry.vdevId,
             osDeviceNodePath: nextPath,
             memberRole: role,
+            memberIndex,
+            groupIndex,
             attachedAt: new Date(),
           },
           { transaction },
@@ -508,6 +741,8 @@ export class VdevMembershipService {
             fromVdevId,
             toVdevId: entry.vdevId,
             memberRole: role,
+            memberIndex,
+            groupIndex,
             osDeviceNodePath: nextPath,
             performedByUserId: performedByUserId ?? null,
             correlationId,
@@ -534,6 +769,8 @@ export class VdevMembershipService {
       fromVdevId?: string | null;
       toVdevId?: string | null;
       memberRole: VdevMemberRole;
+      memberIndex?: number | null;
+      groupIndex?: number | null;
       osDeviceNodePath: string | null;
       performedByUserId: string | null;
       correlationId: string;
@@ -550,6 +787,8 @@ export class VdevMembershipService {
         fromVdevId: data.fromVdevId ?? null,
         toVdevId: data.toVdevId ?? null,
         memberRole: data.memberRole,
+        memberIndex: data.memberIndex ?? null,
+        groupIndex: data.groupIndex ?? null,
         osDeviceNodePath: data.osDeviceNodePath,
         eventTimestamp: new Date(),
         performedByUserId: data.performedByUserId,
@@ -559,6 +798,34 @@ export class VdevMembershipService {
       } as Partial<LogicalDiskEvent>,
       { transaction },
     );
+  }
+
+  private groupIndexFor(
+    profile: VdevProfile | undefined,
+    memberIndex: number,
+  ): number | null {
+    if (!profile || profile.capacityMode !== VdevCapacityMode.MIRROR_GROUPS)
+      return null;
+    return Math.floor(memberIndex / Math.max(2, profile.mirrorCopies || 2));
+  }
+
+  private async lockDrivesAndCurrent(
+    driveIds: string[],
+    transaction: Transaction,
+  ): Promise<void> {
+    if (driveIds.length === 0) return;
+    await this.physicalDriveModel.findAll({
+      where: { id: driveIds },
+      order: [['id', 'ASC']],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    await this.logicalDiskModel.findAll({
+      where: { physicalDriveId: driveIds },
+      order: [['physicalDriveId', 'ASC']],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
   }
 
   private async vdevModelOrThrow(

@@ -28,4 +28,13 @@ export class VdevMoveController {
     const actorId = user?.dbUser?.id ?? user?.id ?? null;
     return this.membershipService.move(dto, actorId);
   }
+
+  @Post('reconcile')
+  @CheckPolicy('reconcile', 'logical-disks')
+  @ApiOperation({
+    summary: 'Rebuild the current vdev membership projection from events',
+  })
+  async reconcile() {
+    return this.membershipService.reconcileProjection();
+  }
 }

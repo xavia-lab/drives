@@ -54,6 +54,10 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
+      profile_snapshot: {
+        type: Sequelize.JSONB,
+        allowNull: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

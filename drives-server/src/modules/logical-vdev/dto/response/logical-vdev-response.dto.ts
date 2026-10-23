@@ -30,6 +30,12 @@ export class LogicalVdevResponseDto {
   @Expose() vdevClass: VdevClass;
   @Expose() sortOrder: number;
   @Expose() notes: string | null;
+  @Expose()
+  @Transform(({ obj }) => {
+    const value = obj as { profileSnapshot?: Record<string, unknown> | null };
+    return value.profileSnapshot;
+  })
+  profileSnapshot: Record<string, unknown> | null;
   @Expose() createdAt: Date;
   @Expose() updatedAt: Date;
 

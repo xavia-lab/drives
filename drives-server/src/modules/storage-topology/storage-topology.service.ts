@@ -108,18 +108,39 @@ export class StorageTopologyService {
     transaction?: Transaction,
   ): Promise<AccessibleDrive[]> {
     const host = await this.getCurrentHost(storagePoolId, transaction);
-    if (!host || !host.hostServerId) {
+    if (!host) {
       return [];
     }
-
-    const board = await this.serverSlotAllocationService.getBoard(
-      host.hostServerId,
+    return this.getAccessibleDrivesForHost(
+      host.type,
+      host.serverId,
+      transaction,
     );
+  }
+
+  async getAccessibleDrivesForHost(
+    hostType: PoolHostType,
+    hostServerId: string,
+    transaction?: Transaction,
+  ): Promise<AccessibleDrive[]> {
+    let physicalServerId = hostServerId;
+    if (hostType === 'VIRTUAL') {
+      const guest = await this.virtualServerModel.findByPk(hostServerId, {
+        transaction,
+      });
+      if (!guest) {
+        return [];
+      }
+      physicalServerId = guest.hostServerId;
+    }
+
+    const board =
+      await this.serverSlotAllocationService.getBoard(physicalServerId);
 
     let allowedSlotIds: Set<string> | null = null;
-    if (host.type === 'VIRTUAL') {
+    if (hostType === 'VIRTUAL') {
       const passthrough = await this.passthroughSlotModel.findAll({
-        where: { virtualServerId: host.serverId },
+        where: { virtualServerId: hostServerId },
         attributes: ['serverSlotId'],
         transaction,
       });
@@ -135,7 +156,7 @@ export class StorageTopologyService {
         driveId: slot.occupancy!.physicalDriveId,
         slotId: slot.id,
         slotLabel: slot.slotLabel,
-        serverId: host.hostServerId,
+        serverId: physicalServerId,
         serverHostname: board.server.hostname,
         datacenterId: board.server.datacenterId,
         label: slot.occupancy!.driveLabel,
@@ -153,6 +174,22 @@ export class StorageTopologyService {
       (await this.getAccessibleDrives(storagePoolId, transaction)).map(
         (drive) => drive.driveId,
       ),
+    );
+  }
+
+  async getAccessibleDriveIdsForHost(
+    hostType: PoolHostType,
+    hostServerId: string,
+    transaction?: Transaction,
+  ): Promise<Set<string>> {
+    return new Set(
+      (
+        await this.getAccessibleDrivesForHost(
+          hostType,
+          hostServerId,
+          transaction,
+        )
+      ).map((drive) => drive.driveId),
     );
   }
 

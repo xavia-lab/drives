@@ -62,6 +62,9 @@ export class LogicalVdev extends BaseModel {
   @Column({ type: DataType.TEXT, allowNull: true })
   declare notes: string | null;
 
+  @Column({ type: DataType.JSONB, allowNull: true, field: 'profile_snapshot' })
+  declare profileSnapshot: Record<string, unknown> | null;
+
   @ForeignKey(() => StoragePool)
   @Column({ type: DataType.UUID, allowNull: false, field: 'storage_pool_id' })
   declare storagePoolId: string;

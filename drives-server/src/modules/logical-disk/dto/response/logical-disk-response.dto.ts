@@ -20,6 +20,8 @@ export class LogicalDiskResponseDto {
   @Expose() physicalDriveId: string;
   @Expose() osDeviceNodePath: string | null;
   @Expose() memberRole: VdevMemberRole;
+  @Expose() memberIndex: number;
+  @Expose() groupIndex: number | null;
   @Expose() attachedAt: Date;
   @Expose() createdAt: Date;
   @Expose() updatedAt: Date;

@@ -10,6 +10,7 @@ import { ServerSlot } from '../physical-server/entities/server-slot.entity';
 import { OperatingSystem } from '../operating-system/entities/operating-system.entity';
 import { PhysicalCpu } from '../physical-cpu/entities/physical-cpu.entity';
 import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
+import { ServerSlotAllocationModule } from '../server-slot-allocation/server-slot-allocation.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CpuModel } from '../cpu-model/entities/cpu-model.entity';
       PhysicalCpu,
       CpuModel,
     ]),
+    ServerSlotAllocationModule,
   ],
   controllers: [VirtualServerController],
   providers: [VirtualServerService, PassthroughSlotService],

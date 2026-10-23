@@ -17,6 +17,8 @@ export class LogicalDiskEventResponseDto {
   @Expose() fromVdevId: string | null;
   @Expose() toVdevId: string | null;
   @Expose() memberRole: VdevMemberRole | null;
+  @Expose() memberIndex: number | null;
+  @Expose() groupIndex: number | null;
   @Expose() osDeviceNodePath: string | null;
   @Expose() eventTimestamp: Date;
   @Expose() performedByUserId: string | null;

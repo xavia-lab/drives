@@ -56,6 +56,14 @@ module.exports = {
         type: Sequelize.STRING(32),
         allowNull: true,
       },
+      member_index: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
+      group_index: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       event_timestamp: {
         type: Sequelize.DATE,
         allowNull: false,

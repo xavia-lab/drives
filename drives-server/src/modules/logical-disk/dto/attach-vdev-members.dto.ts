@@ -2,10 +2,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   Length,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -29,6 +31,18 @@ export class VdevMemberInputDto {
   @IsOptional()
   @IsEnum(VdevMemberRole)
   memberRole?: VdevMemberRole;
+
+  @ApiPropertyOptional({ description: 'Explicit member order within the vdev' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  memberIndex?: number;
+
+  @ApiPropertyOptional({ description: 'Mirror/stripe group index (RAID10)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  groupIndex?: number;
 }
 
 export class AttachVdevMembersDto {

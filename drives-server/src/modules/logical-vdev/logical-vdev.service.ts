@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { WhereOptions } from 'sequelize';
+import { Op, Transaction, WhereOptions } from 'sequelize';
 import { LogicalVdev, VdevClass } from './entities/logical-vdev.entity';
 import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
@@ -118,7 +118,9 @@ export class LogicalVdevService {
 
   async create(createDto: CreateLogicalVdevDto): Promise<LogicalVdev> {
     await this.assertPoolExists(createDto.storagePoolId);
-    await this.assertProfileExists(createDto.redundancyProfileId);
+    const profile = await this.assertProfileExists(
+      createDto.redundancyProfileId,
+    );
     await this.assertUniqueName(createDto.storagePoolId, createDto.vdevName);
 
     const created = await this.logicalVdevModel.create({
@@ -129,6 +131,7 @@ export class LogicalVdevService {
       vdevClass: createDto.vdevClass ?? VdevClass.DATA,
       sortOrder: createDto.sortOrder ?? 0,
       notes: createDto.notes ?? null,
+      profileSnapshot: profile.toJSON(),
     } as Partial<LogicalVdev>);
 
     return this.findOne(created.id);
@@ -143,8 +146,11 @@ export class LogicalVdevService {
       throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
     }
 
+    let nextProfile: VdevProfile | null = null;
     if (updateDto.redundancyProfileId) {
-      await this.assertProfileExists(updateDto.redundancyProfileId);
+      nextProfile = await this.assertProfileExists(
+        updateDto.redundancyProfileId,
+      );
     }
     if (
       updateDto.storagePoolId &&
@@ -177,6 +183,9 @@ export class LogicalVdevService {
     if (updateDto.sortOrder !== undefined)
       update.sortOrder = updateDto.sortOrder;
     if (updateDto.notes !== undefined) update.notes = updateDto.notes;
+    if (nextProfile) {
+      update.profileSnapshot = nextProfile.toJSON();
+    }
 
     await vdev.update(update);
     return this.findOne(id);
@@ -199,6 +208,24 @@ export class LogicalVdevService {
 
     await vdev.destroy();
     return true;
+  }
+
+  async getPoolMemberDriveIds(
+    storagePoolId: string,
+    transaction?: Transaction,
+  ): Promise<string[]> {
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { storagePoolId },
+      attributes: ['id'],
+      transaction,
+    });
+    if (vdevs.length === 0) return [];
+    const members = await this.logicalDiskModel.findAll({
+      where: { logicalVdevId: { [Op.in]: vdevs.map((vdev) => vdev.id) } },
+      attributes: ['physicalDriveId'],
+      transaction,
+    });
+    return [...new Set(members.map((member) => member.physicalDriveId))];
   }
 
   async getPoolCapacity(poolId: string) {
@@ -249,13 +276,12 @@ export class LogicalVdevService {
     }
   }
 
-  private async assertProfileExists(id: string): Promise<void> {
-    const exists = await this.vdevProfileModel.findByPk(id, {
-      attributes: ['id'],
-    });
-    if (!exists) {
+  private async assertProfileExists(id: string): Promise<VdevProfile> {
+    const profile = await this.vdevProfileModel.findByPk(id);
+    if (!profile) {
       throw new NotFoundException(`VdevProfile with ID ${id} not found`);
     }
+    return profile;
   }
 
   private async assertUniqueName(

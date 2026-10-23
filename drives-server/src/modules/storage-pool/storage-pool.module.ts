@@ -9,6 +9,7 @@ import { VirtualServer } from '../virtual-server/entities/virtual-server.entity'
 import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { LogicalVdevModule } from '../logical-vdev/logical-vdev.module';
 import { StoragePoolReportController } from './storage-pool-report.controller';
+import { StorageTopologyModule } from '../storage-topology/storage-topology.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StoragePoolReportController } from './storage-pool-report.controller';
       PoolType,
     ]),
     LogicalVdevModule,
+    StorageTopologyModule,
   ],
   controllers: [StoragePoolReportController, StoragePoolController],
   providers: [StoragePoolService],

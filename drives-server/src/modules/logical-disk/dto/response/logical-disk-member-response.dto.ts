@@ -23,6 +23,8 @@ export class LogicalDiskMemberResponseDto {
   @Expose() physicalDriveId: string;
   @Expose() osDeviceNodePath: string | null;
   @Expose() memberRole: VdevMemberRole;
+  @Expose() memberIndex: number;
+  @Expose() groupIndex: number | null;
   @Expose() attachedAt: Date;
   @Expose() @Type(() => VdevShallowDto) logicalVdev?: VdevShallowDto;
   @Expose() @Type(() => DriveShallowDto) physicalDrive?: DriveShallowDto;

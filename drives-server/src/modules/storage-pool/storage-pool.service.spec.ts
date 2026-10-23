@@ -13,6 +13,8 @@ import { PhysicalServer } from '../physical-server/entities/physical-server.enti
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { PaginationService } from '../pagination/pagination.service';
+import { LogicalVdevService } from '../logical-vdev/logical-vdev.service';
+import { StorageTopologyService } from '../storage-topology/storage-topology.service';
 import { CreateStoragePoolDto } from './dto/create-storage-pool.dto';
 import {
   describe,
@@ -34,6 +36,8 @@ describe('StoragePoolService', () => {
   let mockVirtualServerModel: Record<string, Mock>;
   let mockPoolTypeModel: Record<string, Mock>;
   let mockPaginationService: Mocked<PaginationService>;
+  let mockLogicalVdevService: { getPoolMemberDriveIds: Mock };
+  let mockStorageTopology: { getAccessibleDriveIdsForHost: Mock };
   let mockTransaction: { LOCK: { UPDATE: string } };
   let mockSequelize: { transaction: Mock };
 
@@ -56,6 +60,12 @@ describe('StoragePoolService', () => {
 
     mockPaginationService = {
       paginate: vi.fn(),
+    };
+    mockLogicalVdevService = {
+      getPoolMemberDriveIds: vi.fn().mockResolvedValue([]),
+    };
+    mockStorageTopology = {
+      getAccessibleDriveIdsForHost: vi.fn().mockResolvedValue(new Set()),
     };
 
     mockTransaction = { LOCK: { UPDATE: 'UPDATE' } };
@@ -91,6 +101,8 @@ describe('StoragePoolService', () => {
           useValue: mockSequelize,
         },
         { provide: PaginationService, useValue: mockPaginationService },
+        { provide: LogicalVdevService, useValue: mockLogicalVdevService },
+        { provide: StorageTopologyService, useValue: mockStorageTopology },
       ],
     }).compile();
 
