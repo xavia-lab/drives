@@ -4,14 +4,19 @@ resourcePolicy:
   resource: "physical-cpus"
   rules:
     # 1. Admin can ALWAYS create, show, and list
-    - actions: ["create", "show", "list", "edit", "delete"]
+    - actions: ["create", "acquire", "show", "list", "edit", "delete"]
       effect: EFFECT_ALLOW
       roles:
         - admin
 
-    # 2. Viewer
-    - actions: ["show", "list"]
+    # 2. Workflow operators can acquire CPUs
+    - actions: ["acquire", "show", "list"]
       effect: EFFECT_ALLOW
       roles:
         - user
+
+    # 3. Viewer is read-only
+    - actions: ["show", "list"]
+      effect: EFFECT_ALLOW
+      roles:
         - viewer

@@ -5,6 +5,7 @@ import {
   PaperClipOutlined,
   SwapOutlined,
   SyncOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { WorkflowDefinition } from "@components/workflow";
 
@@ -20,6 +21,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
       "Register a newly purchased drive, its purchase details, receiving datacenter and ACQUIRE lifecycle event.",
     href: "/workflows/drive-acquisition",
     icon: <HddOutlined />,
+    category: "Inventory",
+  },
+  {
+    key: "cpu-acquisition",
+    title: "New CPU Acquisition",
+    description:
+      "Register a purchased processor, select or create its CPU model, and record purchase and warranty details.",
+    href: "/workflows/cpu-acquisition",
+    icon: <ThunderboltOutlined />,
     category: "Inventory",
   },
   {

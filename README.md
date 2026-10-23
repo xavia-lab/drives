@@ -17,7 +17,7 @@ The project is a pnpm + Turborepo monorepo with a NestJS API, a Next.js/Refine f
 - **Warranty and RMA** — warranty claims with independent tracking timelines, replacement-drive links, and derived claim status.
 - **Media attachments** — photos, invoices, certificates, and documents attached to drives, deduplicated by content hash.
 - **Dashboards** — fleet distribution, lifecycle health, slot utilization, warranty watchlist, RMA pipeline, capital/age analysis, datacenter health, and recent activity.
-- **Guided workflows** — drive acquisition, relocation, allocation, media management, and warranty claim creation/progression.
+- **Guided workflows** — drive acquisition, CPU acquisition, relocation, allocation, media management, and warranty claim creation/progression.
 - **Role-based access** — `admin`, `user`, and `viewer` roles enforced by Cerbos and mirrored in the UI.
 - **Background tasks** — scheduled exchange-rate sync, exchange-rate housekeeping, content-store cleanup, and content-store garbage collection, with run history in the UI.
 
