@@ -14,6 +14,7 @@ import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
 import { StoragePoolHostActions } from "@app/storage-pools/_components/storage-pool-host-actions";
+import { StoragePoolVdevManager } from "@app/storage-pools/_components/storage-pool-vdev-manager";
 import {
   StoragePoolHostsTimeline,
   type StoragePoolHostEvent,
@@ -118,6 +119,8 @@ export default function StoragePoolShow() {
         >
           <StoragePoolHostsTimeline events={hosts} />
         </Card>
+
+        <StoragePoolVdevManager poolId={record?.id as string | undefined} />
 
         <Row justify="center" gutter={32}>
           <Col style={{ textAlign: "center" }}>

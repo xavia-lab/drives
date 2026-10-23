@@ -31,6 +31,10 @@ export interface AccessibleDrive {
   serverId: string;
   serverHostname: string;
   datacenterId: string;
+  label: string;
+  serialNumber: string;
+  driveModelId: string;
+  driveModelName: string | null;
   devicePath?: string | null;
 }
 
@@ -134,6 +138,10 @@ export class StorageTopologyService {
         serverId: host.hostServerId,
         serverHostname: board.server.hostname,
         datacenterId: board.server.datacenterId,
+        label: slot.occupancy!.driveLabel,
+        serialNumber: slot.occupancy!.serialNumber,
+        driveModelId: slot.occupancy!.driveModelId,
+        driveModelName: slot.occupancy!.driveModelName,
       }));
   }
 

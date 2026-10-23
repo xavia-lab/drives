@@ -89,7 +89,16 @@ export class LogicalVdevService {
         ['displayKey', 'ASC'],
       ],
     });
-    return this.enrich(vdevs);
+    await this.enrich(vdevs);
+    await Promise.all(
+      vdevs.map(async (vdev) => {
+        vdev.setDataValue(
+          'members',
+          await this.capacityService.getMembers(vdev.id),
+        );
+      }),
+    );
+    return vdevs;
   }
 
   async findOne(id: string): Promise<LogicalVdev> {

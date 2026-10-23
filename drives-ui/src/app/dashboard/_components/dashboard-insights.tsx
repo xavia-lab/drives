@@ -12,6 +12,7 @@ import { CapitalAgeCard } from "./capital-age-card";
 import { RecentActivityCard } from "./recent-activity-card";
 import { RmaPipelineCard } from "./rma-pipeline-card";
 import { OldestInUseCard } from "./oldest-in-use-card";
+import { StorageCapacityReportCard } from "./storage-capacity-report-card";
 import type { DashboardSummary } from "./types";
 
 /**
@@ -93,6 +94,8 @@ export const DashboardInsights = () => {
           <CapitalAgeCard capital={summary.capitalAge} />
         </Col>
       </Row>
+
+      <StorageCapacityReportCard />
 
       <Row gutter={[16, 16]} align="stretch">
         <Col xs={24} xl={14}>

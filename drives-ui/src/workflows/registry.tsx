@@ -6,6 +6,7 @@ import {
   SwapOutlined,
   SyncOutlined,
   ThunderboltOutlined,
+  DatabaseOutlined,
 } from "@ant-design/icons";
 import type { WorkflowDefinition } from "@components/workflow";
 
@@ -31,6 +32,15 @@ export const WORKFLOWS: WorkflowDefinition[] = [
     href: "/workflows/cpu-acquisition",
     icon: <ThunderboltOutlined />,
     category: "Inventory",
+  },
+  {
+    key: "storage-vdev-management",
+    title: "Storage Vdev Management",
+    description:
+      "Create and manage vdevs, member drives and capacity for storage pools on a server.",
+    href: "/workflows/storage-vdev-management",
+    icon: <DatabaseOutlined />,
+    category: "Storage",
   },
   {
     key: "drive-relocation",

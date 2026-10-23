@@ -2,7 +2,9 @@
 
 import { useApiUrl, useCustom } from "@refinedev/core";
 import type { BaseRecord } from "@refinedev/core";
-import { Card, Empty, Table, Tag, Typography } from "antd";
+import { Button, Card, Empty, Table, Tag, Typography } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
+import NextLink from "next/link";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 
@@ -42,7 +44,18 @@ export const AttachedStoragePools = ({
   const pools = (result?.data ?? []) as BaseRecord[];
 
   return (
-    <Card title={"Attached Storage Pools"}>
+    <Card
+      title={"Attached Storage Pools"}
+      extra={
+        serverId ? (
+          <NextLink
+            href={`/workflows/storage-vdev-management?hostType=${serverType}&hostId=${serverId}`}
+          >
+            <Button icon={<DatabaseOutlined />}>Manage Vdevs</Button>
+          </NextLink>
+        ) : undefined
+      }
+    >
       {pools.length > 0 ? (
         <Table
           dataSource={pools}
