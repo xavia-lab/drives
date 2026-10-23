@@ -96,6 +96,23 @@ export class DriveModelController {
     return this.driveModelService.create(createDriveModelDto);
   }
 
+  @Post('workflows')
+  @CheckPolicy('create-workflow', 'drive-models')
+  @InvalidateCache('drive-models')
+  @ApiOperation({
+    summary: 'Create a drive model from the drive-acquisition workflow',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'DriveModel created successfully',
+  })
+  @ApiResponse({ status: 409, description: 'DriveModel already exists' })
+  async createForWorkflow(
+    @Body() createDriveModelDto: CreateDriveModelDto,
+  ): Promise<DriveModel> {
+    return this.driveModelService.create(createDriveModelDto);
+  }
+
   @Put(':id')
   @CheckPolicy('edit', 'drive-models')
   @InvalidateCache('drive-models')

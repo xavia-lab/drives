@@ -23,7 +23,7 @@ import {
   Typography,
   Upload,
 } from "antd";
-import type { UploadProps } from "antd";
+import type { SelectProps, UploadProps } from "antd";
 import {
   DeleteOutlined,
   EnvironmentOutlined,
@@ -31,6 +31,7 @@ import {
   HddOutlined,
   InboxOutlined,
   PaperClipOutlined,
+  PlusOutlined,
   ShoppingCartOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -41,8 +42,35 @@ import {
 } from "@components/workflow";
 import { CurrencyFormatter } from "@utils/currency-formatter";
 import { BinaryService } from "@providers/binary-data-provider";
+import {
+  DriveModelSubWorkflow,
+  type CreatedDriveModel,
+} from "./drive-model-sub-workflow";
 
 const { Text } = Typography;
+
+type DriveModelSelectProps = SelectProps & {
+  canCreate: boolean;
+  onCreate: () => void;
+};
+
+/**
+ * Form.Item clones its direct child, so this wrapper must forward `value` and
+ * `onChange` to the Select. Keeping the create button outside the Select still
+ * lets Form.Item control the selected model.
+ */
+const DriveModelSelect = ({
+  canCreate,
+  onCreate,
+  ...selectProps
+}: DriveModelSelectProps) => (
+  <Space.Compact style={{ width: "100%" }}>
+    <Select {...selectProps} style={{ width: "100%" }} />
+    <Button icon={<PlusOutlined />} disabled={!canCreate} onClick={onCreate}>
+      New model
+    </Button>
+  </Space.Compact>
+);
 
 const PAGE_SIZE = 250;
 const formatter = new CurrencyFormatter();
@@ -142,6 +170,8 @@ export const DriveAcquisitionWorkflow = () => {
   const { open } = useNotification();
   const { mutateAsync: acquireDrive } = useCustomMutation();
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
+  const [createdModels, setCreatedModels] = useState<DriveModelRecord[]>([]);
+  const [modelModalOpen, setModelModalOpen] = useState(false);
 
   const addFiles = (files: File[]) => {
     setMediaDrafts((current) => {
@@ -288,9 +318,17 @@ export const DriveAcquisitionWorkflow = () => {
     () => new Map(retailers.map((vendor) => [vendor.id, vendor.name])),
     [retailers],
   );
+  const modelRecords = useMemo(() => {
+    const records = new Map(driveModels.map((model) => [model.id, model]));
+    for (const model of createdModels) {
+      records.set(model.id, model);
+    }
+    return Array.from(records.values());
+  }, [createdModels, driveModels]);
+
   const modelsById = useMemo(
-    () => new Map(driveModels.map((model) => [model.id, model])),
-    [driveModels],
+    () => new Map(modelRecords.map((model) => [model.id, model])),
+    [modelRecords],
   );
   const currenciesById = useMemo(
     () => new Map(currencies.map((currency) => [currency.id, currency])),
@@ -303,10 +341,13 @@ export const DriveAcquisitionWorkflow = () => {
 
   const selectedManufacturerId = Form.useWatch("manufacturerId", form) as
     string | undefined;
+  const selectedManufacturerName = selectedManufacturerId
+    ? manufacturerNames.get(selectedManufacturerId)
+    : undefined;
 
   const modelOptions = useMemo(
     () =>
-      driveModels
+      modelRecords
         .filter(
           (model) =>
             !selectedManufacturerId ||
@@ -318,7 +359,7 @@ export const DriveAcquisitionWorkflow = () => {
             [model.name, model.modelNumber].filter(Boolean).join(" | "),
           value: model.id,
         })),
-    [driveModels, selectedManufacturerId],
+    [modelRecords, selectedManufacturerId],
   );
 
   const initialValues = useMemo<AcquisitionFormValues>(
@@ -363,7 +404,10 @@ export const DriveAcquisitionWorkflow = () => {
                   placeholder="Select manufacturer"
                   loading={vendorsQuery.isLoading}
                   options={manufacturerOptions}
-                  onChange={() => form.resetFields(["driveModelId"])}
+                  onChange={() => {
+                    form.resetFields(["driveModelId"]);
+                    setModelModalOpen(false);
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -373,7 +417,7 @@ export const DriveAcquisitionWorkflow = () => {
                 name="driveModelId"
                 rules={[{ required: true, message: "Select the drive model" }]}
               >
-                <Select
+                <DriveModelSelect
                   showSearch
                   optionFilterProp="label"
                   placeholder={
@@ -384,6 +428,8 @@ export const DriveAcquisitionWorkflow = () => {
                   disabled={!selectedManufacturerId}
                   loading={driveModelsQuery.isLoading}
                   options={modelOptions}
+                  canCreate={Boolean(selectedManufacturerId)}
+                  onCreate={() => setModelModalOpen(true)}
                 />
               </Form.Item>
             </Col>
@@ -902,18 +948,37 @@ export const DriveAcquisitionWorkflow = () => {
     );
   };
 
+  const handleModelCreated = (model: CreatedDriveModel) => {
+    setCreatedModels((current) => [
+      ...current.filter((item) => item.id !== model.id),
+      model as DriveModelRecord,
+    ]);
+    form.setFieldValue("driveModelId", model.id);
+    setModelModalOpen(false);
+    void driveModelsQuery.refetch();
+  };
+
   return (
-    <WorkflowWizard
-      title="New Drive Acquisition"
-      subtitle="Register a purchased drive, its receiving datacenter and acquisition lifecycle event."
-      icon={<HddOutlined />}
-      form={form}
-      steps={steps}
-      initialValues={initialValues}
-      submitLabel="Acquire drive"
-      submittingLabel="Acquiring..."
-      onCancel={() => router.push("/dashboard")}
-      onFinish={handleFinish}
-    />
+    <>
+      <WorkflowWizard
+        title="New Drive Acquisition"
+        subtitle="Register a purchased drive, its receiving datacenter and acquisition lifecycle event."
+        icon={<HddOutlined />}
+        form={form}
+        steps={steps}
+        initialValues={initialValues}
+        submitLabel="Acquire drive"
+        submittingLabel="Acquiring..."
+        onCancel={() => router.push("/dashboard")}
+        onFinish={handleFinish}
+      />
+      <DriveModelSubWorkflow
+        open={modelModalOpen}
+        manufacturerId={selectedManufacturerId}
+        manufacturerName={selectedManufacturerName}
+        onCancel={() => setModelModalOpen(false)}
+        onCreated={handleModelCreated}
+      />
+    </>
   );
 };
