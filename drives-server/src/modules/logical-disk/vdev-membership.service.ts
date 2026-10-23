@@ -1,0 +1,719 @@
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
+import { Order, Sequelize, Transaction } from 'sequelize';
+import { randomUUID } from 'crypto';
+import { LogicalDisk, VdevMemberRole } from './entities/logical-disk.entity';
+import {
+  LogicalDiskEvent,
+  VdevMembershipAction,
+} from './entities/logical-disk-event.entity';
+import { LogicalVdev } from '../logical-vdev/entities/logical-vdev.entity';
+import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
+import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
+import { StorageTopologyService } from '../storage-topology/storage-topology.service';
+import {
+  VdevCapacityService,
+  type VdevCapacity,
+} from '../logical-vdev/vdev-capacity.service';
+import { AttachVdevMembersDto } from './dto/attach-vdev-members.dto';
+import { MoveVdevMembersDto } from './dto/move-vdev-members.dto';
+import { SaveVdevLayoutDto } from './dto/save-vdev-layout.dto';
+
+const MEMBER_ORDER: Order = [
+  ['memberRole', 'ASC'],
+  ['displayKey', 'ASC'],
+];
+
+@Injectable()
+export class VdevMembershipService {
+  constructor(
+    @InjectModel(LogicalDisk)
+    private readonly logicalDiskModel: typeof LogicalDisk,
+    @InjectModel(LogicalDiskEvent)
+    private readonly eventModel: typeof LogicalDiskEvent,
+    @InjectModel(LogicalVdev)
+    private readonly logicalVdevModel: typeof LogicalVdev,
+    @InjectModel(VdevProfile)
+    private readonly vdevProfileModel: typeof VdevProfile,
+    @InjectModel(PhysicalDrive)
+    private readonly physicalDriveModel: typeof PhysicalDrive,
+    @InjectConnection()
+    private readonly sequelize: Sequelize,
+    private readonly topology: StorageTopologyService,
+    private readonly capacity: VdevCapacityService,
+  ) {}
+
+  async getMembers(vdevId: string): Promise<LogicalDisk[]> {
+    return this.logicalDiskModel.findAll({
+      where: { logicalVdevId: vdevId },
+      include: [PhysicalDrive],
+      order: MEMBER_ORDER,
+    });
+  }
+
+  async getCapacity(vdevId: string): Promise<VdevCapacity> {
+    const vdev = await this.vdevModelOrThrow(vdevId);
+    return this.capacity.calculate(vdev);
+  }
+
+  async getHistory(vdevId: string): Promise<LogicalDiskEvent[]> {
+    const { Op } = await import('sequelize');
+    return this.eventModel.findAll({
+      where: {
+        [Op.or]: [
+          { logicalVdevId: vdevId },
+          { fromVdevId: vdevId },
+          { toVdevId: vdevId },
+        ],
+      },
+      include: [PhysicalDrive],
+      order: [
+        ['eventTimestamp', 'DESC'],
+        ['displayKey', 'DESC'],
+      ],
+    });
+  }
+
+  async attach(
+    vdevId: string,
+    dto: AttachVdevMembersDto,
+    performedByUserId?: string | null,
+  ): Promise<LogicalDisk[]> {
+    return this.sequelize.transaction(async (transaction) => {
+      const vdev = await this.lockVdev(vdevId, transaction);
+      const profile = vdev.redundancyProfile;
+      const driveIds = this.uniqueDriveIds(
+        dto.members.map((member) => member.physicalDriveId),
+      );
+      if (driveIds.length !== dto.members.length) {
+        throw new ConflictException(
+          'A physical drive may appear only once in an attach request',
+        );
+      }
+
+      await this.assertAccessible(vdev, driveIds, transaction);
+      await this.assertDrivesExist(driveIds, transaction);
+      await this.assertDriveNotAssigned(driveIds, transaction);
+
+      const currentCount = await this.logicalDiskModel.count({
+        where: { logicalVdevId: vdevId },
+        transaction,
+      });
+      if (
+        profile?.maxMembers != null &&
+        currentCount + driveIds.length > profile.maxMembers
+      ) {
+        throw new ConflictException(
+          `Vdev ${vdevId} accepts at most ${profile.maxMembers} members`,
+        );
+      }
+
+      const correlationId = randomUUID();
+      const created: LogicalDisk[] = [];
+      for (const member of dto.members) {
+        const row = await this.logicalDiskModel.create(
+          {
+            logicalVdevId: vdevId,
+            physicalDriveId: member.physicalDriveId,
+            osDeviceNodePath: member.osDeviceNodePath ?? null,
+            memberRole: member.memberRole ?? VdevMemberRole.DATA,
+            attachedAt: new Date(),
+          } as Partial<LogicalDisk>,
+          { transaction },
+        );
+        await this.appendEvent(
+          {
+            action: VdevMembershipAction.ATTACH,
+            physicalDriveId: member.physicalDriveId,
+            logicalVdevId: vdevId,
+            toVdevId: vdevId,
+            memberRole: member.memberRole ?? VdevMemberRole.DATA,
+            osDeviceNodePath: member.osDeviceNodePath ?? null,
+            performedByUserId: performedByUserId ?? null,
+            correlationId,
+            notes: dto.notes ?? null,
+          },
+          transaction,
+        );
+        created.push(row);
+      }
+
+      return created;
+    });
+  }
+
+  async detach(
+    vdevId: string,
+    physicalDriveId: string,
+    performedByUserId?: string | null,
+    notes?: string,
+  ): Promise<LogicalDisk[]> {
+    return this.sequelize.transaction(async (transaction) => {
+      await this.lockVdev(vdevId, transaction);
+      const current = await this.logicalDiskModel.findOne({
+        where: { logicalVdevId: vdevId, physicalDriveId },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!current) {
+        throw new NotFoundException(
+          `Physical drive ${physicalDriveId} is not a member of vdev ${vdevId}`,
+        );
+      }
+
+      await current.destroy({ transaction });
+      await this.appendEvent(
+        {
+          action: VdevMembershipAction.DETACH,
+          physicalDriveId,
+          logicalVdevId: vdevId,
+          fromVdevId: vdevId,
+          memberRole: current.memberRole,
+          osDeviceNodePath: current.osDeviceNodePath,
+          performedByUserId: performedByUserId ?? null,
+          correlationId: randomUUID(),
+          notes: notes ?? null,
+        },
+        transaction,
+      );
+
+      return this.getMembers(vdevId);
+    });
+  }
+
+  async move(
+    dto: MoveVdevMembersDto,
+    performedByUserId?: string | null,
+  ): Promise<LogicalDisk[]> {
+    return this.sequelize.transaction(async (transaction) => {
+      const driveIds = this.uniqueDriveIds(
+        dto.moves.map((move) => move.physicalDriveId),
+      );
+      if (driveIds.length !== dto.moves.length) {
+        throw new ConflictException(
+          'A physical drive may appear only once in a move request',
+        );
+      }
+
+      const currentRows = await this.logicalDiskModel.findAll({
+        where: { physicalDriveId: driveIds },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+        order: [['physicalDriveId', 'ASC']],
+      });
+      const currentByDrive = new Map(
+        currentRows.map((row) => [row.physicalDriveId, row]),
+      );
+      const missing = driveIds.filter((id) => !currentByDrive.has(id));
+      if (missing.length > 0) {
+        throw new NotFoundException(
+          `Physical drive(s) ${missing.join(', ')} are not assigned to a vdev`,
+        );
+      }
+
+      const targetIds = this.uniqueDriveIds(
+        dto.moves.map((move) => move.targetVdevId),
+      );
+      const targetVdevs = await this.lockVdevs(targetIds, transaction);
+      const targetById = new Map(targetVdevs.map((vdev) => [vdev.id, vdev]));
+      const missingTargets = targetIds.filter((id) => !targetById.has(id));
+      if (missingTargets.length > 0) {
+        throw new NotFoundException(
+          `Logical vdev(s) ${missingTargets.join(', ')} not found`,
+        );
+      }
+
+      const sourceVdevIds = [
+        ...new Set(currentRows.map((row) => row.logicalVdevId)),
+      ];
+      const sourceVdevs = await this.lockVdevs(sourceVdevIds, transaction);
+      const sourceById = new Map(sourceVdevs.map((vdev) => [vdev.id, vdev]));
+
+      const sourcePoolIds = new Set(
+        sourceVdevs.map((vdev) => vdev.storagePoolId),
+      );
+      const targetPoolIds = new Set(
+        targetVdevs.map((vdev) => vdev.storagePoolId),
+      );
+      const pools = [...new Set([...sourcePoolIds, ...targetPoolIds])];
+      const host = await this.sharedHost(pools, transaction);
+
+      const targetCounts = new Map<string, number>();
+      for (const move of dto.moves) {
+        const target = targetById.get(move.targetVdevId);
+        if (!target) continue;
+        targetCounts.set(
+          move.targetVdevId,
+          (targetCounts.get(move.targetVdevId) ?? 0) + 1,
+        );
+      }
+      for (const [targetId, incoming] of targetCounts) {
+        const target = targetById.get(targetId)!;
+        const profile = target.redundancyProfile;
+        const currentCount = await this.logicalDiskModel.count({
+          where: { logicalVdevId: targetId },
+          transaction,
+        });
+        const outgoing = dto.moves.filter(
+          (move) =>
+            currentByDrive.get(move.physicalDriveId)?.logicalVdevId ===
+            targetId,
+        ).length;
+        if (
+          profile?.maxMembers != null &&
+          currentCount + incoming - outgoing > profile.maxMembers
+        ) {
+          throw new ConflictException(
+            `Vdev ${targetId} accepts at most ${profile.maxMembers} members`,
+          );
+        }
+      }
+
+      await Promise.all(
+        [...new Set(dto.moves.map((move) => move.targetVdevId))].map(
+          (targetVdevId) => {
+            const target = targetById.get(targetVdevId)!;
+            return this.assertAccessible(
+              target,
+              dto.moves
+                .filter((move) => move.targetVdevId === targetVdevId)
+                .map((move) => move.physicalDriveId),
+              transaction,
+            );
+          },
+        ),
+      );
+
+      const correlationId = randomUUID();
+      for (const move of dto.moves) {
+        const current = currentByDrive.get(move.physicalDriveId)!;
+        const source = sourceById.get(current.logicalVdevId)!;
+        const target = targetById.get(move.targetVdevId)!;
+        const fromVdevId = current.logicalVdevId;
+        const role = move.memberRole ?? current.memberRole;
+        const devicePath =
+          move.osDeviceNodePath !== undefined
+            ? move.osDeviceNodePath
+            : current.osDeviceNodePath;
+
+        await current.update(
+          {
+            logicalVdevId: target.id,
+            osDeviceNodePath: devicePath,
+            memberRole: role,
+            attachedAt: new Date(),
+          },
+          { transaction },
+        );
+
+        await this.appendEvent(
+          {
+            action: VdevMembershipAction.MOVE,
+            physicalDriveId: move.physicalDriveId,
+            logicalVdevId: target.id,
+            fromVdevId,
+            toVdevId: target.id,
+            memberRole: role,
+            osDeviceNodePath: devicePath,
+            performedByUserId: performedByUserId ?? null,
+            correlationId,
+            notes: dto.reason ?? null,
+            contextMetadata: {
+              sourceStoragePoolId: source.storagePoolId,
+              targetStoragePoolId: target.storagePoolId,
+              hostType: host.type,
+              hostServerId: host.serverId,
+            },
+          },
+          transaction,
+        );
+      }
+
+      return this.logicalDiskModel.findAll({
+        where: { physicalDriveId: driveIds },
+        include: [PhysicalDrive],
+        order: MEMBER_ORDER,
+        transaction,
+      });
+    });
+  }
+
+  async saveLayout(
+    storagePoolId: string,
+    dto: SaveVdevLayoutDto,
+    performedByUserId?: string | null,
+  ): Promise<LogicalDisk[]> {
+    return this.sequelize.transaction(async (transaction) => {
+      const vdevIds = this.uniqueDriveIds(
+        dto.vdevs.map((layout) => layout.vdevId),
+      );
+      const vdevs = await this.lockVdevs(vdevIds, transaction);
+      if (vdevs.length !== vdevIds.length) {
+        throw new NotFoundException('One or more vdevs were not found');
+      }
+      if (vdevs.some((vdev) => vdev.storagePoolId !== storagePoolId)) {
+        throw new BadRequestException(
+          'Every vdev in the layout must belong to the target storage pool',
+        );
+      }
+
+      const desired: Array<{
+        vdevId: string;
+        physicalDriveId: string;
+        osDeviceNodePath?: string | null;
+        memberRole?: VdevMemberRole;
+      }> = [];
+      const desiredDriveIds = new Set<string>();
+      for (const layout of dto.vdevs) {
+        for (const member of layout.members) {
+          if (desiredDriveIds.has(member.physicalDriveId)) {
+            throw new ConflictException(
+              `Physical drive ${member.physicalDriveId} appears in more than one vdev`,
+            );
+          }
+          desiredDriveIds.add(member.physicalDriveId);
+          desired.push({
+            vdevId: layout.vdevId,
+            physicalDriveId: member.physicalDriveId,
+            osDeviceNodePath: member.osDeviceNodePath,
+            memberRole: member.memberRole,
+          });
+        }
+      }
+
+      await Promise.all(
+        vdevs.map((vdev) =>
+          this.assertAccessible(
+            vdev,
+            desired
+              .filter((entry) => entry.vdevId === vdev.id)
+              .map((entry) => entry.physicalDriveId),
+            transaction,
+          ),
+        ),
+      );
+
+      for (const vdev of vdevs) {
+        const profile = vdev.redundancyProfile;
+        const count = desired.filter(
+          (entry) => entry.vdevId === vdev.id,
+        ).length;
+        if (profile?.maxMembers != null && count > profile.maxMembers) {
+          throw new ConflictException(
+            `Vdev ${vdev.id} accepts at most ${profile.maxMembers} members`,
+          );
+        }
+      }
+
+      const current = await this.logicalDiskModel.findAll({
+        where: { logicalVdevId: vdevIds },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      const currentByDrive = new Map(
+        current.map((row) => [row.physicalDriveId, row]),
+      );
+      const desiredByDrive = new Map(
+        desired.map((entry) => [entry.physicalDriveId, entry]),
+      );
+
+      const correlationId = randomUUID();
+      const toRemove = current.filter(
+        (row) => !desiredByDrive.has(row.physicalDriveId),
+      );
+      for (const row of toRemove) {
+        await row.destroy({ transaction });
+        await this.appendEvent(
+          {
+            action: VdevMembershipAction.DETACH,
+            physicalDriveId: row.physicalDriveId,
+            logicalVdevId: row.logicalVdevId,
+            fromVdevId: row.logicalVdevId,
+            memberRole: row.memberRole,
+            osDeviceNodePath: row.osDeviceNodePath,
+            performedByUserId: performedByUserId ?? null,
+            correlationId,
+            notes: dto.notes ?? null,
+          },
+          transaction,
+        );
+      }
+
+      for (const entry of desired) {
+        const existing = currentByDrive.get(entry.physicalDriveId);
+        const role =
+          entry.memberRole ?? existing?.memberRole ?? VdevMemberRole.DATA;
+        if (!existing) {
+          await this.ensureDriveExists(entry.physicalDriveId, transaction);
+          await this.logicalDiskModel.create(
+            {
+              logicalVdevId: entry.vdevId,
+              physicalDriveId: entry.physicalDriveId,
+              osDeviceNodePath: entry.osDeviceNodePath ?? null,
+              memberRole: role,
+              attachedAt: new Date(),
+            } as Partial<LogicalDisk>,
+            { transaction },
+          );
+          await this.appendEvent(
+            {
+              action: VdevMembershipAction.ATTACH,
+              physicalDriveId: entry.physicalDriveId,
+              logicalVdevId: entry.vdevId,
+              toVdevId: entry.vdevId,
+              memberRole: role,
+              osDeviceNodePath: entry.osDeviceNodePath ?? null,
+              performedByUserId: performedByUserId ?? null,
+              correlationId,
+              notes: dto.notes ?? null,
+            },
+            transaction,
+          );
+          continue;
+        }
+
+        const nextPath =
+          entry.osDeviceNodePath !== undefined
+            ? entry.osDeviceNodePath
+            : existing.osDeviceNodePath;
+        const changed =
+          existing.logicalVdevId !== entry.vdevId ||
+          existing.osDeviceNodePath !== nextPath ||
+          existing.memberRole !== role;
+        if (!changed) continue;
+
+        const fromVdevId = existing.logicalVdevId;
+        const isMove = existing.logicalVdevId !== entry.vdevId;
+        await existing.update(
+          {
+            logicalVdevId: entry.vdevId,
+            osDeviceNodePath: nextPath,
+            memberRole: role,
+            attachedAt: new Date(),
+          },
+          { transaction },
+        );
+        await this.appendEvent(
+          {
+            action: isMove
+              ? VdevMembershipAction.MOVE
+              : VdevMembershipAction.UPDATE,
+            physicalDriveId: entry.physicalDriveId,
+            logicalVdevId: entry.vdevId,
+            fromVdevId,
+            toVdevId: entry.vdevId,
+            memberRole: role,
+            osDeviceNodePath: nextPath,
+            performedByUserId: performedByUserId ?? null,
+            correlationId,
+            notes: dto.notes ?? null,
+          },
+          transaction,
+        );
+      }
+
+      return this.logicalDiskModel.findAll({
+        where: { logicalVdevId: vdevIds },
+        include: [PhysicalDrive],
+        order: MEMBER_ORDER,
+        transaction,
+      });
+    });
+  }
+
+  private async appendEvent(
+    data: {
+      action: VdevMembershipAction;
+      physicalDriveId: string;
+      logicalVdevId: string;
+      fromVdevId?: string | null;
+      toVdevId?: string | null;
+      memberRole: VdevMemberRole;
+      osDeviceNodePath: string | null;
+      performedByUserId: string | null;
+      correlationId: string;
+      notes?: string | null;
+      contextMetadata?: Record<string, unknown> | null;
+    },
+    transaction: Transaction,
+  ): Promise<void> {
+    await this.eventModel.create(
+      {
+        action: data.action,
+        physicalDriveId: data.physicalDriveId,
+        logicalVdevId: data.logicalVdevId,
+        fromVdevId: data.fromVdevId ?? null,
+        toVdevId: data.toVdevId ?? null,
+        memberRole: data.memberRole,
+        osDeviceNodePath: data.osDeviceNodePath,
+        eventTimestamp: new Date(),
+        performedByUserId: data.performedByUserId,
+        correlationId: data.correlationId,
+        notes: data.notes ?? null,
+        contextMetadata: data.contextMetadata ?? null,
+      } as Partial<LogicalDiskEvent>,
+      { transaction },
+    );
+  }
+
+  private async vdevModelOrThrow(
+    id: string,
+    transaction?: Transaction,
+  ): Promise<LogicalVdev> {
+    const vdev = await this.logicalVdevModel.findByPk(id, {
+      include: [VdevProfile],
+      transaction,
+    });
+    if (!vdev) {
+      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+    }
+    return vdev;
+  }
+
+  private async lockVdev(
+    id: string,
+    transaction: Transaction,
+  ): Promise<LogicalVdev> {
+    const vdev = await this.logicalVdevModel.findByPk(id, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    if (!vdev) {
+      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+    }
+    const profile = await this.vdevProfileModel.findByPk(
+      vdev.redundancyProfileId,
+      { transaction },
+    );
+    if (!profile) {
+      throw new NotFoundException(
+        `VdevProfile with ID ${vdev.redundancyProfileId} not found`,
+      );
+    }
+    vdev.setDataValue('redundancyProfile', profile);
+    return vdev;
+  }
+
+  private async lockVdevs(
+    ids: string[],
+    transaction: Transaction,
+  ): Promise<LogicalVdev[]> {
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { id: ids },
+      order: [['id', 'ASC']],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    const profiles = await this.vdevProfileModel.findAll({
+      where: {
+        id: [...new Set(vdevs.map((vdev) => vdev.redundancyProfileId))],
+      },
+      transaction,
+    });
+    const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+    for (const vdev of vdevs) {
+      const profile = byId.get(vdev.redundancyProfileId);
+      if (profile) vdev.setDataValue('redundancyProfile', profile);
+    }
+    return vdevs;
+  }
+
+  private uniqueDriveIds(ids: string[]): string[] {
+    return [...new Set(ids)];
+  }
+
+  private async assertAccessible(
+    vdev: LogicalVdev,
+    driveIds: string[],
+    transaction: Transaction,
+  ): Promise<void> {
+    if (driveIds.length === 0) return;
+    const accessible = await this.topology.getAccessibleDriveIds(
+      vdev.storagePoolId,
+      transaction,
+    );
+    const missing = driveIds.filter((id) => !accessible.has(id));
+    if (missing.length > 0) {
+      throw new ConflictException(
+        `Physical drive(s) ${missing.join(', ')} are not accessible to the host of storage pool ${vdev.storagePoolId}`,
+      );
+    }
+  }
+
+  private async assertDrivesExist(
+    ids: string[],
+    transaction: Transaction,
+  ): Promise<void> {
+    const drives = await this.physicalDriveModel.findAll({
+      where: { id: ids },
+      attributes: ['id'],
+      transaction,
+    });
+    if (drives.length !== ids.length) {
+      const found = new Set(drives.map((drive) => drive.id));
+      throw new NotFoundException(
+        `Physical drive(s) ${ids.filter((id) => !found.has(id)).join(', ')} not found`,
+      );
+    }
+  }
+
+  private async ensureDriveExists(
+    id: string,
+    transaction: Transaction,
+  ): Promise<void> {
+    await this.assertDrivesExist([id], transaction);
+  }
+
+  private async assertDriveNotAssigned(
+    ids: string[],
+    transaction: Transaction,
+  ): Promise<void> {
+    const existing = await this.logicalDiskModel.findAll({
+      where: { physicalDriveId: ids },
+      attributes: ['physicalDriveId'],
+      transaction,
+    });
+    if (existing.length > 0) {
+      throw new ConflictException(
+        `Physical drive(s) ${existing.map((row) => row.physicalDriveId).join(', ')} are already assigned to a vdev`,
+      );
+    }
+  }
+
+  private async sharedHost(
+    poolIds: string[],
+    transaction: Transaction,
+  ): Promise<{ type: 'PHYSICAL' | 'VIRTUAL'; serverId: string }> {
+    if (poolIds.length === 0) {
+      throw new BadRequestException('No storage pool selected');
+    }
+    const hosts = await Promise.all(
+      poolIds.map((poolId) =>
+        this.topology.getCurrentHost(poolId, transaction),
+      ),
+    );
+    const first = hosts[0];
+    if (!first) {
+      throw new BadRequestException(
+        'All source and target pools must be attached to a host',
+      );
+    }
+    for (const host of hosts) {
+      if (
+        !host ||
+        host.type !== first.type ||
+        host.serverId !== first.serverId
+      ) {
+        throw new ConflictException(
+          'Vdev members can only move between pools on the same host',
+        );
+      }
+    }
+    return { type: first.type, serverId: first.serverId };
+  }
+}

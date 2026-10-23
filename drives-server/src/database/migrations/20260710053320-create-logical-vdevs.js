@@ -3,45 +3,56 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
     await queryInterface.createTable('logical_vdevs', {
       id: {
         type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
       },
       display_key: {
         type: Sequelize.INTEGER,
         allowNull: false,
         autoIncrement: true,
-        unique: true, // Automatically builds a unique index for sorting/filtering
+        unique: true,
       },
       storage_pool_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match storage_pools.id
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: 'storage_pools',
           key: 'id',
         },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT', // Blocks deleting a pool if it contains active underlying redundancy structures
+        onDelete: 'RESTRICT',
+      },
+      redundancy_profile_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: {
+          model: 'vdev_profiles',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       vdev_name: {
         type: Sequelize.STRING(32),
-        allowNull: false, // e.g., 'raidz2-0', 'mirror-1'
-      },
-      vdev_redundancy_profile: {
-        type: Sequelize.ENUM(
-          'STRIPE',
-          'MIRROR',
-          'RAIDZ1',
-          'RAIDZ2',
-          'RAIDZ3',
-          'JBOD_SINGLE',
-        ),
         allowNull: false,
+      },
+      vdev_class: {
+        type: Sequelize.ENUM('DATA', 'LOG', 'CACHE', 'SPECIAL', 'SPARE'),
+        allowNull: false,
+        defaultValue: 'DATA',
+      },
+      sort_order: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      notes: {
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -53,20 +64,28 @@ module.exports = {
       },
     });
 
-    // 2. Performance Optimization Indexes
     await queryInterface.addIndex('logical_vdevs', ['storage_pool_id'], {
       name: 'logical_vdevs_storage_pool_id_idx',
       using: 'btree',
     });
+    await queryInterface.addIndex(
+      'logical_vdevs',
+      ['storage_pool_id', 'vdev_name'],
+      {
+        name: 'logical_vdevs_pool_name_unique_idx',
+        unique: true,
+      },
+    );
+    await queryInterface.addIndex('logical_vdevs', ['redundancy_profile_id'], {
+      name: 'logical_vdevs_redundancy_profile_id_idx',
+      using: 'btree',
+    });
   },
 
-  async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove structural dependencies (Postgres handles internal sequence cleanup automatically)
+  async down(queryInterface) {
     await queryInterface.dropTable('logical_vdevs');
-
-    // Clean up localized PostgreSQL types created exclusively for this table state
     await queryInterface.sequelize.query(
-      `DROP TYPE IF EXISTS "enum_logical_vdevs_vdev_redundancy_profile";`,
+      `DROP TYPE IF EXISTS "enum_logical_vdevs_vdev_class";`,
     );
   },
 };
