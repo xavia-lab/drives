@@ -22,7 +22,10 @@ import { DriveLifecycleEvent } from '../modules/drive-lifecycle-event/entities/d
 import { FormFactor } from 'src/modules/form-factor/entities/form-factor.entity';
 import { Interface } from 'src/modules/interface/entities/interface.entity';
 import { LogicalDisk } from '../modules/logical-disk/entities/logical-disk.entity';
+import { LogicalDiskEvent } from '../modules/logical-disk/entities/logical-disk-event.entity';
 import { LogicalVdev } from '../modules/logical-vdev/entities/logical-vdev.entity';
+import { LogicalVdevEvent } from '../modules/logical-vdev/entities/logical-vdev-event.entity';
+import { VdevProfile } from '../modules/vdev-profile/entities/vdev-profile.entity';
 import { OperatingSystem } from '../modules/operating-system/entities/operating-system.entity';
 import { PhysicalDrive } from '../modules/physical-drive/entities/physical-drive.entity';
 import { PhysicalDriveLocation } from '../modules/physical-drive/entities/physical-drive-location.entity';
@@ -72,7 +75,10 @@ import { WarrantyClaimEvent } from '../modules/warranty-claim/entities/warranty-
             FormFactor,
             Interface,
             LogicalDisk,
+            LogicalDiskEvent,
             LogicalVdev,
+            LogicalVdevEvent,
+            VdevProfile,
             OperatingSystem,
             PhysicalDrive,
             PhysicalDriveLocation,

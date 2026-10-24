@@ -1,13 +1,15 @@
 import {
-  IsString,
-  IsNotEmpty,
-  Length,
-  IsOptional,
-  IsUUID,
   IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VdevRedundancyProfile } from '../entities/logical-vdev.entity';
+import { VdevClass } from '../entities/logical-vdev.entity';
 
 export class CreateLogicalVdevDto {
   @ApiPropertyOptional({
@@ -20,8 +22,7 @@ export class CreateLogicalVdevDto {
   id?: string;
 
   @ApiProperty({
-    description:
-      'Relational link pointer reference ID connecting to the parent hosting storage pool framework',
+    description: 'Storage pool that owns this vdev',
     example: '019f5431-1bf4-7e4b-accd-617e39d8a372',
     required: true,
   })
@@ -30,9 +31,18 @@ export class CreateLogicalVdevDto {
   storagePoolId: string;
 
   @ApiProperty({
-    description:
-      'The distinctive name label tracking token of the specific vdev layout configuration (e.g., raidz2-0, mirror-1)',
-    maxLength: 32,
+    description: 'Vdev profile id (RAIDZ2, MIRROR, RAID5, ...)',
+    example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
+    required: true,
+  })
+  @IsUUID('7', {
+    message: 'The redundancyProfileId must be a valid UUIDv7 string',
+  })
+  @IsNotEmpty()
+  redundancyProfileId: string;
+
+  @ApiProperty({
+    description: 'Unique vdev name within the pool, e.g. raidz2-0',
     example: 'raidz2-0',
     required: true,
   })
@@ -41,17 +51,23 @@ export class CreateLogicalVdevDto {
   @Length(1, 32)
   vdevName: string;
 
-  @ApiProperty({
-    description:
-      'The mathematical parity arrangement topology architecture profile design type used to manage device disks',
-    enum: VdevRedundancyProfile,
-    example: VdevRedundancyProfile.RAIDZ2,
-    required: true,
+  @ApiPropertyOptional({
+    enum: VdevClass,
+    default: VdevClass.DATA,
+    description: 'ZFS-style vdev class; DATA contributes pool capacity',
   })
-  @IsNotEmpty()
-  @IsEnum(VdevRedundancyProfile, {
-    message:
-      'The vdevRedundancyProfile must match supported options (STRIPE, MIRROR, RAIDZ1, RAIDZ2, RAIDZ3, JBOD_SINGLE)',
-  })
-  vdevRedundancyProfile: VdevRedundancyProfile;
+  @IsOptional()
+  @IsEnum(VdevClass)
+  vdevClass?: VdevClass;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string | null;
 }

@@ -3,43 +3,55 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Create Table Structure with UUIDv7 Primary and Foreign Keys + Auto-Incrementing Display Key
     await queryInterface.createTable('logical_disks', {
       id: {
         type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        // Uses PostgreSQL's native uuidv7 function to auto-generate IDs
         defaultValue: Sequelize.literal('uuidv7()'),
       },
       display_key: {
         type: Sequelize.INTEGER,
         allowNull: false,
         autoIncrement: true,
-        unique: true, // Automatically builds a unique index for high-performance sorting/filtering
+        unique: true,
       },
       logical_vdev_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match logical_vdevs.id
+        type: Sequelize.UUID,
         allowNull: false,
         references: { model: 'logical_vdevs', key: 'id' },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT', // Blocks removing a vdev configuration block if active drive links exist
+        onDelete: 'RESTRICT',
       },
       physical_drive_id: {
-        type: Sequelize.UUID, // Upgraded to UUID to match physical_drives.id
+        type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'physical_drives', key: 'id' }, // Points back to actual physical asset block
+        references: { model: 'physical_drives', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
       },
       os_device_node_path: {
         type: Sequelize.STRING(32),
-        allowNull: false, // e.g., '/dev/nvme0n1', '/dev/sda'
+        allowNull: true,
       },
-      is_spare_drive: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false, // True if flagged as a hot-spare for automated pool rebuilding
+      member_role: {
+        type: Sequelize.ENUM('DATA', 'SPARE'),
         allowNull: false,
+        defaultValue: 'DATA',
+      },
+      attached_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+      member_index: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      group_index: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -51,23 +63,28 @@ module.exports = {
       },
     });
 
-    // --- Performance & Data Integrity Indexes ---
-
-    // Unique Constraint: Prevents a physical drive from being assigned to multiple pools/vdevs simultaneously
     await queryInterface.addIndex('logical_disks', ['physical_drive_id'], {
       name: 'logical_disks_phys_drive_unique_idx',
       unique: true,
     });
-
-    // B-Tree Optimization: Speeds up finding all drive members assigned to a specific virtual device group
     await queryInterface.addIndex('logical_disks', ['logical_vdev_id'], {
       name: 'logical_disks_logical_vdev_id_idx',
       using: 'btree',
     });
+    await queryInterface.addIndex(
+      'logical_disks',
+      ['logical_vdev_id', 'group_index', 'member_index'],
+      {
+        name: 'logical_disks_vdev_order_idx',
+        using: 'btree',
+      },
+    );
   },
 
-  async down(queryInterface, Sequelize) {
-    // Drop target table cleanly to remove dependencies (Postgres handles internal sequence cleanup automatically)
+  async down(queryInterface) {
     await queryInterface.dropTable('logical_disks');
+    await queryInterface.sequelize.query(
+      `DROP TYPE IF EXISTS "enum_logical_disks_member_role";`,
+    );
   },
 };

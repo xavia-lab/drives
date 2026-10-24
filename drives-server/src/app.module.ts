@@ -27,6 +27,8 @@ import { DriveLifecycleEventModule } from './modules/drive-lifecycle-event/drive
 import { FormFactorModule } from './modules/form-factor/form-factor.module';
 import { InterfaceModule } from './modules/interface/interface.module';
 import { LogicalDiskModule } from './modules/logical-disk/logical-disk.module';
+import { VdevProfileModule } from './modules/vdev-profile/vdev-profile.module';
+import { StorageTopologyModule } from './modules/storage-topology/storage-topology.module';
 import { LogicalVdevModule } from './modules/logical-vdev/logical-vdev.module';
 import { OperatingSystemModule } from './modules/operating-system/operating-system.module';
 import { PhysicalDriveModule } from './modules/physical-drive/physical-drive.module';
@@ -92,6 +94,8 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
     InterfaceModule,
     LogicalDiskModule,
     LogicalVdevModule,
+    VdevProfileModule,
+    StorageTopologyModule,
     OperatingSystemModule,
     PhysicalDriveModule,
     PhysicalCpuModule,

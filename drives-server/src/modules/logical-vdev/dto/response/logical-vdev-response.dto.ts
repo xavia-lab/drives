@@ -1,73 +1,60 @@
-import { Expose, Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { VdevRedundancyProfile } from '../../entities/logical-vdev.entity';
+import { Expose, Transform, Type } from 'class-transformer';
+import { VdevClass } from '../../entities/logical-vdev.entity';
+import { VdevProfileResponseDto } from '../../../vdev-profile/dto/response/vdev-profile-response.dto';
+import type { VdevCapacity } from '../../vdev-capacity.service';
 
 class StoragePoolShallowDto {
-  @Expose()
-  @ApiProperty({
-    example: '019f5431-1bf4-7e4b-accd-617e39d8a372',
-    description: 'The unique identifier of the parent storage pool',
-  })
-  id: string;
+  @Expose() id: string;
+  @Expose() poolName: string;
+}
 
-  @Expose()
-  @ApiProperty({
-    example: 'tank-nvme-cache',
-    description: 'The descriptive name label of the storage pool array',
-  })
-  poolName: string;
+class VdevMemberShallowDto {
+  @Expose() id: string;
+  @Expose() physicalDriveId: string;
+  @Expose() osDeviceNodePath: string | null;
+  @Expose() memberRole: string;
+  @Expose() attachedAt: Date;
+  @Expose() physicalDrive?: {
+    id: string;
+    label: string;
+    serialNumber: string;
+  };
 }
 
 export class LogicalVdevResponseDto {
+  @Expose() displayKey: number;
+  @Expose() id: string;
+  @Expose() storagePoolId: string;
+  @Expose() redundancyProfileId: string;
+  @Expose() vdevName: string;
+  @Expose() vdevClass: VdevClass;
+  @Expose() sortOrder: number;
+  @Expose() notes: string | null;
   @Expose()
-  @ApiProperty({
-    example: 1,
-    description: 'The consistent global sequential index number across pages',
+  @Transform(({ obj }) => {
+    const value = obj as { profileSnapshot?: Record<string, unknown> | null };
+    return value.profileSnapshot;
   })
-  displayKey: number;
-
-  @Expose()
-  @ApiProperty({
-    example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
-    description:
-      'The unique UUIDv7 primary identifier of this logical vdev record',
-  })
-  id: string;
-
-  @Expose()
-  @ApiProperty({
-    example: '019f5431-1bf4-7e4b-accd-617e39d8a372',
-    description:
-      'Relational link pointer ID connecting to the parent hosting storage pool framework',
-  })
-  storagePoolId: string;
-
-  @Expose()
-  @ApiProperty({
-    example: 'raidz2-0',
-    description:
-      'The explicit name identifier assigned to the vdev redundancy grouping inside the pool',
-  })
-  vdevName: string;
-
-  @Expose()
-  @ApiProperty({
-    enum: VdevRedundancyProfile,
-    example: VdevRedundancyProfile.RAIDZ2,
-    description:
-      'The data redundancy array profile used to govern disk storage parity rules',
-  })
-  vdevRedundancyProfile: VdevRedundancyProfile;
-
-  @Expose()
-  @ApiProperty({ example: '2026-07-13T05:42:00.000Z' })
-  createdAt: Date;
-  @Expose()
-  @ApiProperty({ example: '2026-07-13T05:42:00.000Z' })
-  updatedAt: Date;
+  profileSnapshot: Record<string, unknown> | null;
+  @Expose() createdAt: Date;
+  @Expose() updatedAt: Date;
 
   @Expose()
   @Type(() => StoragePoolShallowDto)
-  @ApiProperty({ type: StoragePoolShallowDto })
-  storagePool: StoragePoolShallowDto;
+  storagePool?: StoragePoolShallowDto;
+
+  @Expose()
+  @Type(() => VdevProfileResponseDto)
+  redundancyProfile?: VdevProfileResponseDto;
+
+  @Expose() memberCount?: number;
+  @Expose()
+  @Transform(({ obj }) => {
+    const value = obj as { capacity?: VdevCapacity };
+    return value.capacity;
+  })
+  capacity?: VdevCapacity;
+  @Expose()
+  @Type(() => VdevMemberShallowDto)
+  members?: VdevMemberShallowDto[];
 }

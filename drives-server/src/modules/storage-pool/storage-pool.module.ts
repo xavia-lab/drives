@@ -7,6 +7,9 @@ import { StoragePoolHost } from './entities/storage-pool-host.entity';
 import { PhysicalServer } from '../physical-server/entities/physical-server.entity';
 import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
 import { PoolType } from '../pool-type/entities/pool-type.entity';
+import { LogicalVdevModule } from '../logical-vdev/logical-vdev.module';
+import { StoragePoolReportController } from './storage-pool-report.controller';
+import { StorageTopologyModule } from '../storage-topology/storage-topology.module';
 
 @Module({
   imports: [
@@ -18,8 +21,10 @@ import { PoolType } from '../pool-type/entities/pool-type.entity';
       VirtualServer,
       PoolType,
     ]),
+    LogicalVdevModule,
+    StorageTopologyModule,
   ],
-  controllers: [StoragePoolController],
+  controllers: [StoragePoolReportController, StoragePoolController],
   providers: [StoragePoolService],
   exports: [StoragePoolService], // Allows down-stream allocation layers (like Virtual Disks) to inject this service
 })

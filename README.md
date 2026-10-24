@@ -13,7 +13,8 @@ The project is a pnpm + Turborepo monorepo with a NestJS API, a Next.js/Refine f
 - **Locations** — append-only datacenter history per drive, including relocations and an "unassigned" state.
 - **Server and slot management** — racks, physical servers, CPUs, server slots, and drive-to-slot assignments with mount/unmount history.
 - **Virtual servers** — VMs and containers with host capacity checks, vCPU allocation, and hardware passthrough slots.
-- **Storage pools** — pool types, encryption state, and import/export host history.
+- **Storage pools** — pool types, encryption state, import/export host history, logical vdevs, member drives, and derived raw/usable capacity.
+- **Vdev membership history** — transactional drive attach/detach/move events with host-aware allocation rules.
 - **Warranty and RMA** — warranty claims with independent tracking timelines, replacement-drive links, and derived claim status.
 - **Media attachments** — photos, invoices, certificates, and documents attached to drives, deduplicated by content hash.
 - **Dashboards** — fleet distribution, lifecycle health, slot utilization, warranty watchlist, RMA pipeline, capital/age analysis, datacenter health, and recent activity.

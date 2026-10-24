@@ -4,6 +4,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { PassthroughSlotService } from './passthrough-slot.service';
 import { PassthroughSlot } from './entities/passthrough-slot.entity';
 import { ServerSlot } from '../physical-server/entities/server-slot.entity';
+import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
 describe('PassthroughSlotService', () => {
@@ -28,6 +29,10 @@ describe('PassthroughSlotService', () => {
           useValue: mockPassthroughSlotModel,
         },
         { provide: getModelToken(ServerSlot), useValue: mockServerSlotModel },
+        {
+          provide: ServerSlotAllocationService,
+          useValue: { assertSlotDrivesNotVdevMembers: vi.fn() },
+        },
       ],
     }).compile();
 

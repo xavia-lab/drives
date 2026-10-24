@@ -33,6 +33,7 @@ import {
   DriveLifecycleEventType,
   DriveLifecycleState,
 } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
+import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
@@ -127,6 +128,8 @@ export class ServerSlotAllocationService {
     private readonly physicalDriveModel: typeof PhysicalDrive,
     @InjectModel(PhysicalDriveLocation)
     private readonly physicalDriveLocationModel: typeof PhysicalDriveLocation,
+    @InjectModel(LogicalDisk)
+    private readonly logicalDiskModel: typeof LogicalDisk,
     private readonly lifecycleService: DriveLifecycleEventService,
     private readonly paginationService: PaginationService,
     @InjectConnection()
@@ -554,6 +557,8 @@ export class ServerSlotAllocationService {
         );
       }
 
+      await this.assertDrivesNotVdevMembers([physicalDriveId], transaction);
+
       const location = (
         await this.getLatestLocationPerDrive([physicalDriveId], transaction)
       ).get(physicalDriveId);
@@ -672,6 +677,40 @@ export class ServerSlotAllocationService {
     return this.getBoard(serverId);
   }
 
+  async assertSlotDrivesNotVdevMembers(
+    slotIds: string[],
+    transaction?: Transaction,
+  ): Promise<void> {
+    const occupancy = await this.getSlotOccupancyMap(slotIds, transaction);
+    const driveIds = [...occupancy.values()]
+      .filter((occupant): occupant is CurrentSlotOccupant => Boolean(occupant))
+      .map((occupant) => occupant.physicalDriveId);
+    await this.assertDrivesNotVdevMembers(driveIds, transaction);
+  }
+
+  /** Reject seating changes that would invalidate an active vdev membership. */
+  private async assertDrivesNotVdevMembers(
+    driveIds: string[],
+    transaction?: Transaction,
+  ): Promise<void> {
+    const ids = [...new Set(driveIds)].filter(Boolean);
+    if (ids.length === 0) return;
+    const members = await this.logicalDiskModel.findAll({
+      where: { physicalDriveId: { [Op.in]: ids } },
+      attributes: ['physicalDriveId'],
+      transaction,
+    });
+    if (members.length > 0) {
+      throw new ConflictException(
+        `Physical drive(s) ${members
+          .map((member) => member.physicalDriveId)
+          .join(
+            ', ',
+          )} are current vdev members; detach them from the vdev before changing their server slot or passthrough assignment`,
+      );
+    }
+  }
+
   /**
    * Removes the drive currently seated in a slot by appending an UNMOUNT event.
    */
@@ -702,6 +741,11 @@ export class ServerSlotAllocationService {
           `ServerSlot ${slotId} does not currently hold a drive`,
         );
       }
+
+      await this.assertDrivesNotVdevMembers(
+        [latest.physicalDriveId],
+        transaction,
+      );
 
       await this.appendEvent(
         {
@@ -900,6 +944,11 @@ export class ServerSlotAllocationService {
           mounts.push({ slotId: desiredSlot, driveId });
         }
       }
+
+      const unseatedDriveIds = unmounts
+        .filter(({ driveId }) => !desiredSlotByDrive.has(driveId))
+        .map(({ driveId }) => driveId);
+      await this.assertDrivesNotVdevMembers(unseatedDriveIds, transaction);
 
       // Unmounts first so the appended MOUNT is always the latest event.
       for (const { slotId, driveId } of unmounts) {
@@ -1193,6 +1242,7 @@ export class ServerSlotAllocationService {
       );
 
       const detachSet = new Set(detachDriveIds);
+      await this.assertDrivesNotVdevMembers(detachDriveIds, transaction);
       for (const driveId of detachDriveIds) {
         const current = currentAssignments.get(driveId);
         if (!current || current.serverId !== dto.sourceServerId) {

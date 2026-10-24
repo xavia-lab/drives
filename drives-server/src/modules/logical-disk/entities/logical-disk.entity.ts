@@ -9,11 +9,15 @@ import { BaseModel } from '../../../shared/entities/base.model';
 import { LogicalVdev } from '../../logical-vdev/entities/logical-vdev.entity';
 import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.entity';
 
+export enum VdevMemberRole {
+  DATA = 'DATA',
+  SPARE = 'SPARE',
+}
+
 @Table({
   tableName: 'logical_disks',
   timestamps: true,
-  underscored: true, // Automatically maps camelCase to snake_case in the database
-  // Class-level unique and performance optimization indexes mapped from the migration
+  underscored: true,
   indexes: [
     {
       name: 'logical_disks_phys_drive_unique_idx',
@@ -25,51 +29,59 @@ import { PhysicalDrive } from '../../physical-drive/entities/physical-drive.enti
       using: 'btree',
       fields: ['logical_vdev_id'],
     },
+    {
+      name: 'logical_disks_vdev_order_idx',
+      using: 'btree',
+      fields: ['logical_vdev_id', 'group_index', 'member_index'],
+    },
   ],
 })
 export class LogicalDisk extends BaseModel {
   @Column({
     type: DataType.STRING(32),
-    allowNull: false, // e.g., '/dev/nvme0n1', '/dev/sda'
+    allowNull: true,
     field: 'os_device_node_path',
   })
-  declare osDeviceNodePath: string;
+  declare osDeviceNodePath: string | null;
 
   @Column({
-    type: DataType.BOOLEAN,
-    defaultValue: false, // True if flagged as a hot-spare for automated pool rebuilding
+    type: DataType.ENUM(...Object.values(VdevMemberRole)),
     allowNull: false,
-    field: 'is_spare_drive',
+    defaultValue: VdevMemberRole.DATA,
+    field: 'member_role',
   })
-  declare isSpareDrive: boolean;
+  declare memberRole: VdevMemberRole;
 
-  // --- Foreign Keys and Associations ---
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+    field: 'attached_at',
+  })
+  declare attachedAt: Date;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'member_index',
+  })
+  declare memberIndex: number;
+
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'group_index' })
+  declare groupIndex: number | null;
 
   @ForeignKey(() => LogicalVdev)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-    field: 'logical_vdev_id',
-  })
+  @Column({ type: DataType.UUID, allowNull: false, field: 'logical_vdev_id' })
   declare logicalVdevId: string;
 
-  @BelongsTo(() => LogicalVdev, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
+  @BelongsTo(() => LogicalVdev, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare logicalVdev: LogicalVdev;
 
   @ForeignKey(() => PhysicalDrive)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-    field: 'physical_drive_id',
-  })
+  @Column({ type: DataType.UUID, allowNull: false, field: 'physical_drive_id' })
   declare physicalDriveId: string;
 
-  @BelongsTo(() => PhysicalDrive, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
+  @BelongsTo(() => PhysicalDrive, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   declare physicalDrive: PhysicalDrive;
 }

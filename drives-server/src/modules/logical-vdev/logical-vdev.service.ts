@@ -1,150 +1,514 @@
 import {
-  Injectable,
   ConflictException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { LogicalVdev } from './entities/logical-vdev.entity';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
+import { Op, Sequelize, Transaction, WhereOptions } from 'sequelize';
+import { LogicalVdev, VdevClass } from './entities/logical-vdev.entity';
+import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
+import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
+import {
+  LogicalVdevEvent,
+  VdevConfigAction,
+} from './entities/logical-vdev-event.entity';
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
 import { QueryLogicalVdevDto } from './dto/query-logical-vdev.dto';
+import { QueryLogicalVdevEventDto } from './dto/query-logical-vdev-event.dto';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
+import { VdevCapacityService, type VdevHealth } from './vdev-capacity.service';
+
+const VDEV_HEALTH_RANK: Record<VdevHealth, number> = {
+  ONLINE: 0,
+  PLANNED: 1,
+  UNKNOWN: 2,
+  INCOMPLETE: 3,
+  DEGRADED: 4,
+  FAILED: 5,
+};
 
 @Injectable()
 export class LogicalVdevService {
   constructor(
     @InjectModel(LogicalVdev)
     private readonly logicalVdevModel: typeof LogicalVdev,
+    @InjectModel(LogicalDisk)
+    private readonly logicalDiskModel: typeof LogicalDisk,
     @InjectModel(StoragePool)
     private readonly storagePoolModel: typeof StoragePool,
+    @InjectModel(VdevProfile)
+    private readonly vdevProfileModel: typeof VdevProfile,
+    @InjectModel(PoolType)
+    private readonly poolTypeModel: typeof PoolType,
+    @InjectModel(LogicalVdevEvent)
+    private readonly vdevEventModel: typeof LogicalVdevEvent,
+    @InjectConnection()
+    private readonly sequelize: Sequelize,
     private readonly paginationService: PaginationService,
+    private readonly capacityService: VdevCapacityService,
   ) {}
 
-  // 🌟 Private helper to check foreign key constraints concurrently and aggregate errors
-  private async validateForeignKeys(ids: {
-    storagePoolId?: string;
-  }): Promise<void> {
-    const checkPromises: Promise<string | null>[] = [];
+  private includeRelations() {
+    return [StoragePool, VdevProfile];
+  }
 
-    if (ids.storagePoolId) {
-      checkPromises.push(
-        this.storagePoolModel
-          .findByPk(ids.storagePoolId)
-          .then((exists) =>
-            exists
-              ? null
-              : `StoragePool with ID ${ids.storagePoolId} not found`,
-          ),
-      );
+  private buildWhere(query?: QueryLogicalVdevDto): WhereOptions {
+    const where: WhereOptions = {};
+    if (query?.storagePoolId) {
+      (where as Record<string, unknown>).storagePoolId = query.storagePoolId;
     }
-
-    const results = await Promise.all(checkPromises);
-    const errors = results.filter((error): error is string => error !== null);
-
-    if (errors.length > 0) {
-      throw new NotFoundException(errors.join('\n'));
+    if (query?.vdevClass) {
+      (where as Record<string, unknown>).vdevClass = query.vdevClass;
     }
+    if (query?.redundancyProfileId) {
+      (where as Record<string, unknown>).redundancyProfileId =
+        query.redundancyProfileId;
+    }
+    return where;
+  }
+
+  private async enrich<T extends LogicalVdev>(vdevs: T[]): Promise<T[]> {
+    const capacities = await this.capacityService.calculateMany(
+      vdevs.map((vdev) => vdev.id),
+    );
+    for (const vdev of vdevs) {
+      const capacity = capacities.get(vdev.id);
+      if (capacity) {
+        vdev.setDataValue('capacity', capacity);
+        vdev.setDataValue('memberCount', capacity.memberCount);
+      }
+    }
+    return vdevs;
   }
 
   async findAll(
     query?: QueryLogicalVdevDto,
   ): Promise<PaginatedResponse<LogicalVdev>> {
-    // Clean delegation to the standalone pagination service with relational inclusion
-    return this.paginationService.paginate<LogicalVdev>(
+    const result = await this.paginationService.paginate<LogicalVdev>(
       this.logicalVdevModel,
       query,
       {
-        include: [StoragePool],
+        where: this.buildWhere(query),
+        include: this.includeRelations(),
       },
     );
+    result.data = await this.enrich(result.data);
+    return result;
   }
 
-  async findOne(id: string): Promise<LogicalVdev | null> {
-    const vdev = await this.logicalVdevModel.findByPk(id, {
-      include: [StoragePool],
+  async findByPool(poolId: string): Promise<LogicalVdev[]> {
+    await this.assertPoolExists(poolId);
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { storagePoolId: poolId },
+      include: this.includeRelations(),
+      order: [
+        ['sortOrder', 'ASC'],
+        ['displayKey', 'ASC'],
+      ],
     });
+    await this.enrich(vdevs);
+    await Promise.all(
+      vdevs.map(async (vdev) => {
+        vdev.setDataValue(
+          'members',
+          await this.capacityService.getMembers(vdev.id),
+        );
+      }),
+    );
+    return vdevs;
+  }
 
+  async findOne(id: string): Promise<LogicalVdev> {
+    const vdev = await this.logicalVdevModel.findByPk(id, {
+      include: this.includeRelations(),
+    });
     if (!vdev) {
       throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
     }
-
+    const capacity = await this.capacityService.calculate(vdev);
+    const members = await this.capacityService.getMembers(id);
+    vdev.setDataValue('capacity', capacity);
+    vdev.setDataValue('memberCount', capacity.memberCount);
+    vdev.setDataValue('members', members);
     return vdev;
   }
 
-  async create(createDto: CreateLogicalVdevDto): Promise<LogicalVdev> {
-    // Enforce unique naming within the same pool boundary context
-    const existingByName = await this.logicalVdevModel.findOne({
-      where: {
-        storagePoolId: createDto.storagePoolId,
-        vdevName: createDto.vdevName,
-      },
+  async create(
+    createDto: CreateLogicalVdevDto,
+    performedByUserId?: string | null,
+  ): Promise<LogicalVdev> {
+    const created = await this.sequelize.transaction(async (transaction) => {
+      await this.assertPoolExists(createDto.storagePoolId);
+      const profile = await this.assertProfileExists(
+        createDto.redundancyProfileId,
+      );
+      await this.assertProfileCompatible(createDto.storagePoolId, profile);
+      await this.assertUniqueName(createDto.storagePoolId, createDto.vdevName);
+
+      const vdev = await this.logicalVdevModel.create(
+        {
+          ...(createDto.id ? { id: createDto.id } : {}),
+          storagePoolId: createDto.storagePoolId,
+          redundancyProfileId: createDto.redundancyProfileId,
+          vdevName: createDto.vdevName,
+          vdevClass: createDto.vdevClass ?? VdevClass.DATA,
+          sortOrder: createDto.sortOrder ?? 0,
+          notes: createDto.notes ?? null,
+          profileSnapshot: profile.toJSON(),
+        } as Partial<LogicalVdev>,
+        { transaction },
+      );
+
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.CREATE,
+          beforeSnapshot: null,
+          afterSnapshot: vdev.toJSON<Record<string, unknown>>(),
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+
+      return vdev;
     });
 
-    if (existingByName) {
-      throw new ConflictException(
-        `LogicalVdev with name "${createDto.vdevName}" already exists in storage pool ${createDto.storagePoolId}`,
-      );
-    }
-
-    // 🌟 Validate that the parent storagePoolId exists concurrently before creating the record
-    await this.validateForeignKeys(createDto);
-
-    const vdev = await this.logicalVdevModel.create(
-      createDto as Partial<LogicalVdev>,
-    );
-    return vdev.reload({ include: [StoragePool] });
+    return this.findOne(created.id);
   }
 
   async update(
     id: string,
     updateDto: UpdateLogicalVdevDto,
+    performedByUserId?: string | null,
   ): Promise<LogicalVdev> {
-    const vdevObject = await this.logicalVdevModel.findByPk(id);
+    const vdev = await this.logicalVdevModel.findByPk(id);
+    if (!vdev) {
+      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+    }
+    const beforeSnapshot = vdev.toJSON<Record<string, unknown>>();
 
-    if (!vdevObject) {
+    let nextProfile: VdevProfile | null = null;
+    if (updateDto.redundancyProfileId) {
+      nextProfile = await this.assertProfileExists(
+        updateDto.redundancyProfileId,
+      );
+    }
+    if (
+      updateDto.storagePoolId &&
+      updateDto.storagePoolId !== vdev.storagePoolId
+    ) {
+      const memberCount = await this.logicalDiskModel.count({
+        where: { logicalVdevId: id },
+      });
+      if (memberCount > 0) {
+        throw new ConflictException(
+          'Detach all member drives before moving a vdev to another storage pool',
+        );
+      }
+      await this.assertPoolExists(updateDto.storagePoolId);
+    }
+    if (updateDto.vdevName || updateDto.storagePoolId) {
+      const targetPool = updateDto.storagePoolId ?? vdev.storagePoolId;
+      const targetName = updateDto.vdevName ?? vdev.vdevName;
+      await this.assertUniqueName(targetPool, targetName, id);
+    }
+
+    const update: Partial<LogicalVdev> = {};
+    if (updateDto.storagePoolId !== undefined)
+      update.storagePoolId = updateDto.storagePoolId;
+    if (updateDto.redundancyProfileId !== undefined)
+      update.redundancyProfileId = updateDto.redundancyProfileId;
+    if (updateDto.vdevName !== undefined) update.vdevName = updateDto.vdevName;
+    if (updateDto.vdevClass !== undefined)
+      update.vdevClass = updateDto.vdevClass;
+    if (updateDto.sortOrder !== undefined)
+      update.sortOrder = updateDto.sortOrder;
+    if (updateDto.notes !== undefined) update.notes = updateDto.notes;
+    if (nextProfile) {
+      await this.assertProfileCompatible(
+        updateDto.storagePoolId ?? vdev.storagePoolId,
+        nextProfile,
+      );
+      update.profileSnapshot = nextProfile.toJSON();
+    } else if (
+      updateDto.storagePoolId &&
+      updateDto.storagePoolId !== vdev.storagePoolId
+    ) {
+      const currentProfile = await this.assertProfileExists(
+        vdev.redundancyProfileId,
+      );
+      await this.assertProfileCompatible(
+        updateDto.storagePoolId,
+        currentProfile,
+      );
+    }
+
+    await this.sequelize.transaction(async (transaction) => {
+      await vdev.update(update, { transaction });
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.UPDATE,
+          beforeSnapshot,
+          afterSnapshot: vdev.toJSON<Record<string, unknown>>(),
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+    });
+    return this.findOne(id);
+  }
+
+  async delete(
+    id: string,
+    performedByUserId?: string | null,
+  ): Promise<boolean> {
+    const vdev = await this.logicalVdevModel.findByPk(id);
+    if (!vdev) {
       throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
     }
 
-    // Enforce unique naming boundaries if names or parent pool associations are updated
-    if (updateDto.vdevName || updateDto.storagePoolId) {
-      const targetPool = updateDto.storagePoolId ?? vdevObject.storagePoolId;
-      const targetName = updateDto.vdevName ?? vdevObject.vdevName;
+    const memberCount = await this.logicalDiskModel.count({
+      where: { logicalVdevId: id },
+    });
+    if (memberCount > 0) {
+      throw new ConflictException(
+        `LogicalVdev ${id} still has ${memberCount} member drive(s); detach them before deleting the vdev`,
+      );
+    }
 
-      const existing = await this.logicalVdevModel.findOne({
-        where: { storagePoolId: targetPool, vdevName: targetName },
-      });
-      if (existing && existing.id !== id) {
-        throw new ConflictException(
-          `LogicalVdev with name "${targetName}" already exists in storage pool ${targetPool}`,
-        );
+    const beforeSnapshot = vdev.toJSON<Record<string, unknown>>();
+    await this.sequelize.transaction(async (transaction) => {
+      await this.vdevEventModel.create(
+        {
+          logicalVdevId: vdev.id,
+          storagePoolId: vdev.storagePoolId,
+          action: VdevConfigAction.DELETE,
+          beforeSnapshot,
+          afterSnapshot: null,
+          performedByUserId: performedByUserId ?? null,
+        } as Partial<LogicalVdevEvent>,
+        { transaction },
+      );
+      await vdev.destroy({ transaction });
+    });
+    return true;
+  }
+
+  async getConfigHistory(
+    id: string,
+    query: QueryLogicalVdevEventDto = {},
+  ): Promise<PaginatedResponse<LogicalVdevEvent>> {
+    await this.assertVdevExists(id);
+    return this.paginationService.paginate<LogicalVdevEvent>(
+      this.vdevEventModel,
+      this.withHistoryDefaults(query),
+      { where: this.historyWhere({ logicalVdevId: id }, query) },
+    );
+  }
+
+  async getPoolConfigHistory(
+    storagePoolId: string,
+    query: QueryLogicalVdevEventDto = {},
+  ): Promise<PaginatedResponse<LogicalVdevEvent>> {
+    await this.assertPoolExists(storagePoolId);
+    return this.paginationService.paginate<LogicalVdevEvent>(
+      this.vdevEventModel,
+      this.withHistoryDefaults(query),
+      { where: this.historyWhere({ storagePoolId }, query) },
+    );
+  }
+
+  private historyWhere(
+    base: WhereOptions,
+    query: QueryLogicalVdevEventDto,
+  ): WhereOptions {
+    const where = { ...base } as Record<string, unknown>;
+    if (query.action !== undefined) where.action = query.action;
+    if (!('logicalVdevId' in base) && query.logicalVdevId !== undefined)
+      where.logicalVdevId = query.logicalVdevId;
+    if (!('storagePoolId' in base) && query.storagePoolId !== undefined)
+      where.storagePoolId = query.storagePoolId;
+    return where;
+  }
+
+  private withHistoryDefaults(
+    query: QueryLogicalVdevEventDto,
+  ): QueryLogicalVdevEventDto {
+    return Object.assign(
+      {
+        pageNumber: 1,
+        pageSize: 20,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc' as const,
+      },
+      query,
+    );
+  }
+
+  private async assertVdevExists(id: string): Promise<void> {
+    const exists = await this.logicalVdevModel.findByPk(id, {
+      attributes: ['id'],
+    });
+    if (!exists) {
+      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+    }
+  }
+
+  async getPoolMemberDriveIds(
+    storagePoolId: string,
+    transaction?: Transaction,
+  ): Promise<string[]> {
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { storagePoolId },
+      attributes: ['id'],
+      transaction,
+    });
+    if (vdevs.length === 0) return [];
+    const members = await this.logicalDiskModel.findAll({
+      where: { logicalVdevId: { [Op.in]: vdevs.map((vdev) => vdev.id) } },
+      attributes: ['physicalDriveId'],
+      transaction,
+    });
+    return [...new Set(members.map((member) => member.physicalDriveId))];
+  }
+
+  async getPoolCapacity(poolId: string) {
+    await this.assertPoolExists(poolId);
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { storagePoolId: poolId },
+      include: this.includeRelations(),
+    });
+    const capacities = await this.capacityService.calculateMany(
+      vdevs.map((vdev) => vdev.id),
+    );
+
+    let rawBytes = 0;
+    let usableBytes = 0;
+    let capacityKnown = true;
+    let estimated = false;
+    let spareVdevCount = 0;
+    let spareMemberCount = 0;
+    let health: VdevHealth | null = null;
+    const healthCounts: Record<VdevHealth, number> = {
+      PLANNED: 0,
+      INCOMPLETE: 0,
+      ONLINE: 0,
+      DEGRADED: 0,
+      FAILED: 0,
+      UNKNOWN: 0,
+    };
+
+    for (const vdev of vdevs) {
+      const capacity = capacities.get(vdev.id);
+      if (capacity) {
+        healthCounts[capacity.health] += 1;
+      }
+      if (vdev.vdevClass === VdevClass.SPARE) {
+        spareVdevCount += 1;
+        spareMemberCount += capacity?.memberCount ?? 0;
+        continue;
+      }
+      if (vdev.vdevClass !== VdevClass.DATA) continue;
+      if (capacity) {
+        if (
+          health === null ||
+          VDEV_HEALTH_RANK[capacity.health] > VDEV_HEALTH_RANK[health]
+        ) {
+          health = capacity.health;
+        }
+        if (capacity.rawBytes === null || capacity.usableBytes === null) {
+          capacityKnown = false;
+        } else {
+          rawBytes += capacity.rawBytes;
+          usableBytes += capacity.usableBytes;
+        }
+        estimated = estimated || capacity.estimated;
       }
     }
 
-    // 🌟 Validate parent key reference existences concurrently
-    await this.validateForeignKeys(updateDto);
-
-    const updateData: Partial<LogicalVdev> = {};
-    if (updateDto.vdevName !== undefined)
-      updateData.vdevName = updateDto.vdevName;
-    if (updateDto.vdevRedundancyProfile !== undefined)
-      updateData.vdevRedundancyProfile = updateDto.vdevRedundancyProfile;
-    if (updateDto.storagePoolId !== undefined)
-      updateData.storagePoolId = updateDto.storagePoolId;
-
-    await vdevObject.update(updateData);
-    return vdevObject.reload({ include: [StoragePool] });
+    return {
+      storagePoolId: poolId,
+      vdevCount: vdevs.length,
+      dataVdevCount: vdevs.filter((vdev) => vdev.vdevClass === VdevClass.DATA)
+        .length,
+      rawBytes: capacityKnown ? rawBytes : null,
+      usableBytes: capacityKnown ? usableBytes : null,
+      capacityKnown,
+      estimated,
+      health: health ?? 'PLANNED',
+      healthCounts,
+      spareVdevCount,
+      spareMemberCount,
+    };
   }
 
-  async delete(id: string): Promise<boolean> {
-    const vdevObject = await this.logicalVdevModel.findByPk(id);
-
-    if (!vdevObject) {
-      throw new NotFoundException(`LogicalVdev with ID ${id} not found`);
+  private async assertPoolExists(id: string): Promise<void> {
+    const exists = await this.storagePoolModel.findByPk(id, {
+      attributes: ['id'],
+    });
+    if (!exists) {
+      throw new NotFoundException(`StoragePool with ID ${id} not found`);
     }
+  }
 
-    const deletedCount = await this.logicalVdevModel.destroy({ where: { id } });
-    return deletedCount > 0;
+  private async assertProfileCompatible(
+    storagePoolId: string,
+    profile: VdevProfile,
+  ): Promise<void> {
+    const pool = await this.storagePoolModel.findByPk(storagePoolId);
+    if (!pool) {
+      throw new NotFoundException(
+        `StoragePool with ID ${storagePoolId} not found`,
+      );
+    }
+    const poolType = await this.poolTypeModel.findByPk(pool.poolTypeId);
+    if (!poolType) {
+      throw new NotFoundException(
+        `PoolType with ID ${pool.poolTypeId} not found`,
+      );
+    }
+    const allowedByType: Record<string, string[]> = {
+      ZFS: ['ZFS', 'GENERIC'],
+      BTRFS: ['BTRFS', 'GENERIC'],
+      CEPH_OSD_POOL: ['CEPH', 'GENERIC'],
+      MDRAID: ['MDRAID', 'GENERIC'],
+      RAW_JBOD: ['GENERIC'],
+    };
+    const allowed = allowedByType[poolType.name] ?? ['GENERIC'];
+    if (!allowed.includes(profile.technology)) {
+      throw new ConflictException(
+        `Vdev profile ${profile.code} (${profile.technology}) is not compatible with pool type ${poolType.name}`,
+      );
+    }
+  }
+
+  private async assertProfileExists(id: string): Promise<VdevProfile> {
+    const profile = await this.vdevProfileModel.findByPk(id);
+    if (!profile) {
+      throw new NotFoundException(`VdevProfile with ID ${id} not found`);
+    }
+    return profile;
+  }
+
+  private async assertUniqueName(
+    storagePoolId: string,
+    vdevName: string,
+    exceptId?: string,
+  ): Promise<void> {
+    const existing = await this.logicalVdevModel.findOne({
+      where: { storagePoolId, vdevName: { [Op.iLike]: vdevName } },
+    });
+    if (existing && existing.id !== exceptId) {
+      throw new ConflictException(
+        `LogicalVdev with name "${vdevName}" already exists in storage pool ${storagePoolId}`,
+      );
+    }
   }
 }

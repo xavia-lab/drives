@@ -6,7 +6,7 @@ export class QueryLogicalDiskDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: 'displayKey',
     description:
-      'Sortable fields: id, displayKey, logicalVdevId, physicalDriveId, osDeviceNodePath, isSpareDrive, createdAt, updatedAt',
+      'Sortable fields: id, displayKey, logicalVdevId, physicalDriveId, memberRole, attachedAt, createdAt, updatedAt',
   })
   @IsOptional()
   @IsIn([
@@ -15,7 +15,8 @@ export class QueryLogicalDiskDto extends PaginationQueryDto {
     'logicalVdevId',
     'physicalDriveId',
     'osDeviceNodePath',
-    'isSpareDrive',
+    'memberRole',
+    'attachedAt',
     'createdAt',
     'updatedAt',
   ])

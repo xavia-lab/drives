@@ -1,0 +1,268 @@
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Op, Transaction } from 'sequelize';
+import { LogicalVdev } from './entities/logical-vdev.entity';
+import {
+  LogicalDisk,
+  VdevMemberRole,
+} from '../logical-disk/entities/logical-disk.entity';
+import {
+  VdevProfile,
+  VdevCapacityMode,
+} from '../vdev-profile/entities/vdev-profile.entity';
+import { PhysicalDrive } from '../physical-drive/entities/physical-drive.entity';
+import { DriveModel } from '../drive-model/entities/drive-model.entity';
+import { Capacity } from '../capacity/entities/capacity.entity';
+import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
+import { DriveLifecycleState } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
+
+export type VdevHealth =
+  'PLANNED' | 'INCOMPLETE' | 'ONLINE' | 'DEGRADED' | 'FAILED' | 'UNKNOWN';
+
+export interface VdevCapacity {
+  memberCount: number;
+  dataMemberCount: number;
+  spareCount: number;
+  minMembers: number;
+  maxMembers: number | null;
+  isComplete: boolean;
+  capacityKnown: boolean;
+  rawBytes: number | null;
+  dataRawBytes: number | null;
+  usableBytes: number | null;
+  smallestMemberBytes: number | null;
+  formula: string;
+  estimated: boolean;
+  health: VdevHealth;
+  memberStates: Record<string, string>;
+}
+
+@Injectable()
+export class VdevCapacityService {
+  constructor(
+    @InjectModel(LogicalVdev)
+    private readonly logicalVdevModel: typeof LogicalVdev,
+    @InjectModel(LogicalDisk)
+    private readonly logicalDiskModel: typeof LogicalDisk,
+    @InjectModel(VdevProfile)
+    private readonly vdevProfileModel: typeof VdevProfile,
+    private readonly lifecycleService: DriveLifecycleEventService,
+  ) {}
+
+  private capacityOf(member: LogicalDisk): number | null {
+    const drive = member.physicalDrive as PhysicalDrive | undefined;
+    const driveModel = drive?.driveModel;
+    const capacity = driveModel?.capacity;
+    const absolute = capacity?.absoluteCapacity;
+
+    if (absolute === undefined || absolute === null) {
+      return null;
+    }
+    const value = Number(absolute);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  private calculateFor(
+    profile: VdevProfile,
+    members: LogicalDisk[],
+    lifecycleByDrive: Map<string, { state: DriveLifecycleState }>,
+  ): VdevCapacity {
+    const dataMembers = members.filter(
+      (member) => member.memberRole === VdevMemberRole.DATA,
+    );
+    const spareCount = members.length - dataMembers.length;
+    const capacities = dataMembers.map((member) => this.capacityOf(member));
+    const known = capacities.filter((value): value is number => value !== null);
+    const capacityKnown =
+      capacities.length === 0 || known.length === capacities.length;
+
+    const rawBytes =
+      capacities.length === 0
+        ? 0
+        : known.reduce((sum, value) => sum + value, 0);
+    const dataRawBytes = capacityKnown ? rawBytes : null;
+    const smallest = known.length > 0 ? Math.min(...known) : null;
+
+    let usableBytes: number | null = null;
+    let formula = 'No data members';
+
+    if (dataMembers.length === 0) {
+      usableBytes = 0;
+    } else if (!capacityKnown || smallest === null) {
+      usableBytes = null;
+      formula = 'Unknown drive capacity';
+    } else {
+      switch (profile.capacityMode) {
+        case VdevCapacityMode.SUM:
+          usableBytes = known.reduce((sum, value) => sum + value, 0);
+          formula = 'sum of member capacities';
+          break;
+        case VdevCapacityMode.MIN:
+          usableBytes = smallest;
+          formula = 'smallest member capacity';
+          break;
+        case VdevCapacityMode.PARITY: {
+          const dataCount = Math.max(
+            0,
+            dataMembers.length - profile.parityMembers,
+          );
+          usableBytes = dataCount * smallest;
+          formula = `(${dataMembers.length} - ${profile.parityMembers}) × smallest member`;
+          break;
+        }
+        case VdevCapacityMode.MIRROR_GROUPS: {
+          const groupSize = Math.max(2, profile.mirrorCopies || 2);
+          const groups = Math.floor(dataMembers.length / groupSize);
+          usableBytes =
+            groups * Math.min(...known.slice(0, groups * groupSize));
+          formula = `${groups} mirror group(s) × smallest member per group`;
+          break;
+        }
+      }
+    }
+
+    const memberStates: Record<string, string> = {};
+    for (const member of members) {
+      const state = lifecycleByDrive.get(member.physicalDriveId)?.state;
+      if (state) memberStates[member.physicalDriveId] = state;
+    }
+    const states = Object.values(memberStates);
+    let health: VdevCapacity['health'] = 'UNKNOWN';
+    if (dataMembers.length === 0) {
+      health = 'PLANNED';
+    } else if (dataMembers.length < profile.minMembers) {
+      health = 'INCOMPLETE';
+    } else if (
+      states.some((state) =>
+        ['FAILED', 'RETIRED', 'DEGRADED', 'IN_RMA'].includes(state),
+      )
+    ) {
+      health = 'DEGRADED';
+    } else if (
+      states.some((state) => ['SCRAPPED', 'REPLACED', 'LOST'].includes(state))
+    ) {
+      health = 'FAILED';
+    } else if (
+      states.length > 0 &&
+      states.every((state) => state === 'IN_SERVICE')
+    ) {
+      health = 'ONLINE';
+    }
+
+    return {
+      memberCount: members.length,
+      dataMemberCount: dataMembers.length,
+      spareCount,
+      minMembers: profile.minMembers,
+      maxMembers: profile.maxMembers,
+      isComplete: dataMembers.length >= profile.minMembers,
+      capacityKnown,
+      rawBytes: capacityKnown ? rawBytes : null,
+      dataRawBytes,
+      usableBytes,
+      smallestMemberBytes: smallest,
+      formula,
+      estimated:
+        profile.capacityMode === VdevCapacityMode.PARITY ||
+        profile.capacityMode === VdevCapacityMode.MIRROR_GROUPS,
+      health,
+      memberStates,
+    };
+  }
+
+  private memberIncludes() {
+    return [
+      {
+        model: PhysicalDrive,
+        include: [{ model: DriveModel, include: [Capacity] }],
+      },
+    ];
+  }
+
+  async getMembers(
+    vdevId: string,
+    transaction?: Transaction,
+  ): Promise<LogicalDisk[]> {
+    return this.logicalDiskModel.findAll({
+      where: { logicalVdevId: vdevId },
+      include: this.memberIncludes(),
+      order: [
+        ['memberRole', 'ASC'],
+        ['groupIndex', 'ASC'],
+        ['memberIndex', 'ASC'],
+        ['displayKey', 'ASC'],
+      ],
+      transaction,
+    });
+  }
+
+  async calculate(
+    vdev: LogicalVdev,
+    transaction?: Transaction,
+  ): Promise<VdevCapacity> {
+    const snapshot = vdev.profileSnapshot as unknown as VdevProfile | null;
+    const profile =
+      snapshot ??
+      vdev.redundancyProfile ??
+      (await this.vdevProfileModel.findByPk(vdev.redundancyProfileId, {
+        transaction,
+      }));
+    if (!profile) {
+      throw new Error(`VdevProfile ${vdev.redundancyProfileId} not found`);
+    }
+    const members = await this.getMembers(vdev.id, transaction);
+    const lifecycleByDrive = await this.lifecycleService.getCurrentLifecycleMap(
+      members.map((member) => member.physicalDriveId),
+      transaction,
+    );
+    return this.calculateFor(profile, members, lifecycleByDrive);
+  }
+
+  async calculateMany(
+    vdevIds: string[],
+    transaction?: Transaction,
+  ): Promise<Map<string, VdevCapacity>> {
+    const result = new Map<string, VdevCapacity>();
+    if (vdevIds.length === 0) {
+      return result;
+    }
+
+    const vdevs = await this.logicalVdevModel.findAll({
+      where: { id: { [Op.in]: vdevIds } },
+      include: [VdevProfile],
+      transaction,
+    });
+    const members = await this.logicalDiskModel.findAll({
+      where: { logicalVdevId: { [Op.in]: vdevIds } },
+      include: this.memberIncludes(),
+      transaction,
+    });
+    const membersByVdev = new Map<string, LogicalDisk[]>();
+    for (const member of members) {
+      const list = membersByVdev.get(member.logicalVdevId) ?? [];
+      list.push(member);
+      membersByVdev.set(member.logicalVdevId, list);
+    }
+    const lifecycleByDrive = await this.lifecycleService.getCurrentLifecycleMap(
+      [...new Set(members.map((member) => member.physicalDriveId))],
+      transaction,
+    );
+
+    for (const vdev of vdevs) {
+      const profile =
+        (vdev.profileSnapshot as unknown as VdevProfile | null) ??
+        vdev.redundancyProfile;
+      if (!profile) continue;
+      result.set(
+        vdev.id,
+        this.calculateFor(
+          profile,
+          membersByVdev.get(vdev.id) ?? [],
+          lifecycleByDrive,
+        ),
+      );
+    }
+
+    return result;
+  }
+}

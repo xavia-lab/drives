@@ -1,118 +1,213 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
+import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { LogicalVdevService } from './logical-vdev.service';
-import {
-  LogicalVdev,
-  VdevRedundancyProfile,
-} from './entities/logical-vdev.entity';
+import { LogicalVdev, VdevClass } from './entities/logical-vdev.entity';
+import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
+import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
+import { LogicalVdevEvent } from './entities/logical-vdev-event.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
 import { PaginationService } from '../pagination/pagination.service';
-import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  vi,
-  type Mock,
-  type Mocked,
-} from 'vitest'; // 🚀 Pure ESM imports from Vitest
+import { VdevCapacityService } from './vdev-capacity.service';
 
 describe('LogicalVdevService', () => {
   let service: LogicalVdevService;
-
-  // 🚀 Explicit Vitest mock types replace legacy configuration definitions
-  let mockLogicalVdevModel: Record<string, Mock>;
-  let mockStoragePoolModel: Record<string, Mock>;
-  let mockPaginationService: Mocked<PaginationService>;
+  let vdevModel: Record<string, Mock>;
+  let storagePoolModel: Record<string, Mock>;
+  let vdevProfileModel: Record<string, Mock>;
+  let poolTypeModel: Record<string, Mock>;
+  let velocityEventModel: Record<string, Mock>;
+  let paginationService: { paginate: Mock };
+  let capacityService: {
+    calculateMany: Mock;
+    calculate: Mock;
+    getMembers: Mock;
+  };
 
   beforeEach(async () => {
-    mockLogicalVdevModel = {
-      findOne: vi.fn(), // 🚀 Swapped out legacy jest.fn() with vitest vi.fn()
+    vdevModel = {
       findByPk: vi.fn(),
+      findAll: vi.fn(),
+      findOne: vi.fn(),
       create: vi.fn(),
-      destroy: vi.fn(),
+      count: vi.fn(),
     };
-    mockStoragePoolModel = { findByPk: vi.fn() };
-
-    mockPaginationService = {
-      paginate: vi.fn(),
+    storagePoolModel = { findByPk: vi.fn() };
+    vdevProfileModel = { findByPk: vi.fn() };
+    poolTypeModel = { findByPk: vi.fn() };
+    velocityEventModel = { create: vi.fn() };
+    paginationService = { paginate: vi.fn() };
+    capacityService = {
+      calculateMany: vi.fn().mockResolvedValue(new Map()),
+      calculate: vi.fn(),
+      getMembers: vi.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LogicalVdevService,
-        { provide: getModelToken(LogicalVdev), useValue: mockLogicalVdevModel },
-        { provide: getModelToken(StoragePool), useValue: mockStoragePoolModel },
-        { provide: PaginationService, useValue: mockPaginationService },
+        { provide: getModelToken(LogicalVdev), useValue: vdevModel },
+        { provide: getModelToken(LogicalDisk), useValue: {} },
+        {
+          provide: getModelToken(StoragePool),
+          useValue: storagePoolModel,
+        },
+        {
+          provide: getModelToken(VdevProfile),
+          useValue: vdevProfileModel,
+        },
+        {
+          provide: getModelToken(PoolType),
+          useValue: poolTypeModel,
+        },
+        {
+          provide: getModelToken(LogicalVdevEvent),
+          useValue: velocityEventModel,
+        },
+        {
+          provide: getConnectionToken(),
+          useValue: {
+            transaction: vi.fn((cb: (t: unknown) => unknown) => cb({})),
+          },
+        },
+        { provide: PaginationService, useValue: paginationService },
+        { provide: VdevCapacityService, useValue: capacityService },
       ],
     }).compile();
 
-    service = module.get<LogicalVdevService>(LogicalVdevService);
-    vi.clearAllMocks(); // 🚀 Using Vitest native mock reset pipeline utilities
+    service = module.get(LogicalVdevService);
   });
 
-  describe('findAll', () => {
-    it('should cleanly delegate pagination logic to PaginationService with correct relation inclusions', async () => {
-      const mockQuery = { pageNumber: 1, pageSize: 10 };
-      const expectedPaginatedOutput = { data: [], meta: {} } as unknown as {
-        data: LogicalVdev[];
-        meta: Record<string, unknown>;
-      };
-      mockPaginationService.paginate.mockResolvedValue(expectedPaginatedOutput);
+  it('delegates pagination and enriches capacities', async () => {
+    const vdev = { id: 'vdev-1', setDataValue: vi.fn() };
+    paginationService.paginate.mockResolvedValue({ data: [vdev], meta: {} });
+    capacityService.calculateMany.mockResolvedValue(
+      new Map([['vdev-1', { memberCount: 3 }]]),
+    );
 
-      const result = await service.findAll(mockQuery);
+    const result = await service.findAll({ pageNumber: 1, pageSize: 10 });
 
-      expect(result).toEqual(expectedPaginatedOutput);
-      expect(mockPaginationService.paginate).toHaveBeenCalledWith(
-        mockLogicalVdevModel as unknown,
-        mockQuery,
-        { include: [StoragePool] },
-      );
+    expect(result.data).toHaveLength(1);
+    expect(vdev.setDataValue).toHaveBeenCalledWith('capacity', {
+      memberCount: 3,
     });
   });
 
-  describe('create', () => {
-    const createDto: CreateLogicalVdevDto = {
-      storagePoolId: 'pool-uuid',
-      vdevName: 'raidz2-0',
-      vdevRedundancyProfile: VdevRedundancyProfile.RAIDZ2,
-    };
+  it('rejects a vdev profile incompatible with the pool type', async () => {
+    storagePoolModel.findByPk.mockResolvedValue({
+      id: 'pool-1',
+      poolTypeId: 'pooltype-1',
+    });
+    vdevProfileModel.findByPk.mockResolvedValue({
+      id: 'profile-1',
+      code: 'RAIDZ2',
+      technology: 'ZFS',
+      toJSON: () => ({}),
+    });
+    poolTypeModel.findByPk.mockResolvedValue({
+      id: 'pooltype-1',
+      name: 'BTRFS',
+    });
+    vdevModel.findOne.mockResolvedValue(null);
 
-    it('should successfully create and reload a logical vdev if pool boundary conditions pass', async () => {
-      const mockReload = vi
-        .fn()
-        .mockResolvedValue({ id: 'vdev-uuid', ...createDto });
-      mockLogicalVdevModel.findOne.mockResolvedValue(null);
-      mockStoragePoolModel.findByPk.mockResolvedValue({ id: 'pool-uuid' });
-      mockLogicalVdevModel.create.mockResolvedValue({
-        id: 'vdev-uuid',
-        reload: mockReload,
-      });
+    await expect(
+      service.create({
+        storagePoolId: 'pool-1',
+        redundancyProfileId: 'profile-1',
+        vdevName: 'raidz2-0',
+      }),
+    ).rejects.toThrow(ConflictException);
+    expect(vdevModel.create).not.toHaveBeenCalled();
+  });
 
-      const result = await service.create(createDto);
+  it('aggregates pool health and spare counts from vdev capacity', async () => {
+    storagePoolModel.findByPk.mockResolvedValue({ id: 'pool-1' });
+    vdevModel.findAll.mockResolvedValue([
+      { id: 'vdev-data', vdevClass: VdevClass.DATA },
+      { id: 'vdev-spare', vdevClass: VdevClass.SPARE },
+    ]);
+    capacityService.calculateMany.mockResolvedValue(
+      new Map([
+        [
+          'vdev-data',
+          {
+            health: 'DEGRADED',
+            memberCount: 3,
+            rawBytes: 100,
+            usableBytes: 80,
+            estimated: false,
+          },
+        ],
+        [
+          'vdev-spare',
+          {
+            health: 'ONLINE',
+            memberCount: 2,
+            rawBytes: 0,
+            usableBytes: 0,
+            estimated: false,
+          },
+        ],
+      ]),
+    );
 
-      expect(result).toBeDefined();
-      expect(mockLogicalVdevModel.create).toHaveBeenCalledWith(createDto);
-      expect(mockReload).toHaveBeenCalledWith({ include: [StoragePool] });
+    const result = await service.getPoolCapacity('pool-1');
+
+    expect(result.health).toBe('DEGRADED');
+    expect(result.spareVdevCount).toBe(1);
+    expect(result.spareMemberCount).toBe(2);
+    expect(result.healthCounts.DEGRADED).toBe(1);
+  });
+
+  it('paginates a vdev configuration history newest-first', async () => {
+    vdevModel.findByPk.mockResolvedValue({ id: 'vdev-1' });
+    paginationService.paginate.mockResolvedValue({
+      data: [],
+      meta: { totalItems: 0 },
     });
 
-    it('should throw ConflictException if vdev name already exists inside the same parent storage pool scope', async () => {
-      mockLogicalVdevModel.findOne.mockResolvedValue({ id: 'existing-id' });
-
-      await expect(service.create(createDto)).rejects.toThrow(
-        ConflictException,
-      );
+    await service.getConfigHistory('vdev-1', {
+      pageNumber: 2,
+      pageSize: 5,
     });
 
-    it('should throw NotFoundException if targeted parent storage pool is missing from the system repository', async () => {
-      mockLogicalVdevModel.findOne.mockResolvedValue(null);
-      mockStoragePoolModel.findByPk.mockResolvedValue(null);
+    expect(paginationService.paginate).toHaveBeenCalledWith(
+      velocityEventModel,
+      expect.objectContaining({
+        pageNumber: 2,
+        pageSize: 5,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc',
+      }),
+      { where: { logicalVdevId: 'vdev-1' } },
+    );
+  });
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        new NotFoundException('StoragePool with ID pool-uuid not found'),
-      );
+  it('paginates a pool configuration history including deleted vdevs', async () => {
+    storagePoolModel.findByPk.mockResolvedValue({ id: 'pool-1' });
+    paginationService.paginate.mockResolvedValue({
+      data: [],
+      meta: { totalItems: 0 },
     });
+
+    await service.getPoolConfigHistory('pool-1', { pageNumber: 1 });
+
+    expect(paginationService.paginate).toHaveBeenCalledWith(
+      velocityEventModel,
+      expect.objectContaining({
+        pageNumber: 1,
+        pageSize: 20,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc',
+      }),
+      { where: { storagePoolId: 'pool-1' } },
+    );
+  });
+
+  it('throws when a vdev does not exist', async () => {
+    vdevModel.findByPk.mockResolvedValue(null);
+    await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
   });
 });

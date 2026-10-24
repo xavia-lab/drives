@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Op, Transaction } from 'sequelize';
 import { PassthroughSlot } from './entities/passthrough-slot.entity';
 import { ServerSlot } from '../physical-server/entities/server-slot.entity';
+import { ServerSlotAllocationService } from '../server-slot-allocation/server-slot-allocation.service';
 
 export interface PassthroughSlotInput {
   id?: string;
@@ -20,6 +21,7 @@ export class PassthroughSlotService {
     private readonly passthroughSlotModel: typeof PassthroughSlot,
     @InjectModel(ServerSlot)
     private readonly serverSlotModel: typeof ServerSlot,
+    private readonly slotAllocationService: ServerSlotAllocationService,
   ) {}
 
   /**
@@ -95,12 +97,16 @@ export class PassthroughSlotService {
     );
     const incomingSet = new Set(incomingIds);
 
-    const removedIds = existing
-      .filter((row) => !incomingSet.has(row.serverSlotId))
-      .map((row) => row.id);
-    if (removedIds.length > 0) {
+    const removed = existing.filter(
+      (row) => !incomingSet.has(row.serverSlotId),
+    );
+    if (removed.length > 0) {
+      await this.slotAllocationService.assertSlotDrivesNotVdevMembers(
+        removed.map((row) => row.serverSlotId),
+        transaction,
+      );
       await this.passthroughSlotModel.destroy({
-        where: { id: removedIds },
+        where: { id: removed.map((row) => row.id) },
         transaction,
       });
     }

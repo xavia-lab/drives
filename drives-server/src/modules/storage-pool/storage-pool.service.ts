@@ -22,6 +22,8 @@ import { QueryStoragePoolDto } from './dto/query-storage-pool.dto';
 import { ImportStoragePoolDto } from './dto/import-storage-pool.dto';
 import { ExportStoragePoolDto } from './dto/export-storage-pool.dto';
 import { PaginationService } from '../pagination/pagination.service';
+import { LogicalVdevService } from '../logical-vdev/logical-vdev.service';
+import { StorageTopologyService } from '../storage-topology/storage-topology.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
 
 interface CurrentPoolHost {
@@ -54,6 +56,8 @@ export class StoragePoolService {
     @InjectModel(PoolType)
     private readonly poolTypeModel: typeof PoolType,
     private readonly paginationService: PaginationService,
+    private readonly logicalVdevService: LogicalVdevService,
+    private readonly storageTopology: StorageTopologyService,
     @InjectConnection()
     private readonly sequelize: Sequelize,
   ) {}
@@ -83,6 +87,22 @@ export class StoragePoolService {
   }
 
   // Private helper to check foreign key constraints concurrently and aggregate errors
+  private async assertPoolNameAvailable(
+    poolName: string,
+    exceptId?: string,
+    transaction?: Transaction,
+  ): Promise<void> {
+    const existing = await this.storagePoolModel.findOne({
+      where: { poolName: { [Op.iLike]: poolName } },
+      transaction,
+    });
+    if (existing && existing.id !== exceptId) {
+      throw new ConflictException(
+        `StoragePool with name "${poolName}" already exists`,
+      );
+    }
+  }
+
   private async validateForeignKeys(
     ids: {
       poolTypeId?: string;
@@ -267,6 +287,11 @@ export class StoragePoolService {
 
       // 2. Validate targeted foreign key references exist concurrently
       await this.validateForeignKeys(createDto, transaction);
+      await this.assertPoolNameAvailable(
+        createDto.poolName,
+        undefined,
+        transaction,
+      );
 
       // 3. Persist the pool row itself (no host columns any more)
       const pool = await this.storagePoolModel.create(
@@ -308,6 +333,9 @@ export class StoragePoolService {
     }
 
     await this.validateForeignKeys({ poolTypeId: updateDto.poolTypeId });
+    if (updateDto.poolName) {
+      await this.assertPoolNameAvailable(updateDto.poolName, id);
+    }
 
     const updateData: Partial<StoragePool> = {};
     if (updateDto.poolName !== undefined)
@@ -358,6 +386,31 @@ export class StoragePoolService {
         },
         transaction,
       );
+
+      // A pool may only move to a host that can actually see every current
+      // vdev member drive. Otherwise the membership projection would point at
+      // inaccessible hardware immediately after the import.
+      const memberDriveIds =
+        await this.logicalVdevService.getPoolMemberDriveIds(id, transaction);
+      if (memberDriveIds.length > 0) {
+        const hostType = importDto.serverId ? 'PHYSICAL' : 'VIRTUAL';
+        const hostId = (importDto.serverId ??
+          importDto.virtualServerId) as string;
+        const accessible =
+          await this.storageTopology.getAccessibleDriveIdsForHost(
+            hostType,
+            hostId,
+            transaction,
+          );
+        const inaccessible = memberDriveIds.filter(
+          (driveId) => !accessible.has(driveId),
+        );
+        if (inaccessible.length > 0) {
+          throw new ConflictException(
+            `Storage pool ${id} has vdev member drive(s) ${inaccessible.join(', ')} that are not accessible to the target host`,
+          );
+        }
+      }
 
       await this.storagePoolHostModel.create(
         {
