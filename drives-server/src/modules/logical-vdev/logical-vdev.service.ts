@@ -17,9 +17,19 @@ import {
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
 import { QueryLogicalVdevDto } from './dto/query-logical-vdev.dto';
+import { QueryLogicalVdevEventDto } from './dto/query-logical-vdev-event.dto';
 import { PaginationService } from '../pagination/pagination.service';
 import { PaginatedResponse } from '../pagination/interfaces/paginated-response';
-import { VdevCapacityService } from './vdev-capacity.service';
+import { VdevCapacityService, type VdevHealth } from './vdev-capacity.service';
+
+const VDEV_HEALTH_RANK: Record<VdevHealth, number> = {
+  ONLINE: 0,
+  PLANNED: 1,
+  UNKNOWN: 2,
+  INCOMPLETE: 3,
+  DEGRADED: 4,
+  FAILED: 5,
+};
 
 @Injectable()
 export class LogicalVdevService {
@@ -291,15 +301,55 @@ export class LogicalVdevService {
     return true;
   }
 
-  async getConfigHistory(id: string): Promise<LogicalVdevEvent[]> {
+  async getConfigHistory(
+    id: string,
+    query: QueryLogicalVdevEventDto = {},
+  ): Promise<PaginatedResponse<LogicalVdevEvent>> {
     await this.assertVdevExists(id);
-    return this.vdevEventModel.findAll({
-      where: { logicalVdevId: id },
-      order: [
-        ['eventTimestamp', 'DESC'],
-        ['displayKey', 'DESC'],
-      ],
-    });
+    return this.paginationService.paginate<LogicalVdevEvent>(
+      this.vdevEventModel,
+      this.withHistoryDefaults(query),
+      { where: this.historyWhere({ logicalVdevId: id }, query) },
+    );
+  }
+
+  async getPoolConfigHistory(
+    storagePoolId: string,
+    query: QueryLogicalVdevEventDto = {},
+  ): Promise<PaginatedResponse<LogicalVdevEvent>> {
+    await this.assertPoolExists(storagePoolId);
+    return this.paginationService.paginate<LogicalVdevEvent>(
+      this.vdevEventModel,
+      this.withHistoryDefaults(query),
+      { where: this.historyWhere({ storagePoolId }, query) },
+    );
+  }
+
+  private historyWhere(
+    base: WhereOptions,
+    query: QueryLogicalVdevEventDto,
+  ): WhereOptions {
+    const where = { ...base } as Record<string, unknown>;
+    if (query.action !== undefined) where.action = query.action;
+    if (!('logicalVdevId' in base) && query.logicalVdevId !== undefined)
+      where.logicalVdevId = query.logicalVdevId;
+    if (!('storagePoolId' in base) && query.storagePoolId !== undefined)
+      where.storagePoolId = query.storagePoolId;
+    return where;
+  }
+
+  private withHistoryDefaults(
+    query: QueryLogicalVdevEventDto,
+  ): QueryLogicalVdevEventDto {
+    return Object.assign(
+      {
+        pageNumber: 1,
+        pageSize: 20,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc' as const,
+      },
+      query,
+    );
   }
 
   private async assertVdevExists(id: string): Promise<void> {
@@ -343,17 +393,44 @@ export class LogicalVdevService {
     let usableBytes = 0;
     let capacityKnown = true;
     let estimated = false;
+    let spareVdevCount = 0;
+    let spareMemberCount = 0;
+    let health: VdevHealth | null = null;
+    const healthCounts: Record<VdevHealth, number> = {
+      PLANNED: 0,
+      INCOMPLETE: 0,
+      ONLINE: 0,
+      DEGRADED: 0,
+      FAILED: 0,
+      UNKNOWN: 0,
+    };
+
     for (const vdev of vdevs) {
-      if (vdev.vdevClass !== VdevClass.DATA) continue;
       const capacity = capacities.get(vdev.id);
-      if (!capacity) continue;
-      if (capacity.rawBytes === null || capacity.usableBytes === null) {
-        capacityKnown = false;
-      } else {
-        rawBytes += capacity.rawBytes;
-        usableBytes += capacity.usableBytes;
+      if (capacity) {
+        healthCounts[capacity.health] += 1;
       }
-      estimated = estimated || capacity.estimated;
+      if (vdev.vdevClass === VdevClass.SPARE) {
+        spareVdevCount += 1;
+        spareMemberCount += capacity?.memberCount ?? 0;
+        continue;
+      }
+      if (vdev.vdevClass !== VdevClass.DATA) continue;
+      if (capacity) {
+        if (
+          health === null ||
+          VDEV_HEALTH_RANK[capacity.health] > VDEV_HEALTH_RANK[health]
+        ) {
+          health = capacity.health;
+        }
+        if (capacity.rawBytes === null || capacity.usableBytes === null) {
+          capacityKnown = false;
+        } else {
+          rawBytes += capacity.rawBytes;
+          usableBytes += capacity.usableBytes;
+        }
+        estimated = estimated || capacity.estimated;
+      }
     }
 
     return {
@@ -365,6 +442,10 @@ export class LogicalVdevService {
       usableBytes: capacityKnown ? usableBytes : null,
       capacityKnown,
       estimated,
+      health: health ?? 'PLANNED',
+      healthCounts,
+      spareVdevCount,
+      spareMemberCount,
     };
   }
 

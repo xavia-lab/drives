@@ -6,18 +6,21 @@ import {
   useCan,
   useCustom,
   useCustomMutation,
+  useList,
 } from "@refinedev/core";
-import { LookupSelect } from "@components/lookup-select";
+import { useLookupOptions } from "@hooks/use-lookup-options";
 import {
   Alert,
   App,
   Button,
   Card,
+  Checkbox,
   Col,
   Empty,
   Form,
   Input,
   Modal,
+  Pagination,
   Popconfirm,
   Progress,
   Row,
@@ -50,6 +53,7 @@ interface VdevProfileRecord {
   minMembers: number;
   maxMembers: number | null;
   capacityMode: string;
+  technology: string;
 }
 
 interface DriveShallow {
@@ -127,6 +131,21 @@ interface PoolCapacity {
   estimated: boolean;
   vdevCount: number;
   dataVdevCount: number;
+  health: VdevCapacity["health"];
+  healthCounts: Record<VdevCapacity["health"], number>;
+  spareVdevCount: number;
+  spareMemberCount: number;
+}
+
+interface HistoryPage {
+  data: VdevConfigEvent[];
+  meta: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
 
 interface DraftMember {
@@ -138,6 +157,13 @@ type Draft = Record<string, DraftMember[]>;
 
 interface StoragePoolVdevManagerProps {
   poolId?: string;
+  poolTypeId?: string;
+}
+
+interface HistoryScope {
+  kind: "vdev" | "pool";
+  id: string;
+  name: string;
 }
 
 const formatBytes = (bytes: number | null | undefined) => {
@@ -149,6 +175,14 @@ const formatBytes = (bytes: number | null | undefined) => {
     units.length - 1,
   );
   return `${(bytes / 1000 ** index).toFixed(2)} ${units[index]}`;
+};
+
+const allowedTechnologies: Record<string, string[]> = {
+  ZFS: ["ZFS", "GENERIC"],
+  BTRFS: ["BTRFS", "GENERIC"],
+  CEPH_OSD_POOL: ["CEPH", "GENERIC"],
+  MDRAID: ["MDRAID", "GENERIC"],
+  RAW_JBOD: ["GENERIC"],
 };
 
 const healthColor: Record<VdevCapacity["health"], string> = {
@@ -179,6 +213,7 @@ const draftFromVdevs = (vdevs: VdevRecord[]): Draft =>
 
 export const StoragePoolVdevManager = ({
   poolId,
+  poolTypeId,
 }: StoragePoolVdevManagerProps) => {
   const apiUrl = useApiUrl();
   const { message } = App.useApp();
@@ -204,7 +239,11 @@ export const StoragePoolVdevManager = ({
   const [draft, setDraft] = useState<Draft | null>(null);
   const lastVdevSignature = useRef("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [historyVdev, setHistoryVdev] = useState<VdevRecord | null>(null);
+  const [historyScope, setHistoryScope] = useState<HistoryScope | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [selectedDriveIds, setSelectedDriveIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -224,11 +263,24 @@ export const StoragePoolVdevManager = ({
       refetchOnWindowFocus: false,
     },
   });
-  const historyQuery = useCustom<VdevConfigEvent[]>({
-    url: `${apiUrl}/logical-vdevs/${historyVdev?.id ?? ""}/config-history`,
+  const { query: profilesQuery } = useList<VdevProfileRecord>({
+    resource: "vdev-profiles",
+    pagination: { mode: "server", currentPage: 1, pageSize: 100 },
+  });
+  const { options: poolTypeOptions } = useLookupOptions({
+    resource: "pool-types",
+    optionLabel: "name",
+  });
+  const historyUrl = historyScope
+    ? historyScope.kind === "vdev"
+      ? `${apiUrl}/logical-vdevs/${historyScope.id}/config-history`
+      : `${apiUrl}/storage-pools/${historyScope.id}/vdev-config-history`
+    : "";
+  const historyQuery = useCustom<HistoryPage>({
+    url: `${historyUrl}?pageNumber=${historyPage}&pageSize=8`,
     method: "get",
     queryOptions: {
-      enabled: Boolean(historyVdev),
+      enabled: Boolean(historyScope),
       refetchOnWindowFocus: false,
     },
   });
@@ -256,6 +308,18 @@ export const StoragePoolVdevManager = ({
     [availableQuery.result],
   );
   const capacity = capacityQuery.result?.data as PoolCapacity | undefined;
+  const poolTypeName = poolTypeOptions.find(
+    (option) => option.value === poolTypeId,
+  )?.label;
+  const compatibleProfiles = useMemo(() => {
+    const profiles = profilesQuery.data?.data ?? [];
+    const allowed = poolTypeName
+      ? (allowedTechnologies[String(poolTypeName)] ?? ["GENERIC"])
+      : null;
+    return allowed
+      ? profiles.filter((profile) => allowed.includes(profile.technology))
+      : profiles;
+  }, [poolTypeName, profilesQuery.data?.data]);
 
   const vdevSignature = useMemo(
     () =>
@@ -279,6 +343,7 @@ export const StoragePoolVdevManager = ({
     if (vdevSignature === lastVdevSignature.current) return;
     lastVdevSignature.current = vdevSignature;
     setDraft(draftFromVdevs(vdevs));
+    setSelectedDriveIds(new Set());
   }, [vdevSignature, vdevs, vdevsQuery.result]);
 
   const driveById = useMemo(() => {
@@ -398,6 +463,55 @@ export const StoragePoolVdevManager = ({
     });
   };
 
+  const toggleSelection = (driveId: string) => {
+    setSelectedDriveIds((current) => {
+      const next = new Set(current);
+      if (next.has(driveId)) next.delete(driveId);
+      else next.add(driveId);
+      return next;
+    });
+  };
+
+  const bulkMove = (targetVdevId: string) => {
+    if (selectedDriveIds.size === 0) return;
+    setDraft((current) => {
+      const next: Draft = {};
+      for (const vdev of vdevs) {
+        next[vdev.id] = (current?.[vdev.id] ?? []).filter(
+          (member) => !selectedDriveIds.has(member.physicalDriveId),
+        );
+      }
+      next[targetVdevId] = [
+        ...(next[targetVdevId] ?? []),
+        ...Array.from(selectedDriveIds).map((physicalDriveId) => ({
+          physicalDriveId,
+        })),
+      ];
+      return next;
+    });
+    setSelectedDriveIds(new Set());
+  };
+
+  const bulkRemove = () => {
+    if (selectedDriveIds.size === 0) return;
+    setDraft((current) =>
+      Object.fromEntries(
+        vdevs.map((vdev) => [
+          vdev.id,
+          (current?.[vdev.id] ?? []).filter(
+            (member) => !selectedDriveIds.has(member.physicalDriveId),
+          ),
+        ]),
+      ),
+    );
+    setSelectedDriveIds(new Set());
+  };
+
+  const openHistory = (scope: HistoryScope) => {
+    setHistoryPage(1);
+    setHistoryScope(scope);
+  };
+
   const handleSave = async () => {
     if (!poolId || !draft) return;
     setSaving(true);
@@ -413,6 +527,7 @@ export const StoragePoolVdevManager = ({
         },
       });
       message.success("Vdev layout saved");
+      setSelectedDriveIds(new Set());
       await Promise.all([
         vdevsQuery.query.refetch(),
         availableQuery.query.refetch(),
@@ -486,6 +601,14 @@ export const StoragePoolVdevManager = ({
       }
       extra={
         <Space>
+          <Tooltip title="Pool configuration history">
+            <Button
+              icon={<HistoryOutlined />}
+              onClick={() =>
+                openHistory({ kind: "pool", id: poolId, name: "Pool" })
+              }
+            />
+          </Tooltip>
           <Tooltip title="Reload capacity and memberships">
             <Button
               icon={<ReloadOutlined />}
@@ -517,22 +640,32 @@ export const StoragePoolVdevManager = ({
         {capacity ? (
           <Card size="small" style={{ background: token.colorFillQuaternary }}>
             <Row gutter={24}>
-              <Col xs={12} md={6}>
+              <Col xs={12} md={4}>
                 <Statistic
                   title="Raw capacity"
                   value={formatBytes(capacity.rawBytes)}
                 />
               </Col>
-              <Col xs={12} md={6}>
+              <Col xs={12} md={4}>
                 <Statistic
                   title="Usable capacity"
                   value={formatBytes(capacity.usableBytes)}
                 />
               </Col>
-              <Col xs={12} md={6}>
+              <Col xs={12} md={4}>
                 <Statistic title="Vdevs" value={capacity.vdevCount} />
               </Col>
-              <Col xs={12} md={6}>
+              <Col xs={12} md={4}>
+                <Statistic title="Spares" value={capacity.spareMemberCount} />
+              </Col>
+              <Col xs={12} md={4}>
+                <Statistic
+                  title="Health"
+                  value={capacity.health}
+                  valueStyle={{ color: token.colorText }}
+                />
+              </Col>
+              <Col xs={12} md={4}>
                 <Statistic
                   title="Capacity estimate"
                   value={capacity.estimated ? "Estimated" : "Exact"}
@@ -552,9 +685,37 @@ export const StoragePoolVdevManager = ({
 
         <Text type="secondary">
           Drag-free layout editor: add a drive to a vdev, remove it, or move it
-          to another vdev in this pool, then save the complete layout. The save
-          is transactional.
+          to another vdev in this pool, then save the complete layout. Select
+          multiple member drives to move or remove them in bulk. The save is
+          transactional.
         </Text>
+
+        {selectedDriveIds.size > 0 && canSaveLayout?.can ? (
+          <Card size="small" style={{ background: token.colorFillQuaternary }}>
+            <Space wrap>
+              <Tag color="blue">{selectedDriveIds.size} selected</Tag>
+              <Select
+                placeholder="Move selected to"
+                style={{ minWidth: 180 }}
+                value={null}
+                options={vdevs.map((vdev) => ({
+                  value: vdev.id,
+                  label: vdev.vdevName,
+                }))}
+                onChange={(target) => target && bulkMove(target)}
+              />
+              <Button danger onClick={bulkRemove}>
+                Remove selected
+              </Button>
+              <Button
+                type="text"
+                onClick={() => setSelectedDriveIds(new Set())}
+              >
+                Clear selection
+              </Button>
+            </Space>
+          </Card>
+        ) : null}
 
         {vdevs.length === 0 ? (
           <Empty
@@ -610,7 +771,13 @@ export const StoragePoolVdevManager = ({
                         <Button
                           size="small"
                           icon={<HistoryOutlined />}
-                          onClick={() => setHistoryVdev(vdev)}
+                          onClick={() =>
+                            openHistory({
+                              kind: "vdev",
+                              id: vdev.id,
+                              name: vdev.vdevName,
+                            })
+                          }
                         />
                       </Tooltip>
                       {canCreateVdev?.can ? (
@@ -682,6 +849,16 @@ export const StoragePoolVdevManager = ({
                                   background: token.colorFillQuaternary,
                                 }}
                               >
+                                {canSaveLayout?.can ? (
+                                  <Checkbox
+                                    checked={selectedDriveIds.has(
+                                      member.physicalDriveId,
+                                    )}
+                                    onChange={() =>
+                                      toggleSelection(member.physicalDriveId)
+                                    }
+                                  />
+                                ) : null}
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <Text
                                     strong
@@ -802,10 +979,20 @@ export const StoragePoolVdevManager = ({
             name="redundancyProfileId"
             rules={[{ required: true, message: "Select a profile" }]}
           >
-            <LookupSelect
-              resource="vdev-profiles"
-              optionLabel="displayName"
-              placeholder="Select profile"
+            <Select
+              showSearch
+              optionFilterProp="label"
+              loading={profilesQuery.isLoading}
+              placeholder={
+                compatibleProfiles.length
+                  ? "Select profile"
+                  : "No compatible profile for this pool type"
+              }
+              disabled={compatibleProfiles.length === 0}
+              options={compatibleProfiles.map((profile) => ({
+                value: profile.id,
+                label: profile.displayName,
+              }))}
             />
           </Form.Item>
           <Form.Item label="Vdev class" name="vdevClass">
@@ -822,49 +1009,62 @@ export const StoragePoolVdevManager = ({
       </Modal>
 
       <Modal
-        open={Boolean(historyVdev)}
-        title={`Configuration history${historyVdev ? ` — ${historyVdev.vdevName}` : ""}`}
+        open={Boolean(historyScope)}
+        title={`${historyScope?.kind === "vdev" ? "Vdev" : "Pool"} configuration history${historyScope ? ` — ${historyScope.name}` : ""}`}
         footer={null}
         width={680}
-        onCancel={() => setHistoryVdev(null)}
+        onCancel={() => setHistoryScope(null)}
+        afterClose={() => setHistoryPage(1)}
         destroyOnHidden
       >
         {historyQuery.query.isLoading ? (
           <Spin />
-        ) : (historyQuery.result?.data ?? []).length === 0 ? (
+        ) : (historyQuery.result?.data?.data ?? []).length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="No configuration events recorded"
           />
         ) : (
-          <Timeline
-            items={(historyQuery.result?.data ?? []).map((event) => ({
-              color:
-                event.action === "DELETE"
-                  ? "red"
-                  : event.action === "CREATE"
-                    ? "green"
-                    : "blue",
-              children: (
-                <Space direction="vertical" size={2}>
-                  <Space wrap>
-                    <Tag>{event.action}</Tag>
-                    <Text type="secondary">
-                      {new Date(event.eventTimestamp).toLocaleString()}
+          <>
+            <Timeline
+              items={(historyQuery.result?.data?.data ?? []).map((event) => ({
+                color:
+                  event.action === "DELETE"
+                    ? "red"
+                    : event.action === "CREATE"
+                      ? "green"
+                      : "blue",
+                children: (
+                  <Space direction="vertical" size={2}>
+                    <Space wrap>
+                      <Tag>{event.action}</Tag>
+                      <Text type="secondary">
+                        {new Date(event.eventTimestamp).toLocaleString()}
+                      </Text>
+                    </Space>
+                    <Text>
+                      {snapshotSummary(
+                        event.afterSnapshot ?? event.beforeSnapshot,
+                      )}
                     </Text>
+                    {event.notes ? (
+                      <Text type="secondary">{event.notes}</Text>
+                    ) : null}
                   </Space>
-                  <Text>
-                    {snapshotSummary(
-                      event.afterSnapshot ?? event.beforeSnapshot,
-                    )}
-                  </Text>
-                  {event.notes ? (
-                    <Text type="secondary">{event.notes}</Text>
-                  ) : null}
-                </Space>
-              ),
-            }))}
-          />
+                ),
+              }))}
+            />
+            <Pagination
+              size="small"
+              current={
+                historyQuery.result?.data?.meta.currentPage ?? historyPage
+              }
+              pageSize={historyQuery.result?.data?.meta.itemsPerPage ?? 8}
+              total={historyQuery.result?.data?.meta.totalItems ?? 0}
+              showSizeChanger={false}
+              onChange={setHistoryPage}
+            />
+          </>
         )}
       </Modal>
     </Card>

@@ -16,6 +16,9 @@ import { Capacity } from '../capacity/entities/capacity.entity';
 import { DriveLifecycleEventService } from '../drive-lifecycle-event/drive-lifecycle-event.service';
 import { DriveLifecycleState } from '../drive-lifecycle-event/entities/drive-lifecycle-event.entity';
 
+export type VdevHealth =
+  'PLANNED' | 'INCOMPLETE' | 'ONLINE' | 'DEGRADED' | 'FAILED' | 'UNKNOWN';
+
 export interface VdevCapacity {
   memberCount: number;
   dataMemberCount: number;
@@ -30,8 +33,7 @@ export interface VdevCapacity {
   smallestMemberBytes: number | null;
   formula: string;
   estimated: boolean;
-  health:
-    'PLANNED' | 'INCOMPLETE' | 'ONLINE' | 'DEGRADED' | 'FAILED' | 'UNKNOWN';
+  health: VdevHealth;
   memberStates: Record<string, string>;
 }
 

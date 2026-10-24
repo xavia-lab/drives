@@ -1,5 +1,13 @@
 # @drives/drives-ui
 
+## 0.0.5
+
+### Patch Changes
+
+- a6e80d7: Moved the logout button from the manu and under the user name at the top right of the screen. Also made the favicon dynamic so it now follows the application theme.
+- Implemented Production Readiness checklist for vdevs and pools.
+- 10c97f8: Enhanced the `New Drive Acquisition` workflow and allow either selecting an existing drive model or createing a new model in a sub workflow.
+
 ## 0.0.4
 
 ### Patch Changes

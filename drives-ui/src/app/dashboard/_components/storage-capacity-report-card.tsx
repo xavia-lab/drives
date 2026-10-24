@@ -27,6 +27,10 @@ interface ReportPool {
   usableBytes: number | null;
   capacityKnown: boolean;
   estimated: boolean;
+  health:
+    "PLANNED" | "INCOMPLETE" | "ONLINE" | "DEGRADED" | "FAILED" | "UNKNOWN";
+  spareVdevCount: number;
+  spareMemberCount: number;
 }
 
 interface Report {
@@ -39,8 +43,20 @@ interface Report {
     usableBytes: number;
     capacityKnown: boolean;
     estimated: boolean;
+    spareVdevCount: number;
+    spareMemberCount: number;
+    attentionPoolCount: number;
   };
 }
+
+const healthColor: Record<ReportPool["health"], string> = {
+  PLANNED: "default",
+  INCOMPLETE: "orange",
+  ONLINE: "green",
+  DEGRADED: "gold",
+  FAILED: "red",
+  UNKNOWN: "default",
+};
 
 const formatBytes = (bytes: number | null | undefined) => {
   if (bytes === null || bytes === undefined) return "-";
@@ -76,8 +92,17 @@ export const StorageCapacityReportCard = () => {
       subtitle="Vdev-derived raw and usable capacity across pools"
       icon={<DatabaseOutlined />}
       extra={
-        report?.totals.estimated ? (
-          <Tag color="orange">Includes estimates</Tag>
+        report?.totals.estimated || report?.totals.attentionPoolCount ? (
+          <Space size={4}>
+            {report?.totals.estimated ? (
+              <Tag color="orange">Includes estimates</Tag>
+            ) : null}
+            {report?.totals.attentionPoolCount ? (
+              <Tag color="red">
+                {report.totals.attentionPoolCount} pool(s) need attention
+              </Tag>
+            ) : null}
+          </Space>
         ) : undefined
       }
     >
@@ -99,6 +124,7 @@ export const StorageCapacityReportCard = () => {
               ["Vdevs", report.totals.vdevCount],
               ["Raw", formatBytes(report.totals.rawBytes)],
               ["Usable", formatBytes(report.totals.usableBytes)],
+              ["Spares", report.totals.spareMemberCount],
             ].map(([label, value]) => (
               <div
                 key={String(label)}
@@ -162,7 +188,23 @@ export const StorageCapacityReportCard = () => {
               render={(_, pool: ReportPool) => formatBytes(pool.usableBytes)}
             />
             <Table.Column
-              title="Status"
+              title="Health"
+              width={110}
+              render={(_, pool: ReportPool) => (
+                <Tag color={healthColor[pool.health]}>{pool.health}</Tag>
+              )}
+            />
+            <Table.Column
+              title="Spares"
+              width={90}
+              render={(_, pool: ReportPool) =>
+                pool.spareMemberCount > 0
+                  ? `${pool.spareMemberCount} (${pool.spareVdevCount} vdev)`
+                  : "-"
+              }
+            />
+            <Table.Column
+              title="Capacity"
               width={110}
               render={(_, pool: ReportPool) =>
                 pool.capacityKnown ? (

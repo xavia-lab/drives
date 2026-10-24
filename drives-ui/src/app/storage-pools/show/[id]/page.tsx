@@ -120,7 +120,10 @@ export default function StoragePoolShow() {
           <StoragePoolHostsTimeline events={hosts} />
         </Card>
 
-        <StoragePoolVdevManager poolId={record?.id as string | undefined} />
+        <StoragePoolVdevManager
+          poolId={record?.id as string | undefined}
+          poolTypeId={record?.poolTypeId as string | undefined}
+        />
 
         <Row justify="center" gutter={32}>
           <Col style={{ textAlign: "center" }}>

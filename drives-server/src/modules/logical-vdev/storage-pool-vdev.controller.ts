@@ -6,12 +6,14 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
@@ -27,6 +29,8 @@ import { StorageTopologyService } from '../storage-topology/storage-topology.ser
 import { VdevMembershipService } from '../logical-disk/vdev-membership.service';
 import { SaveVdevLayoutDto } from '../logical-disk/dto/save-vdev-layout.dto';
 import { LogicalDiskMemberResponseDto } from '../logical-disk/dto/response/logical-disk-member-response.dto';
+import { QueryLogicalVdevEventDto } from './dto/query-logical-vdev-event.dto';
+import { LogicalVdevEventResponseDto } from './dto/response/logical-vdev-event-response.dto';
 
 @ApiTags('storage-pool-vdevs')
 @Controller('storage-pools')
@@ -62,6 +66,20 @@ export class StoragePoolVdevController {
       ...dto,
       storagePoolId: poolId,
     });
+  }
+
+  @Get(':poolId/vdev-config-history')
+  @CheckPolicy('list', 'logical-vdevs')
+  @Serialize(LogicalVdevEventResponseDto)
+  @ApiOperation({
+    summary: 'Get paginated vdev configuration history for a storage pool',
+  })
+  @ApiQuery({ type: QueryLogicalVdevEventDto })
+  async configHistory(
+    @Param('poolId', new ParseUUIDPipe({ version: '7' })) poolId: string,
+    @Query() query: QueryLogicalVdevEventDto,
+  ) {
+    return this.logicalVdevService.getPoolConfigHistory(poolId, query);
   }
 
   @Get(':poolId/vdev-capacity')

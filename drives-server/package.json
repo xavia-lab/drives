@@ -1,6 +1,6 @@
 {
   "name": "@drives/drives-server",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A Nest.JS based API backend!",
   "author": "Rehan Mahmood",
   "license": "Apache-2.0",

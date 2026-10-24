@@ -37,6 +37,16 @@ export class StoragePoolReportController {
     );
 
     const known = pools.filter((pool) => pool.capacityKnown);
+    const healthCounts = pools.reduce<Record<string, number>>((acc, pool) => {
+      for (const [health, count] of Object.entries(pool.healthCounts)) {
+        acc[health] = (acc[health] ?? 0) + count;
+      }
+      return acc;
+    }, {});
+    const attentionPoolCount = pools.filter((pool) =>
+      ['INCOMPLETE', 'DEGRADED', 'FAILED', 'UNKNOWN'].includes(pool.health),
+    ).length;
+
     return {
       pools,
       totals: {
@@ -50,6 +60,16 @@ export class StoragePoolReportController {
         ),
         capacityKnown: known.length === pools.length,
         estimated: pools.some((pool) => pool.estimated),
+        spareVdevCount: pools.reduce(
+          (sum, pool) => sum + pool.spareVdevCount,
+          0,
+        ),
+        spareMemberCount: pools.reduce(
+          (sum, pool) => sum + pool.spareMemberCount,
+          0,
+        ),
+        attentionPoolCount,
+        healthCounts,
       },
     };
   }

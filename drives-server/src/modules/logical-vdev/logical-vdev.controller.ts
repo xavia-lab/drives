@@ -24,6 +24,7 @@ import { LogicalVdev } from './entities/logical-vdev.entity';
 import { CreateLogicalVdevDto } from './dto/create-logical-vdev.dto';
 import { UpdateLogicalVdevDto } from './dto/update-logical-vdev.dto';
 import { QueryLogicalVdevDto } from './dto/query-logical-vdev.dto';
+import { QueryLogicalVdevEventDto } from './dto/query-logical-vdev-event.dto';
 import { KeycloakAuthGuard } from '../../common/guards/keycloak.guard';
 import { CerbosGuard } from '../../common/guards/cerbos.guard';
 import { Serialize } from '../../common/interceptors/serialize.interceptor';
@@ -83,11 +84,13 @@ export class LogicalVdevController {
   @Get(':id/config-history')
   @CheckPolicy('show', 'logical-vdevs')
   @Serialize(LogicalVdevEventResponseDto)
-  @ApiOperation({ summary: 'Get vdev configuration history' })
+  @ApiOperation({ summary: 'Get paginated vdev configuration history' })
+  @ApiQuery({ type: QueryLogicalVdevEventDto })
   async configHistory(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
+    @Query() query: QueryLogicalVdevEventDto,
   ) {
-    return this.logicalVdevService.getConfigHistory(id);
+    return this.logicalVdevService.getConfigHistory(id, query);
   }
 
   @Post()

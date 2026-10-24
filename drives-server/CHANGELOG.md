@@ -1,5 +1,12 @@
 # drives-server
 
+## 0.0.5
+
+### Patch Changes
+
+- Implemented Production Readiness checklist for vdevs and pools.
+- 10c97f8: Enhanced the `New Drive Acquisition` workflow and allow either selecting an existing drive model or createing a new model in a sub workflow.
+
 ## 0.0.4
 
 ### Patch Changes

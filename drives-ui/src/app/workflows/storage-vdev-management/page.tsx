@@ -201,7 +201,10 @@ export default function StorageVdevManagementPage() {
         </Card>
 
         {poolId ? (
-          <StoragePoolVdevManager poolId={poolId} />
+          <StoragePoolVdevManager
+            poolId={poolId}
+            poolTypeId={selectedPool?.poolTypeId}
+          />
         ) : (
           <Card>
             <Title level={5} style={{ marginTop: 0 }}>

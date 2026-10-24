@@ -219,24 +219,25 @@ export const DriveMediaManagementWorkflow = () => {
 
   // Refine returns a frozen EMPTY_OBJECT while loading; only treat a real
   // array as the current attachment set.
+  const mediaData = mediaResult?.data;
   const attachments = useMemo<ExistingAttachment[]>(
-    () =>
-      Array.isArray(mediaResult?.data)
-        ? (mediaResult.data as ExistingAttachment[])
-        : [],
-    [mediaResult],
+    () => (Array.isArray(mediaData) ? (mediaData as ExistingAttachment[]) : []),
+    [mediaData],
   );
 
   useEffect(() => {
     if (!driveId) {
       lastLoadedDrive.current = null;
-      setExistingDrafts([]);
-      setNewDrafts([]);
+      // Keep the empty state referentially stable; `useCustom` can return a
+      // fresh result wrapper every render, so an unconditional reset here
+      // would re-render forever while no drive is selected.
+      setExistingDrafts((current) => (current.length ? [] : current));
+      setNewDrafts((current) => (current.length ? [] : current));
       return;
     }
 
     if (mediaQuery.isLoading || mediaQuery.isError) return;
-    if (!Array.isArray(mediaResult?.data)) return;
+    if (!Array.isArray(mediaData)) return;
     if (lastLoadedDrive.current === driveId) return;
 
     lastLoadedDrive.current = driveId;
@@ -257,7 +258,7 @@ export const DriveMediaManagementWorkflow = () => {
   }, [
     driveId,
     attachments,
-    mediaResult?.data,
+    mediaData,
     mediaQuery.isLoading,
     mediaQuery.isError,
   ]);

@@ -3,7 +3,7 @@ import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { LogicalVdevService } from './logical-vdev.service';
-import { LogicalVdev } from './entities/logical-vdev.entity';
+import { LogicalVdev, VdevClass } from './entities/logical-vdev.entity';
 import { LogicalDisk } from '../logical-disk/entities/logical-disk.entity';
 import { StoragePool } from '../storage-pool/entities/storage-pool.entity';
 import { VdevProfile } from '../vdev-profile/entities/vdev-profile.entity';
@@ -120,6 +120,90 @@ describe('LogicalVdevService', () => {
       }),
     ).rejects.toThrow(ConflictException);
     expect(vdevModel.create).not.toHaveBeenCalled();
+  });
+
+  it('aggregates pool health and spare counts from vdev capacity', async () => {
+    storagePoolModel.findByPk.mockResolvedValue({ id: 'pool-1' });
+    vdevModel.findAll.mockResolvedValue([
+      { id: 'vdev-data', vdevClass: VdevClass.DATA },
+      { id: 'vdev-spare', vdevClass: VdevClass.SPARE },
+    ]);
+    capacityService.calculateMany.mockResolvedValue(
+      new Map([
+        [
+          'vdev-data',
+          {
+            health: 'DEGRADED',
+            memberCount: 3,
+            rawBytes: 100,
+            usableBytes: 80,
+            estimated: false,
+          },
+        ],
+        [
+          'vdev-spare',
+          {
+            health: 'ONLINE',
+            memberCount: 2,
+            rawBytes: 0,
+            usableBytes: 0,
+            estimated: false,
+          },
+        ],
+      ]),
+    );
+
+    const result = await service.getPoolCapacity('pool-1');
+
+    expect(result.health).toBe('DEGRADED');
+    expect(result.spareVdevCount).toBe(1);
+    expect(result.spareMemberCount).toBe(2);
+    expect(result.healthCounts.DEGRADED).toBe(1);
+  });
+
+  it('paginates a vdev configuration history newest-first', async () => {
+    vdevModel.findByPk.mockResolvedValue({ id: 'vdev-1' });
+    paginationService.paginate.mockResolvedValue({
+      data: [],
+      meta: { totalItems: 0 },
+    });
+
+    await service.getConfigHistory('vdev-1', {
+      pageNumber: 2,
+      pageSize: 5,
+    });
+
+    expect(paginationService.paginate).toHaveBeenCalledWith(
+      velocityEventModel,
+      expect.objectContaining({
+        pageNumber: 2,
+        pageSize: 5,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc',
+      }),
+      { where: { logicalVdevId: 'vdev-1' } },
+    );
+  });
+
+  it('paginates a pool configuration history including deleted vdevs', async () => {
+    storagePoolModel.findByPk.mockResolvedValue({ id: 'pool-1' });
+    paginationService.paginate.mockResolvedValue({
+      data: [],
+      meta: { totalItems: 0 },
+    });
+
+    await service.getPoolConfigHistory('pool-1', { pageNumber: 1 });
+
+    expect(paginationService.paginate).toHaveBeenCalledWith(
+      velocityEventModel,
+      expect.objectContaining({
+        pageNumber: 1,
+        pageSize: 20,
+        sortField: 'eventTimestamp',
+        sortOrder: 'desc',
+      }),
+      { where: { storagePoolId: 'pool-1' } },
+    );
   });
 
   it('throws when a vdev does not exist', async () => {
