@@ -82,7 +82,7 @@ export default function PhysicalCpuShow() {
                 {record?.label ?? "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Serial Number" span={2}>
-                {record?.serialNumber}
+                {record?.serialNumber ?? "-"}
               </Descriptions.Item>
               <Descriptions.Item label="CPU Model" span={2}>
                 <LinkedLabel

@@ -93,24 +93,27 @@ export class PhysicalCpuService implements OnModuleInit {
   async create(
     createPhysicalCpuDto: CreatePhysicalCpuDto,
   ): Promise<PhysicalCpu> {
-    const existingBySerial = await this.physicalCpuModel.findOne({
-      where: {
-        serialNumber: createPhysicalCpuDto.serialNumber,
-      },
-    });
+    const serialNumber = createPhysicalCpuDto.serialNumber?.trim() || null;
 
-    if (existingBySerial) {
-      throw new ConflictException(
-        `PhysicalCpu with serial number "${createPhysicalCpuDto.serialNumber}" already exists`,
-      );
+    if (serialNumber) {
+      const existingBySerial = await this.physicalCpuModel.findOne({
+        where: { serialNumber },
+      });
+
+      if (existingBySerial) {
+        throw new ConflictException(
+          `PhysicalCpu with serial number "${serialNumber}" already exists`,
+        );
+      }
     }
 
     // Aggregate check for all incoming foreign keys concurrently
     await this.validateForeignKeys(createPhysicalCpuDto);
 
-    return this.physicalCpuModel.create(
-      createPhysicalCpuDto as Partial<PhysicalCpu>,
-    );
+    return this.physicalCpuModel.create({
+      ...createPhysicalCpuDto,
+      serialNumber,
+    } as Partial<PhysicalCpu>);
   }
 
   async update(
@@ -123,15 +126,14 @@ export class PhysicalCpuService implements OnModuleInit {
       throw new NotFoundException(`PhysicalCpu with ID ${id} not found`);
     }
 
-    if (updatePhysicalCpuDto.serialNumber) {
+    const serialNumber = updatePhysicalCpuDto.serialNumber?.trim() || null;
+    if (serialNumber) {
       const existing = await this.physicalCpuModel.findOne({
-        where: {
-          serialNumber: updatePhysicalCpuDto.serialNumber,
-        },
+        where: { serialNumber },
       });
       if (existing && existing.id !== id) {
         throw new ConflictException(
-          `PhysicalCpu with serial number "${updatePhysicalCpuDto.serialNumber}" already exists`,
+          `PhysicalCpu with serial number "${serialNumber}" already exists`,
         );
       }
     }
@@ -141,7 +143,7 @@ export class PhysicalCpuService implements OnModuleInit {
 
     const updateData: Partial<PhysicalCpu> = {};
     if (updatePhysicalCpuDto.serialNumber !== undefined)
-      updateData.serialNumber = updatePhysicalCpuDto.serialNumber;
+      updateData.serialNumber = serialNumber;
     if (updatePhysicalCpuDto.acquisitionCost !== undefined)
       updateData.acquisitionCost = updatePhysicalCpuDto.acquisitionCost;
     if (updatePhysicalCpuDto.purchaseDate !== undefined)

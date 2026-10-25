@@ -15,7 +15,6 @@ import type { FormProps } from "antd";
 import dayjs from "dayjs";
 
 const SERIAL_NUMBER_RULES = [
-  { required: true, message: "Serial number is required" },
   { max: 64, message: "Serial number cannot exceed 64 characters" },
 ];
 
@@ -45,11 +44,11 @@ export const PhysicalCpuForm = ({ formProps }: { formProps: FormProps }) => (
         <Row gutter={[16, 24]}>
           <Col span={12}>
             <Form.Item
-              label={"Serial Number"}
+              label={"Serial Number (optional)"}
               name={["serialNumber"]}
               rules={SERIAL_NUMBER_RULES}
             >
-              <Input maxLength={64} placeholder="e.g. BF2104S00012" />
+              <Input maxLength={64} placeholder="Optional, e.g. BF2104S00012" />
             </Form.Item>
             <Form.Item
               label={"CPU Model"}

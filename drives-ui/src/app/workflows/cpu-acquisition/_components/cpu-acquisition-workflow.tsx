@@ -277,10 +277,9 @@ export const CpuAcquisitionWorkflow = () => {
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                label="Serial number"
+                label="Serial number (optional)"
                 name="serialNumber"
                 rules={[
-                  { required: true, message: "Serial number is required" },
                   {
                     max: 64,
                     message: "Serial number cannot exceed 64 characters",
@@ -486,8 +485,8 @@ export const CpuAcquisitionWorkflow = () => {
               </Descriptions.Item>
             </Descriptions>
             <Text type="secondary">
-              The CPU label is generated automatically from the manufacturer,
-              model and purchase date.
+              The CPU label is generated automatically from the manufacturer and
+              model.
             </Text>
           </Space>
         );

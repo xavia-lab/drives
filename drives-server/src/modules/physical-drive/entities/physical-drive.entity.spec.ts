@@ -21,25 +21,26 @@ describe('PhysicalDrive.generateAssetLabel', () => {
     } as unknown as DriveModel);
   };
 
-  it('increments the sequence from the latest matching label', async () => {
+  it('increments the sequence from the highest matching label', async () => {
     mockModel();
-    vi.spyOn(PhysicalDrive, 'findOne').mockResolvedValue({
-      label: 'SE-EX-0016TB-20211206-001',
-    } as PhysicalDrive);
+    vi.spyOn(PhysicalDrive, 'findAll').mockResolvedValue([
+      { label: 'SE-EX-20211206-16T-001' },
+      { label: 'SE-EX-20211206-16T-003' },
+    ] as PhysicalDrive[]);
 
     const drive = buildDrive();
     await PhysicalDrive.generateAssetLabel(drive, {});
 
-    expect(drive.label).toBe('SE-EX-0016TB-20211206-002');
+    expect(drive.label).toBe('SE-EX-20211206-16T-004');
   });
 
   it('starts at 001 when no matching label exists', async () => {
     mockModel();
-    vi.spyOn(PhysicalDrive, 'findOne').mockResolvedValue(null);
+    vi.spyOn(PhysicalDrive, 'findAll').mockResolvedValue([]);
 
     const drive = buildDrive();
     await PhysicalDrive.generateAssetLabel(drive, {});
 
-    expect(drive.label).toBe('SE-EX-0016TB-20211206-001');
+    expect(drive.label).toBe('SE-EX-20211206-16T-001');
   });
 });

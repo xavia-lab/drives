@@ -11,8 +11,8 @@ import { Op, Transaction } from 'sequelize';
 import { BaseModel } from '../../../shared/entities/base.model';
 import { DriveModel } from '../../drive-model/entities/drive-model.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
-import { Currency } from '../../currency/entities/currency.entity';
 import { Capacity } from '../../capacity/entities/capacity.entity';
+import { Currency } from '../../currency/entities/currency.entity';
 import { PhysicalDriveLocation } from './physical-drive-location.entity';
 import { PhysicalDriveMedia } from './physical-drive-media.entity';
 
@@ -162,62 +162,47 @@ export class PhysicalDrive extends BaseModel {
       .slice(0, 2)
       .toUpperCase();
 
-    // 3. Normalize fractional capacity metrics safely (e.g., 16 => "0016", 3.84 => "03.8")
-    let rawValueStr = '0000';
-    if (
-      capacityObj &&
-      capacityObj.value !== undefined &&
-      capacityObj.value !== null
-    ) {
-      const rawVal = capacityObj.value;
-      const primitiveValue =
-        typeof rawVal === 'string' || typeof rawVal === 'number'
-          ? rawVal
-          : `${rawVal as string | number}`;
-
-      const parsedVal = parseFloat(primitiveValue.toString());
-      if (!isNaN(parsedVal)) {
-        if (Number.isInteger(parsedVal)) {
-          rawValueStr = parsedVal.toString().padStart(4, '0');
-        } else {
-          // Formats fractional cloud sizes like 3.84TB gracefully to a consistent 4 character boundary
-          rawValueStr = parsedVal.toFixed(1).padStart(4, '0');
-        }
-      }
+    let capacityCode = 'XX';
+    const rawCapacity = capacityObj?.value;
+    const parsedValue =
+      typeof rawCapacity === 'number'
+        ? rawCapacity
+        : typeof rawCapacity === 'string'
+          ? parseFloat(rawCapacity)
+          : Number.NaN;
+    if (Number.isFinite(parsedValue)) {
+      const compact = Number.isInteger(parsedValue)
+        ? parsedValue.toString()
+        : parsedValue.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      const unit =
+        typeof capacityObj?.unit === 'string'
+          ? capacityObj.unit.charAt(0).toUpperCase()
+          : '';
+      capacityCode = `${compact}${unit || 'X'}`;
     }
-    const unitCode =
-      (capacityObj?.unit as string)?.slice(0, 2).toUpperCase() || 'XX';
 
-    // 4. Transform native date strings from YYYY-MM-DD into a compressed numerical cluster string (YYYYMMDD)
-    const rawDateStr = instance.purchaseDate.replace(/[^0-9]/g, ''); // "2021-09-08" => "20210908"
+    const rawDateStr = instance.purchaseDate.replace(/[^0-9]/g, '');
     if (rawDateStr.length !== 8) {
       throw new Error(
         `Label Generation Error: Invalid purchase date format "${instance.purchaseDate}". Expecting YYYY-MM-DD.`,
       );
     }
 
-    // Assemble uniform prefix configuration string block
-    const baseLabelPrefix = `${mfgCode}-${modelCode}-${rawValueStr}${unitCode}-${rawDateStr}`;
+    const baseLabelPrefix = `${mfgCode}-${modelCode}-${rawDateStr}-${capacityCode}`;
 
-    // 5. Evaluate existing assets inside a row lock to find the next available chronological sequence index
-    const lastMatchingDrive = await PhysicalDrive.findOne({
-      where: {
-        label: {
-          [Op.like]: `${baseLabelPrefix}-%`,
-        },
-      },
-      order: [['label', 'DESC']],
+    // Evaluate existing assets inside a row lock to find the next available sequence index.
+    const matching = await PhysicalDrive.findAll({
+      where: { label: { [Op.like]: `${baseLabelPrefix}-%` } },
+      attributes: ['label'],
       transaction,
       lock: transaction ? Transaction.LOCK.UPDATE : false,
     });
+    const sequence =
+      matching.reduce((max, drive) => {
+        const tail = drive.label.match(/(\d+)$/);
+        return Math.max(max, tail ? parseInt(tail[1], 10) : 0);
+      }, 0) + 1;
 
-    let sequence = 1;
-    if (lastMatchingDrive) {
-      const lastSequenceMatch = lastMatchingDrive.label.match(/\d{3}$/);
-      sequence = lastSequenceMatch ? parseInt(lastSequenceMatch[0], 10) + 1 : 1;
-    }
-
-    // 6. Bind the finalized structural bar-code value back to the model instance parameter list
     instance.label = `${baseLabelPrefix}-${sequence.toString().padStart(3, '0')}`;
   }
 }

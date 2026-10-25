@@ -72,14 +72,10 @@ module.exports = {
       name: 'logical_vdevs_storage_pool_id_idx',
       using: 'btree',
     });
-    await queryInterface.addIndex(
-      'logical_vdevs',
-      ['storage_pool_id', 'vdev_name'],
-      {
-        name: 'logical_vdevs_pool_name_unique_idx',
-        unique: true,
-      },
-    );
+    await queryInterface.sequelize.query(`
+      CREATE UNIQUE INDEX "logical_vdevs_pool_name_ci_unique_idx"
+        ON "logical_vdevs" ("storage_pool_id", lower("vdev_name"));
+    `);
     await queryInterface.addIndex('logical_vdevs', ['redundancy_profile_id'], {
       name: 'logical_vdevs_redundancy_profile_id_idx',
       using: 'btree',
