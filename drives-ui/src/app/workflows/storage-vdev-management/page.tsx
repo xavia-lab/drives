@@ -88,7 +88,7 @@ export default function StorageVdevManagementPage() {
             ),
           },
           { title: <Link href="/dashboard">Dashboard</Link> },
-          { title: "Storage Vdev Management" },
+          { title: "Storage VDEV Management" },
         ]}
       />
 

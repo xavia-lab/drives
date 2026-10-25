@@ -484,7 +484,7 @@ export class LogicalVdevService {
     const allowed = allowedByType[poolType.name] ?? ['GENERIC'];
     if (!allowed.includes(profile.technology)) {
       throw new ConflictException(
-        `Vdev profile ${profile.code} (${profile.technology}) is not compatible with pool type ${poolType.name}`,
+        `VDEV profile ${profile.code} (${profile.technology}) is not compatible with pool type ${poolType.name}`,
       );
     }
   }

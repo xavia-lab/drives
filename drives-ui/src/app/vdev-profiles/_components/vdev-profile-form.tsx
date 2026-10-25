@@ -22,7 +22,7 @@ interface VdevProfileFormProps {
 export const VdevProfileForm = ({ form, formProps }: VdevProfileFormProps) => (
   <Form {...formProps} form={form} layout="vertical">
     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-      <Card title="Vdev Profile Information">
+      <Card title="VDEV Profile Information">
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
             <Form.Item

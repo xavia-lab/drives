@@ -18,6 +18,7 @@ export default function VdevProfileShow() {
 
   return (
     <Show
+      title={"Show VDEV Profile"}
       isLoading={isLoading}
       headerButtons={({
         editButtonProps,
@@ -25,14 +26,16 @@ export default function VdevProfileShow() {
         listButtonProps,
       }) => (
         <>
-          {listButtonProps && <ListButton {...listButtonProps} />}
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>VDEV Profiles</ListButton>
+          )}
           {editButtonProps && <EditButton {...editButtonProps} />}
           {deleteButtonProps && <DeleteButton {...deleteButtonProps} />}
         </>
       )}
     >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
-        <Card title="Vdev Profile">
+        <Card title="VDEV Profile">
           <Card size="small">
             <Descriptions title="Details" bordered column={2}>
               <Descriptions.Item label="ID" span={2}>

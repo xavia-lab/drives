@@ -1,6 +1,13 @@
 "use client";
 
-import { DateField, Show } from "@refinedev/antd";
+import {
+  DateField,
+  DeleteButton,
+  EditButton,
+  ListButton,
+  RefreshButton,
+  Show,
+} from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
@@ -37,7 +44,25 @@ export default function PhysicalCpuShow() {
       : "-";
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      title={"Show Physical CPU"}
+      isLoading={isLoading}
+      headerButtons={({
+        listButtonProps,
+        editButtonProps,
+        deleteButtonProps,
+        refreshButtonProps,
+      }) => (
+        <>
+          {listButtonProps ? (
+            <ListButton {...listButtonProps}>Physical CPUs</ListButton>
+          ) : null}
+          {editButtonProps ? <EditButton {...editButtonProps} /> : null}
+          {deleteButtonProps ? <DeleteButton {...deleteButtonProps} /> : null}
+          <RefreshButton {...refreshButtonProps} />
+        </>
+      )}
+    >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Card title={"Physical CPU"}>
           <Card size="small">

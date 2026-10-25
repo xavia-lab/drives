@@ -183,6 +183,7 @@ describe('PhysicalServerService', () => {
         {
           where: { id: ['cpu-1', 'cpu-2'] },
           transaction: 'test-transaction',
+          validate: false,
         },
       );
     });

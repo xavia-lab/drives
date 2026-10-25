@@ -1,6 +1,13 @@
 "use client";
 
-import { DateField, NumberField, Show } from "@refinedev/antd";
+import {
+  DateField,
+  DeleteButton,
+  EditButton,
+  ListButton,
+  NumberField,
+  Show,
+} from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 import { ProviderTag } from "@components/provider-tag";
@@ -12,7 +19,27 @@ export default function FormFactorShow() {
   const { isLoading } = query;
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      title={"Show Form Factor"}
+      isLoading={isLoading}
+      headerButtons={({
+        editButtonProps,
+        deleteButtonProps,
+        listButtonProps,
+      }) => (
+        <>
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>Form Factors</ListButton>
+          )}
+          {editButtonProps && (
+            <EditButton {...editButtonProps} disabled={record?.managed} />
+          )}
+          {deleteButtonProps && (
+            <DeleteButton {...deleteButtonProps} disabled={record?.managed} />
+          )}
+        </>
+      )}
+    >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Card title={"Form Factor"}>
           <Card size="small">

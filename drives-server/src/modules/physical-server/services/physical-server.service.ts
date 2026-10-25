@@ -148,6 +148,9 @@ export class PhysicalServerService {
           ...(uniqueIds.length > 0 ? { id: { [Op.notIn]: uniqueIds } } : {}),
         },
         transaction,
+        // Bulk updates build a partial instance; the label-validation hook
+        // must not run here (it needs the CPU's model fields).
+        validate: false,
       },
     );
 
@@ -155,7 +158,7 @@ export class PhysicalServerService {
     if (uniqueIds.length > 0) {
       await this.physicalCpuModel.update(
         { physicalServerId: serverId },
-        { where: { id: uniqueIds }, transaction },
+        { where: { id: uniqueIds }, transaction, validate: false },
       );
     }
   }

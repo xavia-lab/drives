@@ -22,7 +22,7 @@ export default function OperatingSystemList() {
   });
 
   return (
-    <List>
+    <List title={"Operating Systems"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

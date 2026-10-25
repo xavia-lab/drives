@@ -36,6 +36,7 @@ export default function StoragePoolShow() {
 
   return (
     <Show
+      title={"Show Storage Pool"}
       isLoading={isLoading}
       headerButtons={({
         editButtonProps,
@@ -43,7 +44,9 @@ export default function StoragePoolShow() {
         listButtonProps,
       }) => (
         <>
-          {listButtonProps && <ListButton {...listButtonProps} />}
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>Storage Pools</ListButton>
+          )}
           {editButtonProps && <EditButton {...editButtonProps} />}
           {deleteButtonProps && <DeleteButton {...deleteButtonProps} />}
         </>

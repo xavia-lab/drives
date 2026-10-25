@@ -36,7 +36,7 @@ export default function DriveModelList() {
     useLookupOptions({ resource: "capacities" });
 
   return (
-    <List>
+    <List title={"Drive Models"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

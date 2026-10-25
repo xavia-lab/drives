@@ -1,6 +1,13 @@
 "use client";
 
-import { DateField, Show } from "@refinedev/antd";
+import {
+  DateField,
+  DeleteButton,
+  EditButton,
+  ListButton,
+  RefreshButton,
+  Show,
+} from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { useLookupOptions } from "@hooks/use-lookup-options";
 import { LinkedLabel } from "@components/linked-label";
@@ -29,7 +36,25 @@ export default function DriveModelShow() {
   });
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      title={"Show Drive Model"}
+      isLoading={isLoading}
+      headerButtons={({
+        listButtonProps,
+        editButtonProps,
+        deleteButtonProps,
+        refreshButtonProps,
+      }) => (
+        <>
+          {listButtonProps ? (
+            <ListButton {...listButtonProps}>Drive Models</ListButton>
+          ) : null}
+          {editButtonProps ? <EditButton {...editButtonProps} /> : null}
+          {deleteButtonProps ? <DeleteButton {...deleteButtonProps} /> : null}
+          <RefreshButton {...refreshButtonProps} />
+        </>
+      )}
+    >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Card title={"Drive Model"}>
           <Card size="small">

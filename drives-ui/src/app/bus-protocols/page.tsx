@@ -24,7 +24,7 @@ export default function BusProtocolList() {
   });
 
   return (
-    <List>
+    <List title={"Bus Protocols"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

@@ -37,7 +37,7 @@ export default function PhysicalCpuList() {
   });
 
   return (
-    <List>
+    <List title={"Physical CPUs"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

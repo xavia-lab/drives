@@ -7,7 +7,7 @@ export default function VdevProfileCreate() {
   const { form, formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create VDEV Profile"} saveButtonProps={saveButtonProps}>
       <VdevProfileForm form={form} formProps={formProps} />
     </Create>
   );

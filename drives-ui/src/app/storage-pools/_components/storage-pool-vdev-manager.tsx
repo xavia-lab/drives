@@ -526,7 +526,7 @@ export const StoragePoolVdevManager = ({
           })),
         },
       });
-      message.success("Vdev layout saved");
+      message.success("VDEV layout saved");
       setSelectedDriveIds(new Set());
       await Promise.all([
         vdevsQuery.query.refetch(),
@@ -554,7 +554,7 @@ export const StoragePoolVdevManager = ({
         method: "post",
         values,
       });
-      message.success("Vdev created");
+      message.success("VDEV created");
       setCreateOpen(false);
       form.resetFields();
       await vdevsQuery.query.refetch();
@@ -574,7 +574,7 @@ export const StoragePoolVdevManager = ({
         method: "delete",
         values: {},
       });
-      message.success("Vdev deleted");
+      message.success("VDEV deleted");
       await vdevsQuery.query.refetch();
     } catch (error) {
       const detail = (error as { message?: string | string[] })?.message;
@@ -970,7 +970,7 @@ export const StoragePoolVdevManager = ({
           <Form.Item
             label="Name"
             name="vdevName"
-            rules={[{ required: true, message: "Vdev name is required" }]}
+            rules={[{ required: true, message: "VDEV name is required" }]}
           >
             <Input maxLength={32} placeholder="e.g. raidz2-0" />
           </Form.Item>
@@ -995,7 +995,7 @@ export const StoragePoolVdevManager = ({
               }))}
             />
           </Form.Item>
-          <Form.Item label="Vdev class" name="vdevClass">
+          <Form.Item label="VDEV class" name="vdevClass">
             <Select
               options={(
                 ["DATA", "LOG", "CACHE", "SPECIAL", "SPARE"] as VdevClass[]
@@ -1010,7 +1010,7 @@ export const StoragePoolVdevManager = ({
 
       <Modal
         open={Boolean(historyScope)}
-        title={`${historyScope?.kind === "vdev" ? "Vdev" : "Pool"} configuration history${historyScope ? ` — ${historyScope.name}` : ""}`}
+        title={`${historyScope?.kind === "vdev" ? "VDEV" : "Pool"} configuration history${historyScope ? ` — ${historyScope.name}` : ""}`}
         footer={null}
         width={680}
         onCancel={() => setHistoryScope(null)}

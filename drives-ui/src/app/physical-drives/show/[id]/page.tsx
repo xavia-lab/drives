@@ -1,6 +1,13 @@
 "use client";
 
-import { DateField, Show } from "@refinedev/antd";
+import {
+  DateField,
+  DeleteButton,
+  EditButton,
+  ListButton,
+  RefreshButton,
+  Show,
+} from "@refinedev/antd";
 import { useApiUrl, useCustom, useShow } from "@refinedev/core";
 import { LinkedLabel } from "@components/linked-label";
 import { useLookupOptions } from "@hooks/use-lookup-options";
@@ -77,7 +84,25 @@ export default function PhysicalDriveShow() {
     (record?.locations as PhysicalDriveLocationEvent[] | undefined) ?? [];
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      title={"Show Physical Drive"}
+      isLoading={isLoading}
+      headerButtons={({
+        listButtonProps,
+        editButtonProps,
+        deleteButtonProps,
+        refreshButtonProps,
+      }) => (
+        <>
+          {listButtonProps ? (
+            <ListButton {...listButtonProps}>Physical Drives</ListButton>
+          ) : null}
+          {editButtonProps ? <EditButton {...editButtonProps} /> : null}
+          {deleteButtonProps ? <DeleteButton {...deleteButtonProps} /> : null}
+          <RefreshButton {...refreshButtonProps} />
+        </>
+      )}
+    >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Card title={"Physical Drive"}>
           <Card size="small">
