@@ -7,7 +7,7 @@ export default function PoolTypeCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Pool Type"} saveButtonProps={saveButtonProps}>
       <PoolTypeForm formProps={formProps} />
     </Create>
   );

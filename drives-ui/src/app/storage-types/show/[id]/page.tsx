@@ -20,6 +20,7 @@ export default function StorageTypeShow() {
 
   return (
     <Show
+      title={"Show Storage Type"}
       isLoading={isLoading}
       headerButtons={({
         editButtonProps,
@@ -27,7 +28,9 @@ export default function StorageTypeShow() {
         listButtonProps,
       }) => (
         <>
-          {listButtonProps && <ListButton {...listButtonProps} />}
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>Storage Types</ListButton>
+          )}
           {editButtonProps && (
             <EditButton {...editButtonProps} disabled={record?.managed} />
           )}

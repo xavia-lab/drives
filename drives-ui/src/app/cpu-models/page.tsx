@@ -38,7 +38,7 @@ export default function CpuModelList() {
   );
 
   return (
-    <List>
+    <List title="CPU Models">
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

@@ -19,6 +19,7 @@ export default function PoolTypeShow() {
 
   return (
     <Show
+      title={"Show Pool Type"}
       isLoading={isLoading}
       headerButtons={({
         editButtonProps,
@@ -26,7 +27,9 @@ export default function PoolTypeShow() {
         listButtonProps,
       }) => (
         <>
-          {listButtonProps && <ListButton {...listButtonProps} />}
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>Pool Types</ListButton>
+          )}
           {editButtonProps && (
             <EditButton {...editButtonProps} disabled={record?.managed} />
           )}

@@ -89,7 +89,7 @@ export const StorageCapacityReportCard = () => {
   return (
     <InsightCard
       title="Storage Pool Capacity"
-      subtitle="Vdev-derived raw and usable capacity across pools"
+      subtitle="VDEV-derived raw and usable capacity across pools"
       icon={<DatabaseOutlined />}
       extra={
         report?.totals.estimated || report?.totals.attentionPoolCount ? (

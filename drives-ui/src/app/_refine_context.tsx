@@ -179,7 +179,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   show: "/vdev-profiles/show/:id",
                   meta: {
                     canDelete: true,
-                    label: "Vdev Profiles",
+                    label: "VDEV Profiles",
                     parent: "storage",
                     icon: <TagsOutlined />,
                   },

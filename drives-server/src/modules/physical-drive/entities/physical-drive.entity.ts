@@ -213,7 +213,7 @@ export class PhysicalDrive extends BaseModel {
 
     let sequence = 1;
     if (lastMatchingDrive) {
-      const lastSequenceMatch = lastMatchingDrive.label.match(/\d{3}\$/);
+      const lastSequenceMatch = lastMatchingDrive.label.match(/\d{3}$/);
       sequence = lastSequenceMatch ? parseInt(lastSequenceMatch[0], 10) + 1 : 1;
     }
 

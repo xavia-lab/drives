@@ -35,7 +35,7 @@ export const WORKFLOWS: WorkflowDefinition[] = [
   },
   {
     key: "storage-vdev-management",
-    title: "Storage Vdev Management",
+    title: "Storage VDEV Management",
     description:
       "Create and manage vdevs, member drives and capacity for storage pools on a server.",
     href: "/workflows/storage-vdev-management",

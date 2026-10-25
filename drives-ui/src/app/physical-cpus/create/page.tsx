@@ -7,7 +7,7 @@ export default function PhysicalCpuCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Physical CPU"} saveButtonProps={saveButtonProps}>
       <PhysicalCpuForm formProps={formProps} />
     </Create>
   );

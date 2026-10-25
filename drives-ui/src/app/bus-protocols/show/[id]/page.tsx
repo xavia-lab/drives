@@ -20,6 +20,7 @@ export default function BusProtocolShow() {
 
   return (
     <Show
+      title={"Show Bus Protocol"}
       isLoading={isLoading}
       headerButtons={({
         editButtonProps,
@@ -27,7 +28,9 @@ export default function BusProtocolShow() {
         listButtonProps,
       }) => (
         <>
-          {listButtonProps && <ListButton {...listButtonProps} />}
+          {listButtonProps && (
+            <ListButton {...listButtonProps}>Bus Protocols</ListButton>
+          )}
           {editButtonProps && (
             <EditButton {...editButtonProps} disabled={record?.managed} />
           )}

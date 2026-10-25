@@ -7,7 +7,7 @@ export default function BusProtocolCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Bus Protocol"} saveButtonProps={saveButtonProps}>
       <BusProtocolForm formProps={formProps} />
     </Create>
   );

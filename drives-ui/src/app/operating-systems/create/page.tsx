@@ -7,7 +7,7 @@ export default function OperatingSystemCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Operating System"} saveButtonProps={saveButtonProps}>
       <OperatingSystemForm formProps={formProps} />
     </Create>
   );

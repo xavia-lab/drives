@@ -7,7 +7,7 @@ export default function PhysicalDriveCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Physical Drive"} saveButtonProps={saveButtonProps}>
       <PhysicalDriveForm formProps={formProps} />
     </Create>
   );

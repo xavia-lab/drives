@@ -60,7 +60,7 @@ export class LogicalVdevController {
   @Get(':id')
   @CheckPolicy('show', 'logical-vdevs')
   @Serialize(LogicalVdevResponseDto)
-  @ApiOperation({ summary: 'Get Logical Vdev by ID' })
+  @ApiOperation({ summary: 'Get Logical VDEV by ID' })
   @ApiParam({
     name: 'id',
     description: 'The unique UUIDv7 identifier of the logical vdev row',
@@ -68,9 +68,9 @@ export class LogicalVdevController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Logical Vdev retrieved successfully',
+    description: 'Logical VDEV retrieved successfully',
   })
-  @ApiResponse({ status: 404, description: 'Logical Vdev not found' })
+  @ApiResponse({ status: 404, description: 'Logical VDEV not found' })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
   ): Promise<LogicalVdev> {
@@ -99,7 +99,7 @@ export class LogicalVdevController {
   @ApiOperation({ summary: 'Create a new logical vdev redundancy setup' })
   @ApiResponse({
     status: 201,
-    description: 'Logical Vdev initialized and loaded successfully',
+    description: 'Logical VDEV initialized and loaded successfully',
   })
   @ApiResponse({
     status: 404,
@@ -108,7 +108,7 @@ export class LogicalVdevController {
   @ApiResponse({
     status: 409,
     description:
-      'Vdev name collision error within the target storage pool context',
+      'VDEV name collision error within the target storage pool context',
   })
   async create(
     @Body() createDto: CreateLogicalVdevDto,
@@ -131,16 +131,16 @@ export class LogicalVdevController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Logical Vdev updated successfully',
+    description: 'Logical VDEV updated successfully',
   })
   @ApiResponse({
     status: 404,
-    description: 'Logical Vdev or related validation dependencies not found',
+    description: 'Logical VDEV or related validation dependencies not found',
   })
   @ApiResponse({
     status: 409,
     description:
-      'Vdev name collision error inside the parent storage pool scope',
+      'VDEV name collision error inside the parent storage pool scope',
   })
   async update(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
@@ -170,9 +170,9 @@ export class LogicalVdevController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Logical Vdev layout dropped successfully',
+    description: 'Logical VDEV layout dropped successfully',
   })
-  @ApiResponse({ status: 404, description: 'Logical Vdev not found' })
+  @ApiResponse({ status: 404, description: 'Logical VDEV not found' })
   async delete(
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @RequestUser() user?: AuthenticatedUser,

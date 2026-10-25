@@ -42,6 +42,7 @@ export default function PhysicalDriveList() {
 
   return (
     <List
+      title={"Physical Drives"}
       headerButtons={
         <Button
           icon={<ClearOutlined />}

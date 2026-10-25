@@ -7,7 +7,7 @@ export default function StoragePoolCreate() {
   const { formProps, form, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Storage Pool"} saveButtonProps={saveButtonProps}>
       <StoragePoolForm formProps={formProps} form={form} />
     </Create>
   );

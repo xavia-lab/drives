@@ -1,6 +1,13 @@
 "use client";
 
-import { DateField, Show } from "@refinedev/antd";
+import {
+  DateField,
+  DeleteButton,
+  EditButton,
+  ListButton,
+  RefreshButton,
+  Show,
+} from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Card, Col, Descriptions, Row, Space, Typography } from "antd";
 
@@ -11,7 +18,25 @@ export default function OperatingSystemShow() {
   const { isLoading } = query;
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      title={"Show Operating System"}
+      isLoading={isLoading}
+      headerButtons={({
+        listButtonProps,
+        editButtonProps,
+        deleteButtonProps,
+        refreshButtonProps,
+      }) => (
+        <>
+          {listButtonProps ? (
+            <ListButton {...listButtonProps}>Operating Systems</ListButton>
+          ) : null}
+          {editButtonProps ? <EditButton {...editButtonProps} /> : null}
+          {deleteButtonProps ? <DeleteButton {...deleteButtonProps} /> : null}
+          <RefreshButton {...refreshButtonProps} />
+        </>
+      )}
+    >
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Card title={"Operating System"}>
           <Card size="small">

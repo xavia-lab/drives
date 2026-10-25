@@ -23,7 +23,7 @@ export default function PoolTypeList() {
   });
 
   return (
-    <List>
+    <List title={"Pool Types"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

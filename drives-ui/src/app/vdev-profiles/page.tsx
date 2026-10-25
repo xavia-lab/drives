@@ -21,7 +21,7 @@ export default function VdevProfileList() {
   });
 
   return (
-    <List>
+    <List title={"VDEV Profiles"}>
       <TableSearchFormBridge {...searchFormProps} />
       <Table {...tableProps} rowKey="id" scroll={{ x: true }}>
         <Table.Column

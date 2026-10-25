@@ -31,7 +31,7 @@ export class CreateLogicalVdevDto {
   storagePoolId: string;
 
   @ApiProperty({
-    description: 'Vdev profile id (RAIDZ2, MIRROR, RAID5, ...)',
+    description: 'VDEV profile id (RAIDZ2, MIRROR, RAID5, ...)',
     example: '019f5431-1bf4-76eb-a5f3-1823ab04cf3f',
     required: true,
   })

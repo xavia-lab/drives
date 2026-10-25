@@ -23,7 +23,7 @@ export default function FormFactorList() {
   });
 
   return (
-    <List>
+    <List title={"Form Factors"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

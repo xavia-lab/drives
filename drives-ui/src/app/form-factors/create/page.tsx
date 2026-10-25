@@ -7,7 +7,7 @@ export default function FormFactorCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Form Factor"} saveButtonProps={saveButtonProps}>
       <FormFactorForm formProps={formProps} />
     </Create>
   );

@@ -24,7 +24,7 @@ export default function StorageTypeList() {
   });
 
   return (
-    <List>
+    <List title={"Storage Types"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">

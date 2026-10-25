@@ -233,7 +233,7 @@ export class VdevMembershipService {
         currentCount + driveIds.length > profile.maxMembers
       ) {
         throw new ConflictException(
-          `Vdev ${vdevId} accepts at most ${profile.maxMembers} members`,
+          `VDEV ${vdevId} accepts at most ${profile.maxMembers} members`,
         );
       }
 
@@ -486,7 +486,7 @@ export class VdevMembershipService {
           currentCount + incoming - outgoing > profile.maxMembers
         ) {
           throw new ConflictException(
-            `Vdev ${targetId} accepts at most ${profile.maxMembers} members`,
+            `VDEV ${targetId} accepts at most ${profile.maxMembers} members`,
           );
         }
       }
@@ -672,7 +672,7 @@ export class VdevMembershipService {
         const count = entries.length;
         if (profile?.maxMembers != null && count > profile.maxMembers) {
           throw new ConflictException(
-            `Vdev ${vdev.id} accepts at most ${profile.maxMembers} members`,
+            `VDEV ${vdev.id} accepts at most ${profile.maxMembers} members`,
           );
         }
       }
@@ -1131,7 +1131,7 @@ export class VdevMembershipService {
         host.serverId !== first.serverId
       ) {
         throw new ConflictException(
-          'Vdev members can only move between pools on the same host',
+          'VDEV members can only move between pools on the same host',
         );
       }
     }

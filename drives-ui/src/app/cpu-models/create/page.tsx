@@ -7,7 +7,7 @@ export default function CpuModelCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title="Create CPU Model" saveButtonProps={saveButtonProps}>
       <CpuModelForm formProps={formProps} />
     </Create>
   );

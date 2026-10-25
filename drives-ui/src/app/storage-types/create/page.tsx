@@ -7,7 +7,7 @@ export default function StorageTypeCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
   return (
-    <Create saveButtonProps={saveButtonProps}>
+    <Create title={"Create Storage Type"} saveButtonProps={saveButtonProps}>
       <StorageTypeForm formProps={formProps} />
     </Create>
   );

@@ -29,7 +29,7 @@ export default function StoragePoolList() {
     useLookupOptions({ resource: "pool-types" });
 
   return (
-    <List>
+    <List title={"Storage Pools"}>
       <TableSearchFormBridge {...searchFormProps} />
 
       <Table {...tableProps} rowKey="id">
