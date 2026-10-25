@@ -7,10 +7,18 @@ module.exports = {
       ALTER TABLE "logical_disk_events"
         ADD CONSTRAINT "logical_disk_events_action_semantics_check"
         CHECK (
-          (action = 'ATTACH' AND from_vdev_id IS NULL AND to_vdev_id IS NOT NULL) OR
-          (action = 'DETACH' AND from_vdev_id IS NOT NULL AND to_vdev_id IS NULL) OR
-          (action = 'MOVE' AND from_vdev_id IS NOT NULL AND to_vdev_id IS NOT NULL AND from_vdev_id <> to_vdev_id) OR
-          (action = 'UPDATE' AND from_vdev_id IS NOT NULL AND to_vdev_id IS NOT NULL AND from_vdev_id = to_vdev_id)
+          (action = 'ATTACH' AND from_vdev_id IS NULL) OR
+          (action = 'DETACH' AND to_vdev_id IS NULL) OR
+          (action = 'MOVE' AND (
+            from_vdev_id IS NULL OR
+            to_vdev_id IS NULL OR
+            from_vdev_id <> to_vdev_id
+          )) OR
+          (action = 'UPDATE' AND (
+            from_vdev_id IS NULL OR
+            to_vdev_id IS NULL OR
+            from_vdev_id = to_vdev_id
+          ))
         );
     `);
   },

@@ -20,12 +20,13 @@ import { auditLogProvider } from "@providers/audit-log-provider";
 import "@refinedev/antd/dist/reset.css";
 import {
   ApiOutlined,
-  AppstoreOutlined,
+  AppstoreAddOutlined,
   ApartmentOutlined,
   BankOutlined,
   BookOutlined,
   BorderOutlined,
   BoxPlotOutlined,
+  BuildOutlined,
   CheckCircleOutlined,
   CloudOutlined,
   CloudServerOutlined,
@@ -46,13 +47,13 @@ import {
   LinkOutlined,
   MonitorOutlined,
   NumberOutlined,
+  PartitionOutlined,
   PoundOutlined,
   ProjectOutlined,
   SafetyCertificateOutlined,
   ScheduleOutlined,
   SettingOutlined,
   ShopOutlined,
-  TagsOutlined,
   ThunderboltOutlined,
   ToolOutlined,
 } from "@ant-design/icons";
@@ -155,7 +156,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                   name: "storage",
                   meta: {
                     label: "Storage",
-                    icon: <AppstoreOutlined />,
+                    icon: <DatabaseOutlined />,
                   },
                 },
                 {
@@ -181,7 +182,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "VDEV Profiles",
                     parent: "storage",
-                    icon: <TagsOutlined />,
+                    icon: <PartitionOutlined />,
                   },
                 },
                 {
@@ -194,7 +195,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Pool Types",
                     parent: "storage",
-                    icon: <TagsOutlined />,
+                    icon: <AppstoreAddOutlined />,
                   },
                 },
                 {
@@ -243,7 +244,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
                     canDelete: true,
                     label: "Servers",
                     parent: "physical",
-                    icon: <DatabaseOutlined />,
+                    icon: <BuildOutlined />,
                   },
                 },
                 {

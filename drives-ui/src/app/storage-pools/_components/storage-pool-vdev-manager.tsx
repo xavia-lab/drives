@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   useApiUrl,
   useCan,
@@ -158,12 +165,50 @@ type Draft = Record<string, DraftMember[]>;
 interface StoragePoolVdevManagerProps {
   poolId?: string;
   poolTypeId?: string;
+  /** Hide the internal save button when a parent workflow commits the layout. */
+  showSaveButton?: boolean;
+  /** Stage vdev create/delete until save() is called. */
+  deferVdevMutations?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  onReviewChange?: (review: VdevLayoutReview) => void;
+}
+
+export interface StoragePoolVdevManagerHandle {
+  save: () => Promise<boolean>;
+  isDirty: () => boolean;
 }
 
 interface HistoryScope {
   kind: "vdev" | "pool";
   id: string;
   name: string;
+}
+
+interface PendingVdev {
+  tempId: string;
+  vdevName: string;
+  redundancyProfileId: string;
+  vdevClass: VdevClass;
+  notes?: string;
+  profile?: VdevProfileRecord;
+}
+
+export interface VdevReviewDrive {
+  id: string;
+  label: string;
+}
+
+export interface VdevReviewItem {
+  id: string;
+  name: string;
+  action: "CREATE" | "DELETE" | "UPDATE" | "UNCHANGED";
+  before: VdevReviewDrive[];
+  after: VdevReviewDrive[];
+}
+
+export interface VdevLayoutReview {
+  items: VdevReviewItem[];
+  hasChanges: boolean;
 }
 
 const formatBytes = (bytes: number | null | undefined) => {
@@ -211,10 +256,20 @@ const draftFromVdevs = (vdevs: VdevRecord[]): Draft =>
     return draft;
   }, {});
 
-export const StoragePoolVdevManager = ({
-  poolId,
-  poolTypeId,
-}: StoragePoolVdevManagerProps) => {
+export const StoragePoolVdevManager = forwardRef<
+  StoragePoolVdevManagerHandle,
+  StoragePoolVdevManagerProps
+>(function StoragePoolVdevManager(
+  {
+    poolId,
+    poolTypeId,
+    showSaveButton = true,
+    deferVdevMutations = false,
+    onDirtyChange,
+    onReviewChange,
+  }: StoragePoolVdevManagerProps,
+  ref,
+) {
   const apiUrl = useApiUrl();
   const { message } = App.useApp();
   const { token } = theme.useToken();
@@ -242,6 +297,10 @@ export const StoragePoolVdevManager = ({
   const [historyScope, setHistoryScope] = useState<HistoryScope | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [selectedDriveIds, setSelectedDriveIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [pendingVdevs, setPendingVdevs] = useState<PendingVdev[]>([]);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(
     new Set(),
   );
   const [saving, setSaving] = useState(false);
@@ -298,14 +357,44 @@ export const StoragePoolVdevManager = ({
       Array.isArray(vdevsQuery.result?.data)
         ? (vdevsQuery.result.data as VdevRecord[])
         : [],
-    [vdevsQuery.result],
+    [vdevsQuery.result?.data],
+  );
+  const allVdevs = useMemo<VdevRecord[]>(
+    () => [
+      ...vdevs.filter((vdev) => !pendingDeleteIds.has(vdev.id)),
+      ...pendingVdevs.map((pending) => ({
+        id: pending.tempId,
+        vdevName: pending.vdevName,
+        vdevClass: pending.vdevClass,
+        sortOrder: 0,
+        notes: pending.notes ?? null,
+        redundancyProfileId: pending.redundancyProfileId,
+        redundancyProfile: pending.profile,
+        capacity: {
+          memberCount: 0,
+          dataMemberCount: 0,
+          spareCount: 0,
+          minMembers: pending.profile?.minMembers ?? 1,
+          maxMembers: pending.profile?.maxMembers ?? null,
+          isComplete: false,
+          capacityKnown: true,
+          rawBytes: 0,
+          usableBytes: 0,
+          formula: "Pending vdev",
+          estimated: false,
+          health: "PLANNED" as const,
+          memberStates: {},
+        },
+      })),
+    ],
+    [pendingDeleteIds, pendingVdevs, vdevs],
   );
   const available = useMemo(
     () =>
       Array.isArray(availableQuery.result?.data)
         ? (availableQuery.result.data as AvailableDrive[])
         : [],
-    [availableQuery.result],
+    [availableQuery.result?.data],
   );
   const capacity = capacityQuery.result?.data as PoolCapacity | undefined;
   const poolTypeName = poolTypeOptions.find(
@@ -344,6 +433,8 @@ export const StoragePoolVdevManager = ({
     lastVdevSignature.current = vdevSignature;
     setDraft(draftFromVdevs(vdevs));
     setSelectedDriveIds(new Set());
+    setPendingVdevs([]);
+    setPendingDeleteIds(new Set());
   }, [vdevSignature, vdevs, vdevsQuery.result]);
 
   const driveById = useMemo(() => {
@@ -358,14 +449,63 @@ export const StoragePoolVdevManager = ({
       if (!map.has(drive.driveId)) {
         map.set(drive.driveId, {
           id: drive.driveId,
-          label: drive.label ?? drive.slotLabel,
-          serialNumber: drive.serialNumber ?? drive.slotLabel,
+          label:
+            drive.label ??
+            drive.slotLabel ??
+            drive.serialNumber ??
+            "Unnamed drive",
+          serialNumber: drive.serialNumber ?? drive.slotLabel ?? drive.driveId,
           driveModelId: drive.driveModelId ?? "",
         });
       }
     }
     return map;
   }, [available, vdevs]);
+
+  const layoutReview = useMemo<VdevLayoutReview>(() => {
+    const drive = (id: string): VdevReviewDrive => ({
+      id,
+      label: driveById.get(id)?.label ?? id,
+    });
+    const ids = (members?: DraftMember[]) =>
+      (members ?? []).map((member) => member.physicalDriveId);
+    const items: VdevReviewItem[] = [];
+
+    for (const vdev of vdevs) {
+      const beforeIds = (vdev.members ?? []).map(
+        (member) => member.physicalDriveId,
+      );
+      const deleted = pendingDeleteIds.has(vdev.id);
+      const afterIds = deleted ? [] : ids(draft?.[vdev.id]);
+      const changed =
+        deleted ||
+        beforeIds.length !== afterIds.length ||
+        beforeIds.some((id) => !afterIds.includes(id));
+      items.push({
+        id: vdev.id,
+        name: vdev.vdevName,
+        action: deleted ? "DELETE" : changed ? "UPDATE" : "UNCHANGED",
+        before: beforeIds.map(drive),
+        after: afterIds.map(drive),
+      });
+    }
+
+    for (const pending of pendingVdevs) {
+      const afterIds = ids(draft?.[pending.tempId]);
+      items.push({
+        id: pending.tempId,
+        name: pending.vdevName,
+        action: "CREATE",
+        before: [],
+        after: afterIds.map(drive),
+      });
+    }
+
+    return {
+      items,
+      hasChanges: items.some((item) => item.action !== "UNCHANGED"),
+    };
+  }, [draft, driveById, pendingDeleteIds, pendingVdevs, vdevs]);
 
   const draftDriveIds = useMemo(
     () =>
@@ -386,8 +526,18 @@ export const StoragePoolVdevManager = ({
       if (!draftDriveIds.has(drive.driveId)) {
         map.set(drive.driveId, {
           id: drive.driveId,
-          label: drive.label ?? drive.slotLabel,
-          sublabel: `${drive.serialNumber ?? drive.slotLabel} · ${drive.serverHostname} · ${drive.slotLabel}`,
+          label:
+            drive.label ??
+            drive.slotLabel ??
+            drive.serialNumber ??
+            "Unnamed drive",
+          sublabel: [
+            drive.serialNumber ?? drive.slotLabel,
+            drive.serverHostname,
+            drive.slotLabel,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         });
       }
     }
@@ -399,19 +549,26 @@ export const StoragePoolVdevManager = ({
         ) {
           map.set(member.physicalDriveId, {
             id: member.physicalDriveId,
-            label: member.physicalDrive.label,
-            sublabel: member.physicalDrive.serialNumber,
+            label:
+              member.physicalDrive.label ??
+              member.physicalDrive.serialNumber ??
+              member.physicalDriveId,
+            sublabel:
+              member.physicalDrive.serialNumber ?? member.physicalDriveId,
           });
         }
       }
     }
     return Array.from(map.values()).sort((a, b) =>
-      a.label.localeCompare(b.label),
+      String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
+        numeric: true,
+      }),
     );
   }, [available, draftDriveIds, vdevs]);
 
   const dirty = useMemo(() => {
     if (!draft) return false;
+    if (pendingVdevs.length > 0 || pendingDeleteIds.size > 0) return true;
     return vdevs.some((vdev) => {
       const current = (vdev.members ?? []).map(
         (member) => member.physicalDriveId,
@@ -424,7 +581,7 @@ export const StoragePoolVdevManager = ({
         current.some((id) => !next.includes(id))
       );
     });
-  }, [draft, vdevs]);
+  }, [draft, pendingDeleteIds.size, pendingVdevs.length, vdevs]);
 
   const addMember = (vdevId: string, driveId: string) => {
     setDraft((current) => ({
@@ -476,7 +633,7 @@ export const StoragePoolVdevManager = ({
     if (selectedDriveIds.size === 0) return;
     setDraft((current) => {
       const next: Draft = {};
-      for (const vdev of vdevs) {
+      for (const vdev of allVdevs) {
         next[vdev.id] = (current?.[vdev.id] ?? []).filter(
           (member) => !selectedDriveIds.has(member.physicalDriveId),
         );
@@ -496,7 +653,7 @@ export const StoragePoolVdevManager = ({
     if (selectedDriveIds.size === 0) return;
     setDraft((current) =>
       Object.fromEntries(
-        vdevs.map((vdev) => [
+        allVdevs.map((vdev) => [
           vdev.id,
           (current?.[vdev.id] ?? []).filter(
             (member) => !selectedDriveIds.has(member.physicalDriveId),
@@ -512,27 +669,71 @@ export const StoragePoolVdevManager = ({
     setHistoryScope(scope);
   };
 
-  const handleSave = async () => {
-    if (!poolId || !draft) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!poolId || !draft) return false;
     setSaving(true);
     try {
+      const createdIdByTemp = new Map<string, string>();
+      if (deferVdevMutations) {
+        for (const pending of pendingVdevs) {
+          const response = await createVdev({
+            url: `${apiUrl}/storage-pools/${poolId}/vdevs`,
+            method: "post",
+            values: {
+              vdevName: pending.vdevName,
+              redundancyProfileId: pending.redundancyProfileId,
+              vdevClass: pending.vdevClass,
+              notes: pending.notes,
+            },
+          });
+          const created = response.data as { id?: string } | undefined;
+          if (!created?.id) {
+            throw new Error("VDEV creation did not return an identifier");
+          }
+          createdIdByTemp.set(pending.tempId, created.id);
+        }
+      }
+
+      const layout = vdevs.map((vdev) => ({
+        vdevId: vdev.id,
+        members: pendingDeleteIds.has(vdev.id) ? [] : (draft[vdev.id] ?? []),
+      }));
+      for (const pending of pendingVdevs) {
+        const realId = createdIdByTemp.get(pending.tempId);
+        if (realId) {
+          layout.push({
+            vdevId: realId,
+            members: draft[pending.tempId] ?? [],
+          });
+        }
+      }
+
       await saveLayout({
         url: `${apiUrl}/storage-pools/${poolId}/vdev-layout`,
         method: "put",
-        values: {
-          vdevs: vdevs.map((vdev) => ({
-            vdevId: vdev.id,
-            members: draft[vdev.id] ?? [],
-          })),
-        },
+        values: { vdevs: layout },
       });
-      message.success("VDEV layout saved");
+
+      if (deferVdevMutations) {
+        for (const vdevId of Array.from(pendingDeleteIds)) {
+          await deleteVdev({
+            url: `${apiUrl}/logical-vdevs/${vdevId}`,
+            method: "delete",
+            values: {},
+          });
+        }
+      }
+
+      message.success("VDEV changes saved");
       setSelectedDriveIds(new Set());
+      setPendingVdevs([]);
+      setPendingDeleteIds(new Set());
       await Promise.all([
         vdevsQuery.query.refetch(),
         availableQuery.query.refetch(),
         capacityQuery.query.refetch(),
       ]);
+      return true;
     } catch (error) {
       const detail = (error as { message?: string | string[] })?.message;
       message.error(
@@ -540,6 +741,7 @@ export const StoragePoolVdevManager = ({
           ? detail.join(", ")
           : (detail ?? "Could not save the vdev layout"),
       );
+      return false;
     } finally {
       setSaving(false);
     }
@@ -549,15 +751,48 @@ export const StoragePoolVdevManager = ({
     if (!poolId) return;
     try {
       const values = await form.validateFields();
-      await createVdev({
-        url: `${apiUrl}/storage-pools/${poolId}/vdevs`,
-        method: "post",
-        values,
-      });
-      message.success("VDEV created");
+      const vdevName = values.vdevName.trim();
+      if (
+        vdevs.some(
+          (vdev) => vdev.vdevName.toLowerCase() === vdevName.toLowerCase(),
+        ) ||
+        pendingVdevs.some(
+          (vdev) => vdev.vdevName.toLowerCase() === vdevName.toLowerCase(),
+        )
+      ) {
+        message.error(`VDEV "${vdevName}" already exists in this pool`);
+        return;
+      }
+
+      if (deferVdevMutations) {
+        const tempId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const profile = compatibleProfiles.find(
+          (candidate) => candidate.id === values.redundancyProfileId,
+        );
+        setPendingVdevs((current) => [
+          ...current,
+          {
+            tempId,
+            vdevName,
+            redundancyProfileId: values.redundancyProfileId,
+            vdevClass: values.vdevClass ?? "DATA",
+            notes: values.notes,
+            profile,
+          },
+        ]);
+        setDraft((current) => ({ ...(current ?? {}), [tempId]: [] }));
+        message.success("VDEV staged; apply it from the review step");
+      } else {
+        await createVdev({
+          url: `${apiUrl}/storage-pools/${poolId}/vdevs`,
+          method: "post",
+          values: { ...values, vdevName },
+        });
+        message.success("VDEV created");
+        await vdevsQuery.query.refetch();
+      }
       setCreateOpen(false);
       form.resetFields();
-      await vdevsQuery.query.refetch();
     } catch (error) {
       const detail = (error as { message?: string | string[] })?.message;
       if (detail) {
@@ -566,7 +801,52 @@ export const StoragePoolVdevManager = ({
     }
   };
 
+  const undoPendingDelete = (id: string) => {
+    const vdev = vdevs.find((candidate) => candidate.id === id);
+    setPendingDeleteIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+    setDraft((current) => {
+      const restored = new Set(
+        (vdev?.members ?? []).map((member) => member.physicalDriveId),
+      );
+      const next = Object.fromEntries(
+        Object.entries(current ?? {}).map(([vdevId, members]) => [
+          vdevId,
+          members.filter((member) => !restored.has(member.physicalDriveId)),
+        ]),
+      );
+      next[id] = (vdev?.members ?? []).map((member) => ({
+        physicalDriveId: member.physicalDriveId,
+        osDeviceNodePath: member.osDeviceNodePath,
+      }));
+      return next;
+    });
+  };
+
   const handleDelete = async (id: string) => {
+    if (deferVdevMutations) {
+      if (id.startsWith("local-")) {
+        setPendingVdevs((current) =>
+          current.filter((pending) => pending.tempId !== id),
+        );
+        setDraft((current) => {
+          const next = { ...(current ?? {}) };
+          delete next[id];
+          return next;
+        });
+        setSelectedDriveIds(new Set());
+        return;
+      }
+      setPendingDeleteIds((current) => new Set(current).add(id));
+      setDraft((current) => ({ ...(current ?? {}), [id]: [] }));
+      setSelectedDriveIds(new Set());
+      message.info("VDEV marked for deletion; apply from the review step");
+      return;
+    }
+
     setDeletingId(id);
     try {
       await deleteVdev({
@@ -586,6 +866,19 @@ export const StoragePoolVdevManager = ({
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    save: handleSave,
+    isDirty: () => dirty,
+  }));
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  useEffect(() => {
+    onReviewChange?.(layoutReview);
+  }, [layoutReview, onReviewChange]);
+
   if (!poolId) return null;
 
   const loading = vdevsQuery.query.isLoading;
@@ -596,7 +889,7 @@ export const StoragePoolVdevManager = ({
         <Space>
           <DatabaseOutlined />
           <span>Virtual Devices</span>
-          <Tag>{vdevs.length}</Tag>
+          <Tag>{allVdevs.length}</Tag>
         </Space>
       }
       extra={
@@ -621,13 +914,13 @@ export const StoragePoolVdevManager = ({
               }
             />
           </Tooltip>
-          {canSaveLayout?.can ? (
+          {canSaveLayout?.can && showSaveButton ? (
             <Button
               type="primary"
               icon={<SaveOutlined />}
               disabled={!dirty}
               loading={saving}
-              onClick={handleSave}
+              onClick={() => void handleSave()}
             >
               Save layout
             </Button>
@@ -698,7 +991,7 @@ export const StoragePoolVdevManager = ({
                 placeholder="Move selected to"
                 style={{ minWidth: 180 }}
                 value={null}
-                options={vdevs.map((vdev) => ({
+                options={allVdevs.map((vdev) => ({
                   value: vdev.id,
                   label: vdev.vdevName,
                 }))}
@@ -717,7 +1010,29 @@ export const StoragePoolVdevManager = ({
           </Card>
         ) : null}
 
-        {vdevs.length === 0 ? (
+        {pendingDeleteIds.size > 0 ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={`${pendingDeleteIds.size} vdev(s) marked for deletion`}
+            description="Their member drives will be detached and the vdevs deleted when you apply the review."
+            action={
+              <Space wrap>
+                {Array.from(pendingDeleteIds).map((id) => (
+                  <Button
+                    key={id}
+                    size="small"
+                    onClick={() => undoPendingDelete(id)}
+                  >
+                    Undo {vdevs.find((vdev) => vdev.id === id)?.vdevName ?? ""}
+                  </Button>
+                ))}
+              </Space>
+            }
+          />
+        ) : null}
+
+        {allVdevs.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="No vdevs in this pool yet"
@@ -734,7 +1049,7 @@ export const StoragePoolVdevManager = ({
           </Empty>
         ) : (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            {vdevs.map((vdev) => {
+            {allVdevs.map((vdev) => {
               const members = draft?.[vdev.id] ?? [];
               const profiles = vdev.redundancyProfile;
               const cap = vdev.capacity;
@@ -749,6 +1064,9 @@ export const StoragePoolVdevManager = ({
                   title={
                     <Space wrap>
                       <Text strong>{vdev.vdevName}</Text>
+                      {vdev.id.startsWith("local-") ? (
+                        <Tag color="gold">Pending create</Tag>
+                      ) : null}
                       <Tag color={vdevClassColor[vdev.vdevClass]}>
                         {vdev.vdevClass}
                       </Tag>
@@ -767,25 +1085,39 @@ export const StoragePoolVdevManager = ({
                   }
                   extra={
                     <Space>
-                      <Tooltip title="View configuration history">
-                        <Button
-                          size="small"
-                          icon={<HistoryOutlined />}
-                          onClick={() =>
-                            openHistory({
-                              kind: "vdev",
-                              id: vdev.id,
-                              name: vdev.vdevName,
-                            })
-                          }
-                        />
-                      </Tooltip>
+                      {!vdev.id.startsWith("local-") ? (
+                        <Tooltip title="View configuration history">
+                          <Button
+                            size="small"
+                            icon={<HistoryOutlined />}
+                            onClick={() =>
+                              openHistory({
+                                kind: "vdev",
+                                id: vdev.id,
+                                name: vdev.vdevName,
+                              })
+                            }
+                          />
+                        </Tooltip>
+                      ) : null}
                       {canCreateVdev?.can ? (
                         <Popconfirm
-                          title="Delete this vdev?"
-                          description="Only empty vdevs can be deleted."
+                          title={
+                            vdev.id.startsWith("local-")
+                              ? "Discard this staged vdev?"
+                              : "Delete this vdev?"
+                          }
+                          description={
+                            vdev.id.startsWith("local-")
+                              ? "The staged vdev has not been created yet."
+                              : deferVdevMutations
+                                ? "Member drives will be detached and the vdev deleted when you apply the review."
+                                : "Only empty vdevs can be deleted."
+                          }
                           onConfirm={() => handleDelete(vdev.id)}
-                          okText="Delete"
+                          okText={
+                            vdev.id.startsWith("local-") ? "Discard" : "Delete"
+                          }
                           okButtonProps={{ danger: true }}
                         >
                           <Button
@@ -793,7 +1125,9 @@ export const StoragePoolVdevManager = ({
                             size="small"
                             loading={deletingId === vdev.id}
                           >
-                            Delete
+                            {vdev.id.startsWith("local-")
+                              ? "Discard"
+                              : "Delete"}
                           </Button>
                         </Popconfirm>
                       ) : null}
@@ -1069,7 +1403,7 @@ export const StoragePoolVdevManager = ({
       </Modal>
     </Card>
   );
-};
+});
 
 const snapshotSummary = (snapshot: Record<string, unknown> | null) => {
   if (!snapshot) return "No snapshot";
