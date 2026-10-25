@@ -54,6 +54,22 @@ const vdevs = [
     vdev_class: 'DATA',
     sort_order: 10,
   },
+  {
+    id: '019f6a70-0000-7e70-8e70-000000000007',
+    pool_name: 'truenas-vm-pool',
+    vdev_name: 'raidz2-uk-0',
+    profile_code: 'RAIDZ2',
+    vdev_class: 'DATA',
+    sort_order: 10,
+  },
+  {
+    id: '019f6a70-0000-7e70-8e70-000000000008',
+    pool_name: 'truenas-raidz1-pool',
+    vdev_name: 'raidz1-uk-0',
+    profile_code: 'RAIDZ1',
+    vdev_class: 'DATA',
+    sort_order: 10,
+  },
 ];
 
 module.exports = {

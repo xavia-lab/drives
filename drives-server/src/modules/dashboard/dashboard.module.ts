@@ -16,6 +16,13 @@ import { DriveLifecycleEventModule } from '../drive-lifecycle-event/drive-lifecy
 import { WarrantyClaimModule } from '../warranty-claim/warranty-claim.module';
 import { ServerSlotAllocationModule } from '../server-slot-allocation/server-slot-allocation.module';
 import { ExchangeRateModule } from '../exchange-rate/exchange-rate.module';
+import { StoragePoolModule } from '../storage-pool/storage-pool.module';
+import { LogicalVdevModule } from '../logical-vdev/logical-vdev.module';
+import { StorageTopologyVisualizationService } from './storage-topology-visualization.service';
+import { VirtualServer } from '../virtual-server/entities/virtual-server.entity';
+import { PassthroughSlot } from '../virtual-server/entities/passthrough-slot.entity';
+import { Interface } from '../interface/entities/interface.entity';
+import { PoolType } from '../pool-type/entities/pool-type.entity';
 
 @Module({
   imports: [
@@ -29,15 +36,21 @@ import { ExchangeRateModule } from '../exchange-rate/exchange-rate.module';
       WarrantyClaim,
       WarrantyClaimEvent,
       DriveLifecycleEvent,
+      VirtualServer,
+      PassthroughSlot,
+      Interface,
+      PoolType,
     ]),
     PhysicalDriveModule,
     DriveLifecycleEventModule,
     WarrantyClaimModule,
     ServerSlotAllocationModule,
     ExchangeRateModule,
+    StoragePoolModule,
+    LogicalVdevModule,
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, StorageTopologyVisualizationService],
   exports: [DashboardService],
 })
 export class DashboardModule {}

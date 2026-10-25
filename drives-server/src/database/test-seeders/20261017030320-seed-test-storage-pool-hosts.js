@@ -7,7 +7,7 @@
 // A pool's current host is DERIVED from its latest event: IMPORT => attached,
 // EXPORT => detached. `mdraid-scratch` deliberately carries a full move
 // (ash-storage-01 -> ash-compute-01) to exercise the timeline, and
-// `truenas-vm-pool` has no events at all (detached).
+// `truenas-vm-pool` and `truenas-raidz1-pool` are attached to the UK TrueNAS guest.
 
 const { idMap, required } = require('./lib/lookups');
 
@@ -104,6 +104,26 @@ const poolHostEvents = [
     event_type: 'IMPORT',
     event_timestamp: new Date('2026-07-07T09:00:00.000Z'),
     notes: 'Guest pool import.',
+  },
+  // truenas-vm-pool: six-drive RAIDZ2 pool on the UK TrueNAS guest
+  {
+    id: '019f6a60-0000-7e60-8e60-00000000000a',
+    pool_name: 'truenas-vm-pool',
+    host_kind: HOST.virtual,
+    host_name: 'vm-truenas-vm-01',
+    event_type: 'IMPORT',
+    event_timestamp: new Date('2026-07-08T09:00:00.000Z'),
+    notes: 'UK TrueNAS RAIDZ2 import.',
+  },
+  // truenas-raidz1-pool: three-drive RAIDZ1 pool on the UK TrueNAS guest
+  {
+    id: '019f6a60-0000-7e60-8e60-00000000000b',
+    pool_name: 'truenas-raidz1-pool',
+    host_kind: HOST.virtual,
+    host_name: 'vm-truenas-vm-01',
+    event_type: 'IMPORT',
+    event_timestamp: new Date('2026-07-08T09:05:00.000Z'),
+    notes: 'UK TrueNAS RAIDZ1 import.',
   },
 ];
 

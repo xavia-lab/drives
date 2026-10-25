@@ -6,7 +6,7 @@
 // datacenters).
 //
 // A drive's current location is DERIVED from its latest event. This fixture
-// assigns a datacenter to 46 of the 50 seeded drives (so the slot-assignment
+// assigns a datacenter to 55 of the 59 seeded drives (so the slot-assignment
 // board has free drives in all datacenters) and deliberately leaves 4 drives
 // without any location. The curated events below keep their anchors for the
 // downstream slot-allocation fixture; `S6BZNA0T512346` additionally carries a
@@ -48,13 +48,20 @@ const curatedLocations = [
     located_at: new Date('2026-07-03T09:15:00.000Z'),
     notes: null,
   },
+  ...Array.from({ length: 9 }, (_, index) => ({
+    id: `019f6a70-0000-7e70-8e70-0000000000${(0x05 + index).toString(16).padStart(2, '0')}`,
+    serial_number: `TESTNAS-${String(index + 1).padStart(4, '0')}`,
+    datacenter_code: 'GB-SLO-1',
+    located_at: new Date('2026-07-06T09:00:00.000Z'),
+    notes: 'TrueNAS UK backplane drive.',
+  })),
 ];
 
 // The four drives intentionally left without a location. These are the tail of
-// the `physical-drives` fixture (`TESTDRV-0047..0050`).
+// the generated `physical-drives` fixture (`TESTDRV-0047..0050`).
 const UNASSIGNED_SERIALS = [
-  'TESTDRV-0047-PM9A',
-  'TESTDRV-0048-PM17',
+  'TESTDRV-0047-PM',
+  'TESTDRV-0048-PM',
   'TESTDRV-0049-UL',
   'TESTDRV-0050-EX',
 ];

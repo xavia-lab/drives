@@ -90,6 +90,12 @@ const passthroughSlots = [
     server_hostname: 'fra-storage-01',
     slot_label: 'HDD Bay 11',
   },
+  ...Array.from({ length: 9 }, (_, index) => ({
+    id: `019f6a40-0000-7e11-8e11-0000000000${(0x0e + index).toString(16).padStart(2, '0')}`,
+    virtual_server_hostname: 'vm-truenas-vm-01',
+    server_hostname: 'slo-nas-01',
+    slot_label: `HDD Bay ${index + 2}`,
+  })),
 ];
 
 module.exports = {
