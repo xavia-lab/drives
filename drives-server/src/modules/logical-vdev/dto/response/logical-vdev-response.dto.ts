@@ -8,17 +8,21 @@ class StoragePoolShallowDto {
   @Expose() poolName: string;
 }
 
+class VdevMemberDriveShallowDto {
+  @Expose() id: string;
+  @Expose() label: string;
+  @Expose() serialNumber: string;
+}
+
 class VdevMemberShallowDto {
   @Expose() id: string;
   @Expose() physicalDriveId: string;
   @Expose() osDeviceNodePath: string | null;
   @Expose() memberRole: string;
   @Expose() attachedAt: Date;
-  @Expose() physicalDrive?: {
-    id: string;
-    label: string;
-    serialNumber: string;
-  };
+  @Expose()
+  @Type(() => VdevMemberDriveShallowDto)
+  physicalDrive?: VdevMemberDriveShallowDto;
 }
 
 export class LogicalVdevResponseDto {
