@@ -45,8 +45,8 @@ module.exports = {
       },
       serial_number: {
         type: Sequelize.STRING(64),
-        allowNull: false,
-        unique: true, // Crucial structural constraint for physical hardware verification
+        allowNull: true,
+        unique: true, // Some CPUs do not expose a serial number
       },
       acquisition_cost: {
         type: Sequelize.DECIMAL(12, 2),

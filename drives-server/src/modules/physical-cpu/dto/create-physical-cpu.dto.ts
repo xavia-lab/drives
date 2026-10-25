@@ -20,16 +20,15 @@ export class CreatePhysicalCpuDto {
   @IsUUID('7', { message: 'The id must be a valid UUIDv7 string' }) // Enforces UUIDv7 formatting
   id?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'The unique alphanumeric serial number printed directly on the CPU heat-spreader (IHS) or packaging label',
+      'Optional unique alphanumeric serial number printed on the CPU heat-spreader (IHS) or packaging label',
     example: 'BF2104S00012',
-    required: true,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Length(1, 64)
-  serialNumber: string;
+  serialNumber?: string;
 
   @ApiProperty({
     description:

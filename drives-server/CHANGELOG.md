@@ -1,5 +1,14 @@
 # drives-server
 
+## 0.0.6
+
+### Patch Changes
+
+- eea0731: Cleaned database migraton and seed files with simplified Labels for Physical Drives and CPUs.
+- 0d8cab8: Updated the VDEV workflow to have a transectional commit system.
+- f00d5a8: Added new server viualiser tool on the Dashboard for server storage.
+- aaeda79: Fixed UI naming issues.
+
 ## 0.0.5
 
 ### Patch Changes

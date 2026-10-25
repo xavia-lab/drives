@@ -55,6 +55,10 @@ module.exports = {
       name: 'storage_pools_pool_type_id_idx',
       using: 'btree',
     });
+    await queryInterface.sequelize.query(`
+      CREATE UNIQUE INDEX "storage_pools_pool_name_ci_unique_idx"
+        ON "storage_pools" (lower("pool_name"));
+    `);
   },
 
   async down(queryInterface, Sequelize) {

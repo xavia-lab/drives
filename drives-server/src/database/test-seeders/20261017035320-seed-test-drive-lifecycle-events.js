@@ -16,7 +16,7 @@
 // with "currently seated" and avoids leaving unseated drives in service.
 
 const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
-const TOTAL_DRIVES = 50;
+const TOTAL_DRIVES = 59;
 const STEP_MS = 30 * 60 * 1000;
 
 const BASE_TIME = Date.UTC(2026, 0, 1, 8, 0, 0);
@@ -36,6 +36,7 @@ const BASE_TIME = Date.UTC(2026, 0, 1, 8, 0, 0);
 //   10-38 provisioned -> IN_SERVICE (then DEPROVISION if unseated)
 //   39    fail -> RMA initiate -> IN_RMA
 //   40-49 acquired only -> RECEIVED
+//   50-58 provisioned (UK TrueNAS drives) -> IN_SERVICE
 // ----------------------------------------------------------------------------
 
 const rawEvents = [];
@@ -44,6 +45,7 @@ const push = (drive_index, event_type, extra = {}) =>
 
 for (let i = 0; i < TOTAL_DRIVES; i += 1) push(i, 'ACQUIRE');
 for (let i = 0; i < 40; i += 1) push(i, 'PROVISION');
+for (let i = 50; i < 59; i += 1) push(i, 'PROVISION');
 
 push(0, 'DEGRADE', { context_metadata: { reason: 'SMART warnings' } });
 push(0, 'FAIL', {

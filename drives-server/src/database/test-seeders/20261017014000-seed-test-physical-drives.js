@@ -3,13 +3,13 @@
 // TEST-ONLY fixture for the `physical_drives` table. Not part of production seeding.
 // Run via `pnpm --filter @drives/drives-server seed:test`.
 //
-// Produces a 50-drive dataset: the six curated drives below (whose IDs/serials
-// are referenced by the locations and slot-allocation fixtures) plus 44
-// deterministically generated drives so list/show screens and the slot
-// assignment board have enough data to exercise paging, filtering and drag/drop.
+// Produces a 59-drive dataset: fifteen curated drives (six original fixture
+// anchors plus nine UK TrueNAS drives) and 44 deterministically generated drives
+// so list/show screens and the slot assignment board have enough data to
+// exercise paging, filtering and drag/drop.
 //
 // Labels follow the app's asset-label convention
-// (MFG-MODEL-CAPACITYUNIT-PURCHASEDATE-SEQ). They are supplied explicitly
+// (MFG-MODEL-PURCHASEDATE-CAPACITY-SEQ, e.g. SE-EX-20250115-16T-001). They are supplied explicitly
 // because bulkInsert bypasses the PhysicalDrive @BeforeValidate label hook.
 
 const { idMap, required } = require('./lib/lookups');
@@ -22,8 +22,8 @@ const DRIVE_MODEL_POOL = [
     storage_manufacturer: 'Samsung Electronics',
     drive_model_number: 'MZQL21T9HCJR-00A07',
     mfg: 'SA',
-    model: 'PM9A',
-    capacity: '01.9TB',
+    model: 'PM',
+    capacity: '1.92T',
     base_cost: 219.0,
     wwn_prefix: '5002538c81',
   },
@@ -31,8 +31,8 @@ const DRIVE_MODEL_POOL = [
     storage_manufacturer: 'Samsung Electronics',
     drive_model_number: 'MZ3LO3T8HBLA-00A07',
     mfg: 'SA',
-    model: 'PM17',
-    capacity: '03.8TB',
+    model: 'PM',
+    capacity: '3.84T',
     base_cost: 749.99,
     wwn_prefix: '5002538c82',
   },
@@ -41,7 +41,7 @@ const DRIVE_MODEL_POOL = [
     drive_model_number: 'WUS2ETBB48C2P2',
     mfg: 'WE',
     model: 'UL',
-    capacity: '0480GB',
+    capacity: '480G',
     base_cost: 89.99,
     wwn_prefix: '5000cca2a1',
   },
@@ -50,7 +50,7 @@ const DRIVE_MODEL_POOL = [
     drive_model_number: 'ST16000NM001G',
     mfg: 'SE',
     model: 'EX',
-    capacity: '0016TB',
+    capacity: '16T',
     base_cost: 289.0,
     wwn_prefix: null,
   },
@@ -59,7 +59,7 @@ const DRIVE_MODEL_POOL = [
     drive_model_number: 'ST20000NM007D',
     mfg: 'SE',
     model: 'EX',
-    capacity: '0020TB',
+    capacity: '20T',
     base_cost: 349.0,
     wwn_prefix: null,
   },
@@ -91,7 +91,7 @@ function generateDrives(count, startIndex) {
     warranty.setUTCFullYear(warranty.getUTCFullYear() + 5);
     const purchaseDate = formatDate(purchase);
 
-    const prefix = `${model.mfg}-${model.model}-${model.capacity}-${purchaseDate.replace(/-/g, '')}`;
+    const prefix = `${model.mfg}-${model.model}-${purchaseDate.replace(/-/g, '')}-${model.capacity}`;
     sequenceByPrefix[prefix] = (sequenceByPrefix[prefix] ?? 0) + 1;
 
     return {
@@ -118,7 +118,7 @@ const curatedDrives = [
     storage_manufacturer: 'Samsung Electronics',
     drive_model_number: 'MZQL21T9HCJR-00A07',
     retailer_vendor_name: 'CDW Logistics',
-    label: 'SA-PM9A-01.9TB-20240212-001',
+    label: 'SA-PM-20240212-1.92T-001',
     serial_number: 'S6BZNA0T512345',
     worldwide_name_wwn: '5002538c8101a2b3',
     acquisition_cost: 219.0,
@@ -131,7 +131,7 @@ const curatedDrives = [
     storage_manufacturer: 'Samsung Electronics',
     drive_model_number: 'MZQL21T9HCJR-00A07',
     retailer_vendor_name: 'Amazon US',
-    label: 'SA-PM9A-01.9TB-20240301-001',
+    label: 'SA-PM-20240301-1.92T-001',
     serial_number: 'S6BZNA0T512346',
     worldwide_name_wwn: '5002538c8101a2b4',
     acquisition_cost: 225.5,
@@ -144,7 +144,7 @@ const curatedDrives = [
     storage_manufacturer: 'Samsung Electronics',
     drive_model_number: 'MZ3LO3T8HBLA-00A07',
     retailer_vendor_name: 'CDW Logistics',
-    label: 'SA-PM17-03.8TB-20240620-001',
+    label: 'SA-PM-20240620-3.84T-001',
     serial_number: 'S6XXN0T8BL001',
     worldwide_name_wwn: '5002538c8200c1d1',
     acquisition_cost: 749.99,
@@ -157,7 +157,7 @@ const curatedDrives = [
     storage_manufacturer: 'Western Digital',
     drive_model_number: 'WUS2ETBB48C2P2',
     retailer_vendor_name: 'CDW Logistics',
-    label: 'WE-UL-0480GB-20231105-001',
+    label: 'WE-UL-20231105-480G-001',
     serial_number: 'WD-SN640-00480A',
     worldwide_name_wwn: '5000cca2a1b2c3d4',
     acquisition_cost: 89.99,
@@ -170,7 +170,7 @@ const curatedDrives = [
     storage_manufacturer: 'Seagate Technology',
     drive_model_number: 'ST16000NM001G',
     retailer_vendor_name: 'Amazon US',
-    label: 'SE-EX-0016TB-20230518-001',
+    label: 'SE-EX-20230518-16T-001',
     serial_number: 'ST16000NM001G-2KK103',
     worldwide_name_wwn: null,
     acquisition_cost: 289.0,
@@ -183,7 +183,7 @@ const curatedDrives = [
     storage_manufacturer: 'Seagate Technology',
     drive_model_number: 'ST20000NM007D',
     retailer_vendor_name: 'CDW Logistics',
-    label: 'SE-EX-0020TB-20240122-001',
+    label: 'SE-EX-20240122-20T-001',
     serial_number: 'ST20000NM007D-3TJ103',
     worldwide_name_wwn: null,
     acquisition_cost: 349.0,
@@ -191,14 +191,27 @@ const curatedDrives = [
     purchase_date: '2024-01-22',
     warranty_expiry_date: '2029-01-22',
   },
+  ...Array.from({ length: 9 }, (_, index) => ({
+    id: `019f6a00-0000-7f${(0x40 + index).toString(16)}-8f${(0x40 + index).toString(16)}-0000000000${(0x50 + index).toString(16)}`,
+    storage_manufacturer: 'Seagate Technology',
+    drive_model_number: 'ST16000NM001G',
+    retailer_vendor_name: 'CDW Logistics',
+    label: `SE-EX-20250115-16T-${pad(index + 1, 3)}`,
+    serial_number: `TESTNAS-${pad(index + 1, 4)}`,
+    worldwide_name_wwn: null,
+    acquisition_cost: 299.0 + index,
+    currency_code: 'USD',
+    purchase_date: '2025-01-15',
+    warranty_expiry_date: '2030-01-15',
+  })),
 ];
 
-const TOTAL_DRIVES = 50;
+const TOTAL_DRIVES = 59;
 const physicalDrives = [
   ...curatedDrives,
   ...generateDrives(
     TOTAL_DRIVES - curatedDrives.length,
-    curatedDrives.length + 1,
+    7,
   ),
 ];
 

@@ -88,6 +88,7 @@ export default function PhysicalCpuList() {
           width={180}
           sorter={true}
           defaultSortOrder={getDefaultSortOrder("serialNumber", sorters)}
+          render={(value) => value ?? "-"}
           filterDropdown={(props) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search by Serial Number" />

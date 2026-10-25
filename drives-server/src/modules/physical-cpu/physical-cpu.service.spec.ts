@@ -125,6 +125,27 @@ describe('PhysicalCpuService', () => {
       });
     });
 
+    it('should create a CPU without a serial number', async () => {
+      mockCpuModelRepo.findByPk.mockResolvedValue({ id: 'cpu-model-uuid' });
+      mockVendorRepo.findByPk.mockResolvedValue({ id: 'vendor-uuid' });
+      mockCurrencyRepo.findByPk.mockResolvedValue({ id: 'currency-uuid' });
+      mockPhysicalCpuRepo.create.mockResolvedValue({
+        id: 'cpu-1',
+        ...createDto,
+        serialNumber: null,
+      });
+      const withoutSerial = { ...createDto };
+      delete withoutSerial.serialNumber;
+
+      await service.create(withoutSerial);
+
+      expect(mockPhysicalCpuRepo.findOne).not.toHaveBeenCalled();
+      expect(mockPhysicalCpuRepo.create).toHaveBeenCalledWith({
+        ...withoutSerial,
+        serialNumber: null,
+      });
+    });
+
     it('should throw ConflictException if the serial number already exists', async () => {
       mockPhysicalCpuRepo.findOne.mockResolvedValue({ id: 'existing-id' });
 

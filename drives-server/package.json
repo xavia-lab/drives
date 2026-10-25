@@ -1,6 +1,6 @@
 {
   "name": "@drives/drives-server",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A Nest.JS based API backend!",
   "author": "Rehan Mahmood",
   "license": "Apache-2.0",
@@ -30,10 +30,12 @@
     "seed:test": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:all --seeders-path src/database/test-seeders",
     "seed:test:undo": "node --env-file=.env ./node_modules/sequelize-cli/lib/sequelize db:seed:undo --seeders-path src/database/test-seeders --seed $(basename -a src/database/test-seeders/*.js)",
     "seed:test:teardown": "node --env-file=.env scripts/teardown-test-data.js",
-    "seed:test:reset": "pnpm seed:test:teardown && pnpm seed:test",
+    "seed:test:reset": "pnpm seed:test:teardown && pnpm seed:run && pnpm seed:test",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:sync:force": "ts-node -r tsconfig-paths/register scripts/sync-database.ts --force",
-    "db:sync:alter": "ts-node -r tsconfig-paths/register scripts/sync-database.ts --alter"
+    "db:sync:alter": "ts-node -r tsconfig-paths/register scripts/sync-database.ts --alter",
+    "db:setup": "pnpm migration:run && pnpm seed:run",
+    "db:setup:test": "pnpm migration:run && pnpm seed:run && pnpm seed:test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",

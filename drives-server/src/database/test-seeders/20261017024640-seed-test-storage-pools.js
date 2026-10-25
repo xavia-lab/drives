@@ -60,6 +60,12 @@ const storagePools = [
     pool_type_name: 'CEPH_OSD_POOL',
     encryption_enabled: true,
   },
+  {
+    id: '019f6a50-0000-7e50-8e50-000000000009',
+    pool_name: 'truenas-raidz1-pool',
+    pool_type_name: 'ZFS',
+    encryption_enabled: false,
+  },
 ];
 
 module.exports = {

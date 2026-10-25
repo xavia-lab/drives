@@ -44,6 +44,45 @@ const memberships = [
   },
 ];
 
+// The UK TrueNAS guest receives nine dedicated drives. They are resolved by
+// serial number so the fixture remains stable and the vdev member ordering is
+// explicit (RAIDZ2: six drives, RAIDZ1: three drives).
+const explicitMemberships = [
+  ...[
+    'TESTNAS-0001',
+    'TESTNAS-0002',
+    'TESTNAS-0003',
+    'TESTNAS-0004',
+    'TESTNAS-0005',
+    'TESTNAS-0006',
+  ].map((serial_number, index) => ({
+    id: `019f6a80-0000-7e80-8e80-${(0x10 + index).toString(16).padStart(12, '0')}`,
+    vdev_id: '019f6a70-0000-7e70-8e70-000000000007',
+    pool_name: 'truenas-vm-pool',
+    serial_number,
+    device_path: `/dev/vdev/raidz2-0-${index}`,
+    event_timestamp: new Date(
+      Date.UTC(2026, 6, 13, 9, 30 + index, 0),
+    ),
+    member_index: index,
+  })),
+  ...[
+    'TESTNAS-0007',
+    'TESTNAS-0008',
+    'TESTNAS-0009',
+  ].map((serial_number, index) => ({
+    id: `019f6a80-0000-7e80-8e80-${(0x20 + index).toString(16).padStart(12, '0')}`,
+    vdev_id: '019f6a70-0000-7e70-8e70-000000000008',
+    pool_name: 'truenas-raidz1-pool',
+    serial_number,
+    device_path: `/dev/vdev/raidz1-0-${index}`,
+    event_timestamp: new Date(
+      Date.UTC(2026, 6, 13, 10, index, 0),
+    ),
+    member_index: index,
+  })),
+];
+
 const currentMountedDrive = async (
   queryInterface,
   hostname,
@@ -73,8 +112,20 @@ const currentMountedDrive = async (
 module.exports = {
   async up(queryInterface) {
     const pools = await idMap(queryInterface, 'storage_pools', 'pool_name');
+    const drives = await idMap(
+      queryInterface,
+      'physical_drives',
+      'serial_number',
+    );
     const used = new Set();
     const rows = [];
+    const explicitRows = explicitMemberships.map(
+      ({ serial_number, ...membership }) => ({
+        ...membership,
+        drive_id: required(drives, serial_number, 'physical_drives'),
+      }),
+    );
+    for (const membership of explicitRows) used.add(membership.drive_id);
 
     for (const membership of memberships) {
       const driveId = await currentMountedDrive(
@@ -84,6 +135,7 @@ module.exports = {
       );
       rows.push({ ...membership, drive_id: driveId });
     }
+    rows.push(...explicitRows);
 
     await queryInterface.bulkInsert(
       'logical_disks',
@@ -93,8 +145,8 @@ module.exports = {
         physical_drive_id: row.drive_id,
         os_device_node_path: row.device_path,
         member_role: 'DATA',
-        member_index: 0,
-        group_index: null,
+        member_index: row.member_index ?? 0,
+        group_index: row.group_index ?? null,
         attached_at: row.event_timestamp,
         created_at: row.event_timestamp,
         updated_at: row.event_timestamp,
@@ -114,8 +166,8 @@ module.exports = {
         to_vdev_id: row.vdev_id,
         action: 'ATTACH',
         member_role: 'DATA',
-        member_index: 0,
-        group_index: null,
+        member_index: row.member_index ?? 0,
+        group_index: row.group_index ?? null,
         os_device_node_path: row.device_path,
         event_timestamp: row.event_timestamp,
         performed_by_user_id: MOCK_USER_ID,

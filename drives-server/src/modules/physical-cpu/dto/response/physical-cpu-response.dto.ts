@@ -11,7 +11,7 @@ export class PhysicalCpuResponseDto {
   label: string;
 
   @Expose()
-  serialNumber: string;
+  serialNumber: string | null;
 
   @Expose()
   acquisitionCost: number;

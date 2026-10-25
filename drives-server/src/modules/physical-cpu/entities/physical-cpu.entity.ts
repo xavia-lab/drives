@@ -52,10 +52,10 @@ export class PhysicalCpu extends BaseModel {
 
   @Column({
     type: DataType.STRING(64),
-    allowNull: false,
+    allowNull: true,
     unique: true,
   })
-  declare serialNumber: string;
+  declare serialNumber: string | null;
 
   @Column({
     type: DataType.DECIMAL(12, 2),
@@ -77,7 +77,10 @@ export class PhysicalCpu extends BaseModel {
 
   @Column(DataType.VIRTUAL)
   get title(): string {
-    return `${this.getDataValue('serialNumber') as string}`;
+    return (
+      (this.getDataValue('serialNumber') as string | null) ??
+      (this.getDataValue('label') as string)
+    );
   }
 
   // --- Associations ---
@@ -147,36 +150,28 @@ export class PhysicalCpu extends BaseModel {
       .slice(0, 2)
       .toUpperCase();
 
-    // 3. Transform native date strings from YYYY-MM-DD into a compressed numerical cluster string (YYYYMMDD)
-    const rawDateStr = instance.purchaseDate.replace(/[^0-9]/g, ''); // "2021-09-08" => "20210908"
+    const rawDateStr = instance.purchaseDate.replace(/[^0-9]/g, '');
     if (rawDateStr.length !== 8) {
       throw new Error(
         `Label Generation Error: Invalid purchase date format "${instance.purchaseDate}". Expecting YYYY-MM-DD.`,
       );
     }
 
-    // Assemble uniform prefix configuration string block (CPUs carry no capacity segment)
     const baseLabelPrefix = `${mfgCode}-${modelCode}-${rawDateStr}`;
 
-    // 4. Evaluate existing assets inside a row lock to find the next available chronological sequence index
-    const lastMatchingCpu = await PhysicalCpu.findOne({
-      where: {
-        label: {
-          [Op.like]: `${baseLabelPrefix}-%`,
-        },
-      },
-      order: [['label', 'DESC']],
+    // Evaluate existing assets inside a row lock to find the next available sequence index.
+    const matching = await PhysicalCpu.findAll({
+      where: { label: { [Op.like]: `${baseLabelPrefix}-%` } },
+      attributes: ['label'],
       transaction,
       lock: transaction ? Transaction.LOCK.UPDATE : false,
     });
+    const sequence =
+      matching.reduce((max, cpu) => {
+        const tail = cpu.label.match(/(\d+)$/);
+        return Math.max(max, tail ? parseInt(tail[1], 10) : 0);
+      }, 0) + 1;
 
-    let sequence = 1;
-    if (lastMatchingCpu) {
-      const lastSequenceMatch = lastMatchingCpu.label.match(/\d{3}$/);
-      sequence = lastSequenceMatch ? parseInt(lastSequenceMatch[0], 10) + 1 : 1;
-    }
-
-    // 5. Bind the finalized structural bar-code value back to the model instance parameter list
     instance.label = `${baseLabelPrefix}-${sequence.toString().padStart(3, '0')}`;
   }
 }

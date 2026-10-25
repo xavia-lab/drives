@@ -6,10 +6,10 @@
 // server-slots and physical-drive-locations).
 //
 // The current occupant of a slot, and the current slot of a drive, are DERIVED
-// from the latest event. Six provisioned drives (two per datacenter) are
-// currently mounted, so their lifecycle state stays IN_SERVICE in the lifecycle
-// fixture. A seventh VA drive is mounted then unmounted to keep a realistic
-// history while ending up unseated (and therefore IN_INVENTORY).
+// from the latest event. Fifteen provisioned drives are currently mounted: six
+// baseline mounts (two per datacenter) plus nine UK TrueNAS backplane drives.
+// One additional VA drive is mounted then unmounted to keep a realistic history
+// while ending up unseated (and therefore IN_INVENTORY).
 
 const { idMap, required } = require('./lib/lookups');
 
@@ -50,6 +50,14 @@ const MOUNT_PLAN = [
     slot_label: 'HDD Bay 1',
   },
 ];
+
+// Nine drives purchased together for the UK TrueNAS guest. They fill HDD Bay
+// 2..10 and are passed through to the guest in the passthrough fixture.
+const EXPLICIT_MOUNT_PLAN = Array.from({ length: 9 }, (_, index) => ({
+  serial_number: `TESTNAS-${String(index + 1).padStart(4, '0')}`,
+  server_hostname: 'slo-nas-01',
+  slot_label: `HDD Bay ${index + 2}`,
+}));
 
 const HISTORY_PLAN = {
   datacenter_code: 'VA-ASH-1',
@@ -127,6 +135,13 @@ const buildAllocations = async (queryInterface) => {
     return candidate;
   };
 
+  const [allDriveRows] = await queryInterface.sequelize.query(
+    'SELECT id, serial_number FROM physical_drives;',
+  );
+  const driveIdBySerial = new Map(
+    allDriveRows.map((row) => [row.serial_number, row.id]),
+  );
+
   MOUNT_PLAN.forEach((plan, index) => {
     const drive = takeDrive(plan.datacenter_code);
     allocations.push({
@@ -139,6 +154,28 @@ const buildAllocations = async (queryInterface) => {
         'server_slots',
       ),
       timestamp: new Date(MOUNT_BASE_TIME + index * 60 * 60 * 1000),
+    });
+  });
+
+  EXPLICIT_MOUNT_PLAN.forEach((plan) => {
+    const driveId = driveIdBySerial.get(plan.serial_number);
+    if (!driveId) {
+      throw new Error(
+        `Test seed prerequisite missing: drive ${plan.serial_number} not found.`,
+      );
+    }
+    allocations.push({
+      id: allocationId(allocations.length),
+      action_type: 'MOUNT',
+      physical_drive_id: driveId,
+      server_slot_id: required(
+        slots,
+        `${plan.server_hostname}/${plan.slot_label}`,
+        'server_slots',
+      ),
+      timestamp: new Date(
+        MOUNT_BASE_TIME + allocations.length * 60 * 60 * 1000,
+      ),
     });
   });
 
