@@ -8,7 +8,7 @@ export default async function LoginLayout({
 }: React.PropsWithChildren) {
   const data = await getData();
 
-  if (data.session?.user) {
+  if (data.session?.user && !data.session.error) {
     return redirect("/");
   }
 

@@ -5,8 +5,8 @@ import { App as AntdApp, theme } from "antd";
 import { useNotificationProvider } from "@refinedev/antd";
 import { Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { SessionProvider, useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { SessionProvider, signOut, useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { HardDrive } from "lucide-react";
 
@@ -80,7 +80,7 @@ export const RefineContext = (
   props: React.PropsWithChildren<RefineContextProps>,
 ) => {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={30} refetchOnWindowFocus>
       <AntdApp>
         <App {...props} />
       </AntdApp>
@@ -94,11 +94,31 @@ type AppProps = {
 };
 
 const App = (props: React.PropsWithChildren<AppProps>) => {
-  const { status } = useSession();
-  const to = usePathname();
+  const { status, data: session } = useSession();
+  const to = usePathname() ?? "/";
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (to === "/login") return;
+    if (status === "unauthenticated") {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(to)}`);
+    }
+  }, [router, status, to]);
+
+  React.useEffect(() => {
+    if (to !== "/login" && session?.error) {
+      void signOut({
+        callbackUrl: `/login?callbackUrl=${encodeURIComponent(to)}`,
+      });
+    }
+  }, [session?.error, to]);
 
   if (status === "loading") {
     return <span>loading...</span>;
+  }
+
+  if (to !== "/login" && (status === "unauthenticated" || session?.error)) {
+    return <span>Redirecting to login...</span>;
   }
 
   // Create providers with current state

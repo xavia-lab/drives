@@ -9,6 +9,14 @@ const envSchema = z.object({
   // Keep secrets private (do not send these to the client)
   DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET: z.string(),
   NEXTAUTH_SECRET: z.string(),
+  DRIVES_FRONTEND_SESSION_MAX_AGE_DAYS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(30),
+  DRIVES_FRONTEND_KEYCLOAK_SCOPES: z
+    .string()
+    .default("openid profile email"),
 });
 
 export const getServerConfig = () => {

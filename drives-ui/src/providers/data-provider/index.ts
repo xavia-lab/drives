@@ -6,7 +6,7 @@ import {
   type LogicalFilter,
 } from "@refinedev/core";
 import type { DataProvider } from "@refinedev/core";
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 const API_URL = "/api/proxy";
 
@@ -57,11 +57,15 @@ const authenticatedFetch = async (
 
     const session = await refreshPromise;
 
-    if (session?.accessToken) {
+    if (session?.accessToken && !session.error) {
       // IMPORTANT: We do NOT pass the original headers in options here
       // because they contain the old Authorization string.
       // We let the next recursive call fetch the NEW headers.
       return authenticatedFetch(url, options, true);
+    }
+
+    if (response.status === 401) {
+      void signOut({ callbackUrl: "/login" });
     }
   }
 

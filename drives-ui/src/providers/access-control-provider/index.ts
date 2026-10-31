@@ -1,4 +1,5 @@
 import { AccessControlProvider, CanParams } from "@refinedev/core";
+import { signOut } from "next-auth/react";
 import { dataProvider } from "@providers/data-provider";
 
 const API_URL = "/api/proxy";
@@ -56,6 +57,10 @@ export const createAccessControlProvider = (): AccessControlProvider => ({
         }),
       });
 
+      if (response.status === 401) {
+        void signOut({ callbackUrl: "/login" });
+        return { can: false };
+      }
       if (!response.ok) return { can: false };
 
       const data = await response.json();

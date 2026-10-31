@@ -10,6 +10,8 @@ const {
   DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET,
   DRIVES_FRONTEND_KEYCLOAK_ISSUER,
   NEXTAUTH_SECRET,
+  DRIVES_FRONTEND_SESSION_MAX_AGE_DAYS,
+  DRIVES_FRONTEND_KEYCLOAK_SCOPES,
 } = getServerConfig();
 
 // Define a helper to call Keycloak's token endpoint
@@ -35,6 +37,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       accessToken: refreshedTokens.access_token,
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fallback to old refresh token
+      error: undefined,
     };
   } catch {
     return { ...token, error: "RefreshAccessTokenError" };
@@ -49,6 +52,11 @@ const authOptions: NextAuthOptions = {
       clientId: DRIVES_FRONTEND_KEYCLOAK_CLIENT_ID,
       clientSecret: DRIVES_FRONTEND_KEYCLOAK_CLIENT_SECRET,
       issuer: DRIVES_FRONTEND_KEYCLOAK_ISSUER!,
+      authorization: {
+        params: {
+          scope: DRIVES_FRONTEND_KEYCLOAK_SCOPES,
+        },
+      },
       profile(profile) {
         const name = profile.name ?? profile.preferred_username;
         // Use Keycloak's 'picture' claim, or fallback to a generator
@@ -66,6 +74,11 @@ const authOptions: NextAuthOptions = {
     }),
   ],
   secret: NEXTAUTH_SECRET!,
+  session: {
+    strategy: "jwt",
+    maxAge: DRIVES_FRONTEND_SESSION_MAX_AGE_DAYS * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
   callbacks: {
     async jwt({ token, account, user }) {
       // Initial sign in

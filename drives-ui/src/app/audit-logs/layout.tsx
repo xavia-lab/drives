@@ -11,7 +11,7 @@ import { ResourceRouteGuard } from "@components/resource-route-guard";
 export default async function Layout({ children }: React.PropsWithChildren) {
   const data = await getData();
 
-  if (!data.session?.user) {
+  if (!data.session?.user || data.session.error) {
     return redirect("/login");
   }
 
